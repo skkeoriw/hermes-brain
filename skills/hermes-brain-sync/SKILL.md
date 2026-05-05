@@ -55,8 +55,10 @@ Default exclusions are runtime or rebuildable artifacts:
 - `__pycache__/`
 - `*.pyc`
 - `*.lock`
-- `state.db-wal`
-- `state.db-shm`
+- `*.pid`
+- `*.log`
+- `*-wal`
+- `*-shm`
 - `.update_check`
 
 ## New Machine Bootstrap

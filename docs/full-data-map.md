@@ -26,7 +26,9 @@ Repo path `brain/hermes-home/` maps directly to local `~/.hermes/`.
 - `cache/`, `audio_cache/`
 - `__pycache__/`, `*.pyc`
 - `*.lock`
-- `state.db-wal`, `state.db-shm`
+- `*.pid`
+- `*.log`
+- `*-wal`, `*-shm`
 - `.update_check`
 
 ## Notes

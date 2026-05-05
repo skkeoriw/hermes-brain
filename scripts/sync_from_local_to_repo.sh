@@ -20,7 +20,7 @@ from pathlib import Path
 src = Path(sys.argv[1]).expanduser().resolve()
 dest = Path(sys.argv[2]).expanduser().resolve()
 exclude_names = {'hermes-agent', 'logs', 'cache', 'audio_cache', '__pycache__', '.update_check'}
-exclude_patterns = {'*.pyc', '*.lock', 'state.db-wal', 'state.db-shm'}
+exclude_patterns = {'*.pyc', '*.lock', '*.pid', '*.log', '*-wal', '*-shm'}
 
 def excluded(path: Path) -> bool:
     name = path.name
@@ -66,8 +66,10 @@ cat > "$REPO_ROOT/brain/manifest.json" <<EOF
     "__pycache__/",
     "*.pyc",
     "*.lock",
-    "state.db-wal",
-    "state.db-shm",
+    "*.pid",
+    "*.log",
+    "*-wal",
+    "*-shm",
     ".update_check"
   ]
 }
