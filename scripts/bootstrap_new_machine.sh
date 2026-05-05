@@ -1,30 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKIP_INSTALL=0
+RUN_DOCTOR=1
+for arg in "$@"; do
+  case "$arg" in
+    --skip-install) SKIP_INSTALL=1 ;;
+    --no-doctor) RUN_DOCTOR=0 ;;
+  esac
+done
 
-need() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    echo "ERROR: required command not found: $1" >&2
-    exit 1
-  fi
-}
+command -v git >/dev/null || { echo "missing git" >&2; exit 1; }
+command -v curl >/dev/null || { echo "missing curl" >&2; exit 1; }
+command -v python3 >/dev/null || { echo "missing python3" >&2; exit 1; }
 
-need git
-need curl
-need python3
-bash "$REPO_ROOT/scripts/install_hermes.sh"
-bash "$REPO_ROOT/scripts/sync_from_repo_to_local.sh"
+if [ "$SKIP_INSTALL" = "0" ]; then
+  bash scripts/install_hermes.sh
+fi
 
-echo
-cat <<'EOF'
-Bootstrap complete.
+# Pull latest repo content if origin exists.
+if git remote get-url origin >/dev/null 2>&1; then
+  git pull --ff-only || true
+fi
 
-Next recommended commands:
-  hermes doctor
-  hermes
+python3 scripts/hermes_brain_sync.py repo-to-local
 
-If this machine should run Telegram/webhook/API gateway:
-  hermes gateway install
-  hermes gateway start
-EOF
+if [ "$RUN_DOCTOR" = "1" ] && command -v hermes >/dev/null 2>&1; then
+  hermes doctor || true
+fi
+
+echo "Bootstrap finished. Start Hermes with: hermes"

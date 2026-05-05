@@ -1,25 +1,21 @@
-# SECURITY
+# Security notes
 
-本仓库当前按用户要求使用“private repo + 明文全量同步”模式。
+This repo is intentionally configured for plaintext private-repo brain sync during testing.
 
-这意味着以下文件可能以明文进入 Git 历史：
+It may contain:
 
-- ~/.hermes/.env
-- ~/.hermes/auth.json
-- API keys
-- OAuth tokens
-- Telegram/Discord/Slack 等平台 token
+- API keys and provider credentials
+- OAuth tokens and auth pools
 - webhook secrets
-- GitHub token 或其它 credential
-- pairing / gateway 状态文件
+- GitHub tokens
+- gateway pairing/channel state
+- personal memories/session transcripts
 
-使用规则：
+Rules:
 
-1. 仓库必须保持 private。
-2. 不要添加不可信 collaborator。
-3. 不要在 public CI 日志中打印仓库内容。
-4. 不要把本仓库 fork 成 public。
-5. 如果未来用于生产，先轮换所有密钥，再迁移到加密同步模式。
-6. 如果误公开，立即 revoke/rotate 所有可能泄漏的 token。
-
-本项目的脚本不会故意加密、脱敏或过滤密钥，因为本项目目标是测试环境全量复制 Hermes 大脑。
+1. Keep the GitHub repo private.
+2. Do not add untrusted collaborators.
+3. Do not fork public.
+4. If exposed, rotate/revoke all credentials.
+5. Remember that Git history preserves deleted secrets.
+6. For production, migrate to encrypted secret sync or keep `.env`/`auth.json` machine-local.
