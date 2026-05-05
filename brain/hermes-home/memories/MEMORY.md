@@ -1,0 +1,1 @@
+Git authentication on this machine is configured for GitHub user ChangfengHU using git credential store; the llm-wiki repository lives at /home/zhouhuijuan1987/wiki/llm-wiki-obsidian-blink with origin https://github.com/ChangfengHU/llm-wiki-obsidian-blink.git.
