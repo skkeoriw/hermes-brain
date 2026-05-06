@@ -1,1 +1,3 @@
 Git authentication on this machine is configured for GitHub user ChangfengHU using git credential store; the llm-wiki repository lives at /home/zhouhuijuan1987/wiki/llm-wiki-obsidian-blink with origin https://github.com/ChangfengHU/llm-wiki-obsidian-blink.git.
+§
+The private GitHub repository ChangfengHU/hermes-brain exists and is cloned at /home/zhouhuijuan1987/hermes-brain; it syncs selected Hermes persistent data from ~/.hermes into brain/hermes-home via scripts/hermes_brain_sync.py and shell wrappers.

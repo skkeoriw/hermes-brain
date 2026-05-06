@@ -141,6 +141,8 @@ Otherwise it pulls. If an old push machine sees a different global push owner, i
 
 This role-management procedure is the main way Hermes can "set itself to push": load/use this skill, then run `bash scripts/set_sync_role.sh push --git --push` inside the repo.
 
+For session-specific implementation details and pitfalls, see `references/single-writer-auto-sync.md`.
+
 ## Push Local Hermes State to Repo
 
 Use this on a machine whose Hermes state should become the shared state:
