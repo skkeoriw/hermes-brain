@@ -223,3 +223,9 @@ After bootstrap or restore:
 - To view recent auto-sync logs: `cat $HOME/.local/state/hermes-brain/auto-sync.log`
 - To manually trigger a sync: `cd ~/hermes-brain && ./scripts/auto_sync.sh`
 - To check git status of the brain repo: `cd ~/hermes-brain && git status --short`
+
+## Hermes Cron Job Alternative
+
+Instead of systemd timers, you can use Hermes' built-in cron scheduler for brain sync:
+- See `references/hermes-cron-sync.md` for details on the hourly Telegram-reporting sync job
+- Manage with `hermes cron list`, `hermes cron run <job_id>`, etc.
