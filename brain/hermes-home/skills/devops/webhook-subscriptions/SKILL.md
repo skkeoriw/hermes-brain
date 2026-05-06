@@ -166,6 +166,8 @@ hermes webhook subscribe ci-builds \
   --deliver-chat-id "1234567890"
 ```
 
+For GitHub push -> Hermes relay workflows (including recursion guards like `paths: ['raw/**']` and 401 triage), see `references/github-actions-webhook-relay-recursion-guard.md`.
+
 ### Generic monitoring alert
 ```bash
 hermes webhook subscribe alerts \
@@ -225,17 +227,31 @@ If webhooks aren't working:
 4. **Signature mismatch?** Verify the secret in your service matches the one from `hermes webhook list` or `~/.hermes/webhook_subscriptions.json`. GitHub sends `X-Hub-Signature-256`, GitLab-style fixed-token calls send `X-Gitlab-Token`.
 5. **Accepted but no final answer?** `{"status":"accepted"}` is normal for async webhooks. Track progress with `grep '<delivery_id>\|response ready' ~/.hermes/logs/gateway.log`; final output is delivered via the route's `deliver` target.
 6. **Need the active session trace?** Look for a new `~/.hermes/sessions/session_<timestamp>_*.json` whose platform is `webhook`; inspect recent messages/tool calls to see whether the agent is syncing, scanning, writing, committing, or still running.
-7. **Webhook run finished but expected side effects are missing?** Correlate three artifacts by the same run marker (`run_id`, `delivery_id`, or `X-Request-ID`):
-   - gateway log (`POST ... delivery=<id>` + `response ready`)
-   - webhook session file (`~/.hermes/sessions/session_*.json` for that chat id)
-   - task artifact (for llm-wiki, `logs/webhook-runs/<run_id>.md` in the repo)
+7. **Dynamic route changed but gateway not restarted?** Dynamic subscriptions are hot-reloaded on incoming requests (mtime-gated), so changing `~/.hermes/webhook_subscriptions.json` can take effect on the next POST. Platform enablement/port changes still require gateway restart.
+8. **Firewall/NAT?** The webhook URL must be reachable from the service. For local development, use a tunnel (ngrok, cloudflared).
+9. **Wrong event type?** Check `--events` filter matches what the service sends. If a subscription has Events `(all)`, `event=unknown` is acceptable and still runs.
+10. **Webhook ran but task aborted early (no build/commit)?** Inspect the webhook session JSON under `~/.hermes/sessions/session_<timestamp>_*.json` for that delivery. In Git workflows, a common precondition failure is a dirty working tree (for example `git status --porcelain` showing untracked files like `?? .github/`), which causes policy-driven prompts to stop before sync/build/push. Treat this as a repo-state issue, not a webhook transport failure.
+11. **Telegram delivery uncertainty for webhook runs:** gateway logs can show webhook completion without a per-delivery `[Telegram] Sending response ...` line. Confirm delivery from the webhook session trace by checking for a successful `send_message` tool result (e.g. `{"success": true, "platform": "telegram", ...}`). This separates polling noise from actual per-run delivery success.
+
 5. **Accepted but no final answer?** `{"status":"accepted"}` is normal for async webhooks. Track progress with `grep '<delivery_id>\|response ready' ~/.hermes/logs/gateway.log`; final output is delivered via the route's `deliver` target.
 6. **Response is tiny / no build artifacts created?** Check for provider failures in request dumps:
    - Find latest dump: `ls -t ~/.hermes/sessions/request_dump_*.json | head -1`
    - Inspect `reason`, `error.code`, and model/provider fields (e.g., `max_retries_exhausted`, HTTP 524).
    - If present, this is usually a model/provider failure before tool execution (not a webhook route/auth problem). Switch webhook default model/provider to a more reliable option and restart gateway/session.
 7. **Need the active session trace?** Look for a new `~/.hermes/sessions/session_<timestamp>_*.json` whose platform is `webhook`; inspect message count and tool calls. If it contains only the injected user prompt and no assistant/tool messages, the run likely failed before tool execution.
-8. **Telegram delivery flaky with `terminated by other getUpdates request`?** Another process/machine is polling the same bot token. Keep only one polling instance for that token (or migrate Telegram adapter mode to webhooks) before judging webhook-delivery reliability.
-9. **Dynamic route changed but gateway not restarted?** Dynamic subscriptions are hot-reloaded on incoming requests (mtime-gated), so changing `~/.hermes/webhook_subscriptions.json` can take effect on the next POST. Platform enablement/port changes still require gateway restart.
+8. **Provider/model recently changed but webhook behavior still looks old?** Verify live config, then restart gateway so new defaults are actually used:
+   - Check: `hermes config | sed -n '/^model:/,/^[^ ]/p'`
+   - Set provider/model (example):
+     - `hermes config set model.provider openai-codex`
+     - `hermes config set model.default gpt-5.3-codex`
+   - Restart: `hermes gateway restart` (or `systemctl --user restart hermes-gateway`)
+   This is critical when request dumps show upstream model errors (e.g., `max_retries_exhausted`, HTTP `524`) before any tool calls.
+9. **Telegram delivery flaky with `terminated by other getUpdates request`?** Another process/machine is polling the same bot token. Keep only one polling instance for that token (or migrate Telegram adapter mode to webhooks) before judging webhook-delivery reliability.
+10. **Dynamic route changed but gateway not restarted?** Dynamic subscriptions are hot-reloaded on incoming requests (mtime-gated), so changing `~/.hermes/webhook_subscriptions.json` can take effect on the next POST. Platform enablement/port changes still require gateway restart.
 10. **Firewall/NAT?** The webhook URL must be reachable from the service. For local development, use a tunnel (ngrok, cloudflared).
 11. **Wrong event type?** Check `--events` filter matches what the service sends. If a subscription has Events `(all)`, `event=unknown` is acceptable and still runs.
+12. **GitHub push says triggered, but Hermes sees nothing?** Distinguish source failures vs receiver failures:
+   - Query GitHub webhook deliveries: `GET /repos/<owner>/<repo>/hooks/<hook_id>/deliveries`.
+   - If statuses are `Invalid HTTP Response: 401`, the route secret is mismatched (GitHub webhook `secret` vs Hermes route secret). Fix by aligning both.
+   - If using a GitHub Actions relay (`curl` to Hermes) instead of native repo webhooks, check the Actions run status and logs first; the repo webhook list/deliveries may show failures that are irrelevant to the active relay path.
+13. **Prevent webhook recursion in Git-backed wiki builds:** If Hermes writes back to the same repo (commit/push), gate the trigger by path (for example, only trigger on `raw/**` changes). This prevents build-generated updates under `wiki/`, `log.md`, etc. from re-triggering the webhook endlessly.

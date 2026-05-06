@@ -370,12 +370,16 @@ When the wiki lives in a remote Git repository rather than an already-local fold
 
 1. Clone once into a stable path and set `WIKI_PATH`/`OBSIDIAN_VAULT_PATH` to that clone.
 2. Before every build, ingest, or query: verify a clean worktree, `git fetch`, `git checkout <branch>`, and `git pull --ff-only` from the canonical remote. Stop and report if there are uncommitted changes unless the user explicitly asked to preserve/commit them.
+   - If the workflow requires preserving local edits automatically, use a protective stash sequence: `git stash push -u -m "webhook-auto-stash-<run_id>"` → sync (`fetch/checkout/pull --ff-only`) → `git stash pop` before processing.
+   - If `stash pop` reports conflicts, log conflict details and abort the run (do not force-commit partial conflict state).
 3. For full builds, scan all markdown and repair/init `SCHEMA.md`, `index.md`, `log.md`, entity/concept/comparison/query pages, frontmatter, backlinks, and graph structure.
 4. For incremental builds, diff against the pulled baseline or recent commits to identify changed markdown, then update only affected pages plus `index.md` and `log.md`.
 5. For queries, orient first (schema/index/log), answer from wiki pages, and if the user wants query capture, write a `queries/` page and update navigation/log.
 6. After write operations: `git status`, then `git add -A && git commit -m "chore: update llm wiki graph"` only when changes exist. Push to the user-approved target branch; direct `main` pushes are acceptable only when explicitly requested.
 7. For Hermes webhook/API automation, put the operation selector in payload fields such as `action=full_build|incremental_build|query`, `question`, and `save`, and make the prompt repeat the sync-before/worktree-clean/push-after rules.
 8. When the payload requires a detailed run log under `logs/webhook-runs/<run_id>.md`, write/touch the log before the pre-commit `git status` snapshot so the log is included in the first commit. Include start time, payload, sync command/result, key files read, created/updated/deleted lists, git status, errors, and end time.
+   - If webhook payload provides `run_id`, use that exact filename (do not regenerate a new one). If `run_id` is missing, fallback to `delivery_id`, then UTC timestamp.
+   - If the run-log file already exists, append a new run section for the current execution instead of overwriting previous content. In final user/Telegram summaries, explicitly include the run-log file path.
 9. If the run log itself must contain commit hash and push result, plan for a two-commit sequence: first commit/push the wiki changes and initial log, then append the build commit hash and push result to the log and make a second one-file "finalize webhook run log" commit. A commit cannot truthfully contain its own final hash inside its content. In final/Telegram summaries, report both the build commit and the log-finalization commit when this happens. See `references/webhook-run-logging.md`.
 
 Pitfalls:

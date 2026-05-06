@@ -7,3 +7,5 @@ User wants a private GitHub repository named around “Hermes 大脑” / `herme
 User prefers Hermes brain synchronization to be agent-friendly and automation-first: give Copilot/Hermes a single initialization or sync instruction/file rather than requiring step-by-step manual commands.
 §
 User expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.
+§
+User wants webhook execution summaries to be business-focused: list changed raw articles and KG impact (new/updated entities and relations), and does not want Telegram notifications when incremental builds are skipped due to no raw changes.

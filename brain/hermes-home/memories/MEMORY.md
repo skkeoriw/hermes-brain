@@ -3,3 +3,5 @@ Git authentication on this machine is configured for GitHub user ChangfengHU usi
 The private GitHub repository ChangfengHU/hermes-brain exists and is cloned at /home/zhouhuijuan1987/hermes-brain; it syncs selected Hermes persistent data from ~/.hermes into brain/hermes-home via scripts/hermes_brain_sync.py and shell wrappers.
 §
 The hermes-brain-sync skill has been updated with a new reference file 'references/hermes-cron-sync.md' documenting how to use Hermes' built-in cron scheduler for brain synchronization instead of systemd timers. The SKILL.md was also patched to include a pointer to this reference under a 'Hermes Cron Job Alternative' section. This captures the session's work on setting up an hourly Hermes cron job (ID: 7e876733aba5) that runs the brain sync script, determines push/pull role, and sends a concise report via Telegram.
+§
+For llm-wiki webhook automation, user wants run IDs/delivery IDs to use a GitHub Actions-based prefix format (e.g., gh-<github_run_id>-<run_attempt>) so GitHub runs, webhook deliveries, Hermes sessions, and wiki logs can be correlated end-to-end.
