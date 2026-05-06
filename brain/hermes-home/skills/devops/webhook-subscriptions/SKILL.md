@@ -168,6 +168,8 @@ hermes webhook subscribe ci-builds \
 
 For GitHub push -> Hermes relay workflows (including recursion guards like `paths: ['raw/**']` and 401 triage), see `references/github-actions-webhook-relay-recursion-guard.md`.
 
+For diagnosing and fixing git stash race conditions when multiple webhooks run concurrently (e.g. `could not restore untracked files from stash` failures), see `references/git-stash-race-conditions-in-concurrent-webhooks.md`.
+
 For Telegram notification gating and polling-conflict diagnosis (`terminated by other getUpdates request`), plus business-first summary patterns, see `references/telegram-gating-and-polling-conflicts.md`.
 
 For llm-wiki incremental graph builds with business-focused summaries (changed raw articles + entity/relation deltas) and Telegram-noise suppression (`skipped:no_raw_changes` should not notify), see `references/llm-wiki-business-summary-and-telegram-gating.md`.
