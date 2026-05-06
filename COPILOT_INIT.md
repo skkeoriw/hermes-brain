@@ -8,6 +8,8 @@
 - 如果当前机器未安装 Hermes Agent，则安装。
 - 将仓库里的 `brain/hermes-home/` 恢复到当前用户的 `${HERMES_HOME:-~/.hermes}`。
 - 验证 Hermes、skills、memory、provider 配置是否可用。
+- 默认把当前机器设置成 pull 身份，并安装自动同步 timer；不要让新机器默认 push。
+- 如果用户明确要求当前机器成为主同步机器，运行 `./scripts/set_sync_role.sh push --git --push`。
 - 不要把 token、secret、auth.json、.env 内容打印到终端或聊天里。
 
 重要安全说明：
@@ -27,6 +29,7 @@
 5. 运行验证命令。
 6. 如果 GitHub private repo 权限失败，向用户请求 GitHub PAT 或让用户先完成 GitHub auth；不要猜 token。
 7. 如果 Hermes provider 登录失败，优先提醒用户重新执行 `hermes model` 或对应 OAuth 登录；不要手动编辑未知 token。
+8. 初始化后的默认同步身份是 pull；只有用户明确要求“这台机器作为主同步机器/push 机器”时，才把当前机器设为 push。
 
 推荐直接执行的 shell：
 
@@ -69,6 +72,10 @@ hermes sessions list | head -20 || true
 echo "== Brain repo status =="
 git status --short
 
+echo "== Brain sync role =="
+python3 scripts/hermes_brain_role.py status || true
+systemctl --user --no-pager status hermes-brain-auto-sync.timer || true
+
 echo "Bootstrap completed. Start Hermes with: hermes"
 ```
 
@@ -92,7 +99,26 @@ Provider / 模型注意事项：
 
 后续同步：
 
-从远程 repo 更新本机 Hermes：
+初始化后默认是 pull 身份，自动 timer 会定期执行：
+
+```text
+GitHub hermes-brain -> ~/hermes-brain/brain/hermes-home -> ~/.hermes
+```
+
+如果用户明确要求当前机器成为唯一主同步机器 / push 机器：
+
+```bash
+cd ~/hermes-brain
+./scripts/set_sync_role.sh push --git --push
+```
+
+之后自动 timer 会定期执行：
+
+```text
+~/.hermes -> ~/hermes-brain/brain/hermes-home -> GitHub hermes-brain
+```
+
+从远程 repo 手动更新本机 Hermes：
 
 ```bash
 cd ~/hermes-brain

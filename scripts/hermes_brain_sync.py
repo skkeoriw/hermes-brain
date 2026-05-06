@@ -7,8 +7,10 @@ private repository's brain/hermes-home directory.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import shutil
+import signal
 import stat
 import subprocess
 import sys
@@ -84,6 +86,30 @@ def excluded(path: Path, root: Path) -> bool:
     if any(name.endswith(s) for s in EXCLUDE_FILE_SUFFIXES):
         return True
     return False
+
+
+def tree_signature(root: Path) -> str:
+    """Return a content signature for non-excluded files under root."""
+    h = hashlib.sha256()
+    if not root.exists():
+        return "missing"
+    for base, dirnames, filenames in os.walk(root):
+        basep = Path(base)
+        dirnames[:] = [d for d in dirnames if not excluded(basep / d, root)]
+        for fn in sorted(filenames):
+            p = basep / fn
+            if excluded(p, root):
+                continue
+            rp = str(rel(p, root)).replace(os.sep, "/")
+            h.update(rp.encode("utf-8") + b"\0")
+            if p.is_symlink():
+                h.update(b"SYMLINK\0" + os.readlink(p).encode("utf-8") + b"\0")
+            else:
+                with p.open("rb") as f:
+                    for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                        h.update(chunk)
+                h.update(b"\0")
+    return h.hexdigest()
 
 
 def copy_tree(src: Path, dst: Path, dry_run: bool = False) -> tuple[int, int]:
@@ -186,6 +212,12 @@ def repo_to_local(args: argparse.Namespace) -> None:
         run(["git", "pull", "--ff-only"], REPO_ROOT, check=True)
     if not BRAIN_HOME.exists():
         raise SystemExit(f"repo brain not found: {BRAIN_HOME}")
+    if args.skip_if_same:
+        src_sig = tree_signature(BRAIN_HOME)
+        dst_sig = tree_signature(home) if home.exists() else None
+        if src_sig == dst_sig:
+            print("repo and local Hermes home already match; skipping restore")
+            return
     if args.backup and not args.dry_run:
         b = backup(home)
         if b:
@@ -211,6 +243,10 @@ def doctor(_: argparse.Namespace) -> None:
 
 
 def main() -> None:
+    try:
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+    except (AttributeError, ValueError):
+        pass
     ap = argparse.ArgumentParser(description="Sync Hermes persistent brain data with this repo")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
@@ -225,6 +261,7 @@ def main() -> None:
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--no-backup", dest="backup", action="store_false", default=True)
     p.add_argument("--pull", action="store_true")
+    p.add_argument("--skip-if-same", action="store_true", help="skip restore/backup when repo brain and local Hermes home already match")
     p.set_defaults(func=repo_to_local)
 
     p = sub.add_parser("doctor")
