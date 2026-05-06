@@ -172,6 +172,8 @@ For Telegram notification gating and polling-conflict diagnosis (`terminated by 
 
 For llm-wiki incremental graph builds with business-focused summaries (changed raw articles + entity/relation deltas) and Telegram-noise suppression (`skipped:no_raw_changes` should not notify), see `references/llm-wiki-business-summary-and-telegram-gating.md`.
 
+**Webhooks do NOT require pre-authenticated models.** You can configure any provider + API key on a per-route basis to escape rate limits, optimize costs, or diversify providers. See `references/webhook-model-provider-selection.md` for per-route model setup, cost tables, and fallback strategies.
+
 ### Generic monitoring alert
 ```bash
 hermes webhook subscribe alerts \
