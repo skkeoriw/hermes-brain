@@ -216,3 +216,10 @@ After bootstrap or restore:
 - [ ] `hermes doctor` runs.
 - [ ] `hermes skills list` shows expected skills in a fresh session.
 - [ ] Gateway is only started if this machine is intended to receive messages/webhooks.
+
+## Checking sync status and logs
+
+- To see current effective role: `cd ~/hermes-brain && ./scripts/hermes_brain_role.py status`
+- To view recent auto-sync logs: `cat $HOME/.local/state/hermes-brain/auto-sync.log`
+- To manually trigger a sync: `cd ~/hermes-brain && ./scripts/auto_sync.sh`
+- To check git status of the brain repo: `cd ~/hermes-brain && git status --short`
