@@ -394,8 +394,16 @@ Pitfalls:
 - For unattended webhook runs, avoid `git reset --hard` remediation inside the agent loop. It is usually approval-gated (`Dangerous command requires approval`) and can stall or discard useful local artifacts. Preferred behavior: `fetch/checkout/pull --ff-only` + stash/pop policy; if divergence cannot be fast-forwarded, log and abort with explicit manual-action guidance.
 - If a GitHub Action webhook call returns `HTTP 502`, verify gateway uptime window before debugging payload/auth. A gateway restart/drain window can produce transient 502 even when workflow and secrets are correct; correlate Action timestamp with `~/.hermes/logs/gateway.log` disconnect/start events.
 - Some existing Obsidian wiki repos are non-canonical: schema may be `TheSchema.md`, active files may live under `wiki/index.md`/`wiki/log.md`, and root `SCHEMA.md`/`index.md`/`log.md` may be missing or empty. In that case, read the available schema first, then repair/init the canonical metadata without touching `raw/`; keep compatibility by updating both root and `wiki/` index/log when the repo already uses that layout.
+- On some headless hosts, `python` is not installed but `python3` is. For any inline helper scripts used during webhook runs (log appenders, file list processors, quick markdown transforms), prefer `python3 - <<'PY'` to avoid avoidable runtime failure.
 - For webhook-style requests that include `save=false`, do **not** create a `queries/` page, but still append a query log entry and include `Filed query page: no` in the final/Telegram summary.
 - If the user explicitly requires Telegram delivery, send the same operational summary to Telegram after commit/push, including action, sync status, files changed, commit hash, answer/build summary, and errors.
+- If the webhook contract explicitly forbids route-level `deliver=telegram` and requires **Telegram Bot API direct-send**, use `curl` to call `https://api.telegram.org/bot<TOKEN>/sendMessage` with the provided `chat_id`, and record API success/failure in the run log. Do not substitute Hermes webhook delivery for this requirement.
+- For webhook contracts that ask for **quantitative Telegram summaries**, include explicit metrics rather than generic “graph updated” text:
+  - new entity count + entity names,
+  - changed raw source count + source file list,
+  - relation changes grouped by type (e.g., `entity->concept`, `entity->source`) plus at least 3 sample edges,
+  - affected concept-page list.
+  If any metric cannot be computed, report `unknown` and state the reason.
 - In webhook contracts that gate notifications, honor the gate strictly: e.g., **incremental_build only**, `raw/**/*.md` changed, and actual graph/wiki updates occurred. If the run is `skipped:no_raw_changes`, do not send Telegram.
 
 ## Working with the Wiki
