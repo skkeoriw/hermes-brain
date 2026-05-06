@@ -465,6 +465,43 @@ curl -s -X POST \
   -d '{"ref": "main", "inputs": {"environment": "staging"}}'
 ```
 
+### Troubleshooting: workflow is green but downstream system did nothing
+
+When users report "Actions succeeded but no external effect" (no Telegram, no webhook processing, no deployment), split diagnosis into independent layers:
+
+1) Confirm Actions run state
+```bash
+curl -s -H "Authorization: token $GITHUB_TOKEN" \
+  "https://api.github.com/repos/$OWNER/$REPO/actions/runs?per_page=5"
+```
+Check `status/conclusion` first.
+
+2) Confirm failing step (if any)
+```bash
+curl -s -H "Authorization: token $GITHUB_TOKEN" \
+  "https://api.github.com/repos/$OWNER/$REPO/actions/runs/$RUN_ID/jobs"
+```
+Identify failed step name (often secret/config validation or curl call).
+
+3) If workflow calls a webhook/integration, verify delivery status separately
+```bash
+# list repo hooks
+curl -s -H "Authorization: token $GITHUB_TOKEN" \
+  "https://api.github.com/repos/$OWNER/$REPO/hooks"
+
+# then check deliveries for hook_id
+curl -s -H "Authorization: token $GITHUB_TOKEN" \
+  "https://api.github.com/repos/$OWNER/$REPO/hooks/$HOOK_ID/deliveries?per_page=5"
+```
+A common pattern is: Actions `success`, but deliveries `401/403/5xx`.
+
+4) Report with binary conclusion format
+- `Actions: success|failed`
+- `Downstream delivery: success|failed (status code)`
+- `Business side effect (e.g., Telegram): expected|not expected` based on gating rules
+
+This avoids conflating CI success with downstream webhook/auth behavior.
+
 ## 10. Gists
 
 **With gh:**

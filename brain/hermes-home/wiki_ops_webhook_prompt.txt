@@ -14,13 +14,17 @@ Payload 字段：
 
 通用步骤：
 1. cd /home/zhouhuijuan1987/wiki/llm-wiki-obsidian-blink；确认是 git 仓库，远程是上面的 GitHub 仓库。
-2. 执行 git fetch origin main && git checkout main && git pull --ff-only origin main。若本地有未提交变更，先报告并停止，不要覆盖。
-3. 使用 llm-wiki 方法工作：先阅读 SCHEMA.md、index.md、log.md 最近内容；若缺失则初始化符合 llm-wiki 规范的结构。
-4. full_build：全量扫描全部 Markdown，构建/修复 index、log、entities、concepts、comparisons、queries、双链关系、frontmatter、标签和知识图谱结构。
-5. incremental_build：用 git diff 或最近变更识别新增/修改的 Markdown，只更新受影响的实体、概念、索引、日志、链接关系。
-6. query：根据 question 查询 wiki；默认 save=true，需把有价值的答案写入 queries/，更新 index.md 和 log.md。
-7. 每次写入后执行 git status，若有变更则 git add -A && git commit -m "chore: update llm wiki graph" && git push origin main。若无变更则不要提交。
-8. 最终回复必须包含：执行的 action、同步状态、创建/更新文件列表、是否 commit/push、commit hash、查询答案或构建摘要、错误信息。
+2. 进入仓库后先做保护性暂存：`git stash push -u -m "webhook-auto-stash-{run_id}"`（即使提示无可暂存也继续），再执行 `git fetch origin main && git checkout main && git pull --ff-only origin main`，然后立刻执行 `git stash pop`。
+   - 若 pop 成功或提示无 stash：继续。
+   - 若 pop 报 merge/content 冲突：写入日志并立即终止，不要提交。
+   - 若 pop 仅报 `logs/webhook-runs/{run_id}.md already exists, no checkout` 这类“当前运行日志文件恢复冲突”，视为非阻塞告警，记录日志后继续。
+3. 严格顺序：先完成 stash/pull/pop，再创建或追加 `logs/webhook-runs/{run_id}.md`，避免 run-log 文件先创建导致 stash 恢复冲突。
+4. 使用 llm-wiki 方法工作：先阅读 SCHEMA.md、index.md、log.md 最近内容；若缺失则初始化符合 llm-wiki 规范的结构。
+5. full_build：全量扫描全部 Markdown，构建/修复 index、log、entities、concepts、comparisons、queries、双链关系、frontmatter、标签和知识图谱结构。
+6. incremental_build：用 git diff 或最近变更识别新增/修改的 Markdown，只更新受影响的实体、概念、索引、日志、链接关系。
+7. query：根据 question 查询 wiki；默认 save=true，需把有价值的答案写入 queries/，更新 index.md 和 log.md。
+8. 每次写入后执行 git status，若有变更则 git add -A && git commit -m "chore: update llm wiki graph" && git push origin main。若无变更则不要提交。
+9. 最终回复必须包含：执行的 action、同步状态、创建/更新文件列表、是否 commit/push、commit hash、查询答案或构建摘要、错误信息。
 
 当前请求 action：{action}
 当前请求 question：{question}

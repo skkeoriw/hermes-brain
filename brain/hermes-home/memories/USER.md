@@ -8,4 +8,4 @@ User prefers Hermes brain synchronization to be agent-friendly and automation-fi
 §
 User expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.
 §
-User prefers outcome-focused reporting: emphasize changed raw articles and KG quality/impact (entities/relations, link/metadata quality) over pipeline mechanics; no Telegram when incremental builds are skipped for no raw changes.
+User prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).
