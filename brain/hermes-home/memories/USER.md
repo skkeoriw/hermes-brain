@@ -5,3 +5,5 @@ User wants Hermes deployments across multiple machines to share accumulated “b
 User wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.
 §
 User prefers Hermes brain synchronization to be agent-friendly and automation-first: give Copilot/Hermes a single initialization or sync instruction/file rather than requiring step-by-step manual commands.
+§
+User expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.

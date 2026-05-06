@@ -225,6 +225,17 @@ If webhooks aren't working:
 4. **Signature mismatch?** Verify the secret in your service matches the one from `hermes webhook list` or `~/.hermes/webhook_subscriptions.json`. GitHub sends `X-Hub-Signature-256`, GitLab-style fixed-token calls send `X-Gitlab-Token`.
 5. **Accepted but no final answer?** `{"status":"accepted"}` is normal for async webhooks. Track progress with `grep '<delivery_id>\|response ready' ~/.hermes/logs/gateway.log`; final output is delivered via the route's `deliver` target.
 6. **Need the active session trace?** Look for a new `~/.hermes/sessions/session_<timestamp>_*.json` whose platform is `webhook`; inspect recent messages/tool calls to see whether the agent is syncing, scanning, writing, committing, or still running.
-7. **Dynamic route changed but gateway not restarted?** Dynamic subscriptions are hot-reloaded on incoming requests (mtime-gated), so changing `~/.hermes/webhook_subscriptions.json` can take effect on the next POST. Platform enablement/port changes still require gateway restart.
-8. **Firewall/NAT?** The webhook URL must be reachable from the service. For local development, use a tunnel (ngrok, cloudflared).
-9. **Wrong event type?** Check `--events` filter matches what the service sends. If a subscription has Events `(all)`, `event=unknown` is acceptable and still runs.
+7. **Webhook run finished but expected side effects are missing?** Correlate three artifacts by the same run marker (`run_id`, `delivery_id`, or `X-Request-ID`):
+   - gateway log (`POST ... delivery=<id>` + `response ready`)
+   - webhook session file (`~/.hermes/sessions/session_*.json` for that chat id)
+   - task artifact (for llm-wiki, `logs/webhook-runs/<run_id>.md` in the repo)
+5. **Accepted but no final answer?** `{"status":"accepted"}` is normal for async webhooks. Track progress with `grep '<delivery_id>\|response ready' ~/.hermes/logs/gateway.log`; final output is delivered via the route's `deliver` target.
+6. **Response is tiny / no build artifacts created?** Check for provider failures in request dumps:
+   - Find latest dump: `ls -t ~/.hermes/sessions/request_dump_*.json | head -1`
+   - Inspect `reason`, `error.code`, and model/provider fields (e.g., `max_retries_exhausted`, HTTP 524).
+   - If present, this is usually a model/provider failure before tool execution (not a webhook route/auth problem). Switch webhook default model/provider to a more reliable option and restart gateway/session.
+7. **Need the active session trace?** Look for a new `~/.hermes/sessions/session_<timestamp>_*.json` whose platform is `webhook`; inspect message count and tool calls. If it contains only the injected user prompt and no assistant/tool messages, the run likely failed before tool execution.
+8. **Telegram delivery flaky with `terminated by other getUpdates request`?** Another process/machine is polling the same bot token. Keep only one polling instance for that token (or migrate Telegram adapter mode to webhooks) before judging webhook-delivery reliability.
+9. **Dynamic route changed but gateway not restarted?** Dynamic subscriptions are hot-reloaded on incoming requests (mtime-gated), so changing `~/.hermes/webhook_subscriptions.json` can take effect on the next POST. Platform enablement/port changes still require gateway restart.
+10. **Firewall/NAT?** The webhook URL must be reachable from the service. For local development, use a tunnel (ngrok, cloudflared).
+11. **Wrong event type?** Check `--events` filter matches what the service sends. If a subscription has Events `(all)`, `event=unknown` is acceptable and still runs.
