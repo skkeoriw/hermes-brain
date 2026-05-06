@@ -1,6 +1,6 @@
 ---
 name: hermes-brain-sync
-description: Use when bootstrapping, cloning, restoring, or synchronizing a user's Hermes Agent memory, skills, sessions, configuration, webhooks, and plaintext test credentials across machines from the hermes-brain repository.
+description: Use when bootstrapping, cloning, restoring, synchronizing, auto-syncing, or setting push/pull roles for a user's Hermes Agent memory, skills, sessions, configuration, webhooks, and plaintext test credentials across machines from the hermes-brain repository.
 version: 1.0.0
 author: Hermes Agent
 license: MIT
