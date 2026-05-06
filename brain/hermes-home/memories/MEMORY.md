@@ -1,6 +1,6 @@
 Git authentication on this machine is configured for GitHub user ChangfengHU using git credential store; the llm-wiki repository lives at /home/zhouhuijuan1987/wiki/llm-wiki-obsidian-blink with origin https://github.com/ChangfengHU/llm-wiki-obsidian-blink.git.
 §
-The private GitHub repository ChangfengHU/hermes-brain exists and is cloned at /home/zhouhuijuan1987/hermes-brain; it syncs selected Hermes persistent data from ~/.hermes into brain/hermes-home via scripts/hermes_brain_sync.py and shell wrappers.
+Brain sync architecture: Hermes cron job (7e876733aba5 / hermes-brain-sync-tg) runs hourly at *:00 using gpt-5-nano (Gptsapi), executes ~/hermes-brain/scripts/auto_sync.sh to sync ~/.hermes→brain repo→GitHub, sends Telegram report. Systemd timer deleted (2026-05-06), unified on Hermes cron.
 §
 gptsapi.net: 19 custom providers configured (key: sk-Cbec6ad9324a0ae51b564b5bfd17a8405d083173fefmDd0t). Critical: https://api.gptsapi.net/v1 (subdomain mandatory). OpenAI format (7 GPT + 3 Codex), Claude format (3 models), Gemini format at /v1beta/models (5 variants). Wiki-ops webhook → gpt-5-mini; brain-sync cron → gpt-5-nano (avoids OpenAI quota).
 §

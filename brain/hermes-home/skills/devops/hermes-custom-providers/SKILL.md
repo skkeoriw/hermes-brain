@@ -152,7 +152,7 @@ curl -X POST https://api.gptsapi.net/v1/chat/completions \
 ❌ `claude-opus` (model not found)  
 ✅ `claude-haiku-4-5-20251001` (exact version required)
 
-**Solution:** Query the proxy's docs or test models systematically (same format, different models).
+**Solution:** Query the proxy's docs or test models systematically. **Proxies often require exact version strings** — a generic alias like `claude-opus` will fail even if the proxy supports Anthropic's Claude API. Always ask for or discover the exact model string the proxy exposes (e.g., `claude-haiku-4-5-20251001`, not `claude-haiku`).
 
 ### Pitfall 3: Mixed Auth Headers
 Different formats require **different auth mechanisms**:
@@ -202,4 +202,5 @@ Switch to a different provider temporarily to confirm the config is sound.
 
 ## References
 
-See `references/multi-format-proxy-testing.md` for a real-world example (gptsapi.net) and step-by-step debugging approach.
+- `references/multi-format-proxy-testing.md` — Debugging walk-through for HTTP 405 errors and exact model name discovery (gptsapi.net case study).
+- `references/gptsapi-net-provider-landscape.md` — Complete model roster, config templates, and real-world usage patterns for multi-format proxies.

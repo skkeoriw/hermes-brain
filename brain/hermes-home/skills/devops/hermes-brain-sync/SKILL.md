@@ -229,3 +229,12 @@ After bootstrap or restore:
 Instead of systemd timers, you can use Hermes' built-in cron scheduler for brain sync:
 - See `references/hermes-cron-sync.md` for details on the hourly Telegram-reporting sync job
 - Manage with `hermes cron list`, `hermes cron run <job_id>`, etc.
+
+**Auto-persistence flow:** When a cron job runs, it executes `./scripts/auto_sync.sh` inside the brain repo. The output is captured and reported via Telegram. After the cron runs:
+
+1. Local `~/.hermes` state is synced to `brain/hermes-home/`
+2. Git commits are created (if changes detected)
+3. Pushed to GitHub (if push role is enabled for this machine)
+4. Cron job result (changes summary or "no changes") is sent to Telegram
+
+**Key insight:** Hermes Agent config/webhook/memory changes made in one session do NOT automatically persist to the brain repo until the next cron run. For immediate persistence, run `python3 scripts/hermes_brain_sync.py local-to-repo` manually.
