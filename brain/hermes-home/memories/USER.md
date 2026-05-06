@@ -8,4 +8,4 @@ User prefers Hermes brain synchronization to be agent-friendly and automation-fi
 §
 User expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.
 §
-User wants webhook execution summaries to be business-focused: list changed raw articles and KG impact (new/updated entities and relations), and does not want Telegram notifications when incremental builds are skipped due to no raw changes.
+User prefers outcome-focused reporting: emphasize changed raw articles and KG quality/impact (entities/relations, link/metadata quality) over pipeline mechanics; no Telegram when incremental builds are skipped for no raw changes.

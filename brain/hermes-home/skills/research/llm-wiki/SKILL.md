@@ -375,11 +375,13 @@ When the wiki lives in a remote Git repository rather than an already-local fold
 3. For full builds, scan all markdown and repair/init `SCHEMA.md`, `index.md`, `log.md`, entity/concept/comparison/query pages, frontmatter, backlinks, and graph structure.
 4. For incremental builds, diff against the pulled baseline or recent commits to identify changed markdown, then update only affected pages plus `index.md` and `log.md`.
 5. For queries, orient first (schema/index/log), answer from wiki pages, and if the user wants query capture, write a `queries/` page and update navigation/log.
-6. After write operations: `git status`, then `git add -A && git commit -m "chore: update llm wiki graph"` only when changes exist. Push to the user-approved target branch; direct `main` pushes are acceptable only when explicitly requested.
+6. After write operations: `git status`, then commit only when changes exist. Default to `git add -A && git commit -m "chore: update llm wiki graph"`, **but if the repo already contains unrelated untracked files from other runs, stage only the files touched by this run** to avoid accidentally bundling stale artifacts. Push to the user-approved target branch; direct `main` pushes are acceptable only when explicitly requested.
 7. For Hermes webhook/API automation, put the operation selector in payload fields such as `action=full_build|incremental_build|query`, `question`, and `save`, and make the prompt repeat the sync-before/worktree-clean/push-after rules.
-8. When the payload requires a detailed run log under `logs/webhook-runs/<run_id>.md`, write/touch the log before the pre-commit `git status` snapshot so the log is included in the first commit. Include start time, payload, sync command/result, key files read, created/updated/deleted lists, git status, errors, and end time.
+8. When the payload requires a detailed run log under `logs/webhook-runs/<run_id>.md`, include the run log in the same run's commit, and record start time, payload, sync command/result, key files read, created/updated/deleted lists, git status, errors, and end time.
    - If webhook payload provides `run_id`, use that exact filename (do not regenerate a new one). If `run_id` is missing, fallback to `delivery_id`, then UTC timestamp.
    - If the run-log file already exists, append a new run section for the current execution instead of overwriting previous content. In final user/Telegram summaries, explicitly include the run-log file path.
+   - Stash-order guard: run the protective stash/sync/pop sequence first, then create or append the current run-log file. Creating the run-log before `git stash pop` can cause `already exists, no checkout` restore errors for untracked files.
+   - If `git stash pop` fails, classify the failure: abort on merge/content conflicts or non-log restore conflicts; but if the only restore collision is the current run-log path under `logs/webhook-runs/<run_id>.md`, record it as a non-blocking warning and continue.
 9. If the run log itself must contain commit hash and push result, plan for a two-commit sequence: first commit/push the wiki changes and initial log, then append the build commit hash and push result to the log and make a second one-file "finalize webhook run log" commit. A commit cannot truthfully contain its own final hash inside its content. In final/Telegram summaries, report both the build commit and the log-finalization commit when this happens. See `references/webhook-run-logging.md`.
 
 Pitfalls:
@@ -389,6 +391,7 @@ Pitfalls:
 - Some existing Obsidian wiki repos are non-canonical: schema may be `TheSchema.md`, active files may live under `wiki/index.md`/`wiki/log.md`, and root `SCHEMA.md`/`index.md`/`log.md` may be missing or empty. In that case, read the available schema first, then repair/init the canonical metadata without touching `raw/`; keep compatibility by updating both root and `wiki/` index/log when the repo already uses that layout.
 - For webhook-style requests that include `save=false`, do **not** create a `queries/` page, but still append a query log entry and include `Filed query page: no` in the final/Telegram summary.
 - If the user explicitly requires Telegram delivery, send the same operational summary to Telegram after commit/push, including action, sync status, files changed, commit hash, answer/build summary, and errors.
+- In webhook contracts that gate notifications, honor the gate strictly: e.g., **incremental_build only**, `raw/**/*.md` changed, and actual graph/wiki updates occurred. If the run is `skipped:no_raw_changes`, do not send Telegram.
 
 ## Working with the Wiki
 

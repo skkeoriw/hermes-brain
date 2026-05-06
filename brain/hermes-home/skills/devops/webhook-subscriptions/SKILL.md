@@ -168,6 +168,10 @@ hermes webhook subscribe ci-builds \
 
 For GitHub push -> Hermes relay workflows (including recursion guards like `paths: ['raw/**']` and 401 triage), see `references/github-actions-webhook-relay-recursion-guard.md`.
 
+For Telegram notification gating and polling-conflict diagnosis (`terminated by other getUpdates request`), plus business-first summary patterns, see `references/telegram-gating-and-polling-conflicts.md`.
+
+For llm-wiki incremental graph builds with business-focused summaries (changed raw articles + entity/relation deltas) and Telegram-noise suppression (`skipped:no_raw_changes` should not notify), see `references/llm-wiki-business-summary-and-telegram-gating.md`.
+
 ### Generic monitoring alert
 ```bash
 hermes webhook subscribe alerts \
@@ -247,6 +251,7 @@ If webhooks aren't working:
    - Restart: `hermes gateway restart` (or `systemctl --user restart hermes-gateway`)
    This is critical when request dumps show upstream model errors (e.g., `max_retries_exhausted`, HTTP `524`) before any tool calls.
 9. **Telegram delivery flaky with `terminated by other getUpdates request`?** Another process/machine is polling the same bot token. Keep only one polling instance for that token (or migrate Telegram adapter mode to webhooks) before judging webhook-delivery reliability.
+10. **Need conditional Telegram notifications (only on meaningful changes)?** Do not rely on static route-level `deliver: telegram` for runs that can be no-op/skipped. Remove static `deliver` on that route and send Telegram via explicit `send_message` only when your business gates pass (e.g., raw diff exists + graph updated + push succeeded).
 10. **Dynamic route changed but gateway not restarted?** Dynamic subscriptions are hot-reloaded on incoming requests (mtime-gated), so changing `~/.hermes/webhook_subscriptions.json` can take effect on the next POST. Platform enablement/port changes still require gateway restart.
 10. **Firewall/NAT?** The webhook URL must be reachable from the service. For local development, use a tunnel (ngrok, cloudflared).
 11. **Wrong event type?** Check `--events` filter matches what the service sends. If a subscription has Events `(all)`, `event=unknown` is acceptable and still runs.
@@ -255,3 +260,6 @@ If webhooks aren't working:
    - If statuses are `Invalid HTTP Response: 401`, the route secret is mismatched (GitHub webhook `secret` vs Hermes route secret). Fix by aligning both.
    - If using a GitHub Actions relay (`curl` to Hermes) instead of native repo webhooks, check the Actions run status and logs first; the repo webhook list/deliveries may show failures that are irrelevant to the active relay path.
 13. **Prevent webhook recursion in Git-backed wiki builds:** If Hermes writes back to the same repo (commit/push), gate the trigger by path (for example, only trigger on `raw/**` changes). This prevents build-generated updates under `wiki/`, `log.md`, etc. from re-triggering the webhook endlessly.
+14. **Business-summary output for llm-wiki incremental routes:** For user-facing value, require final summaries to lead with business deltas instead of tool logs. Include, in order: (a) changed `raw/**/*.md` article list, (b) newly created entities, (c) newly added relationships (`source -> relation -> target`), (d) updated entities/concepts + change type, (e) artifact/commit/push result.
+15. **Telegram notification gating for incremental wiki routes:** Do not send Telegram when result is `skipped:no_raw_changes`. Send Telegram only when all are true: raw changes detected, graph updates actually occurred, and commit/push succeeded.
+16. **`send_message` executed but user cannot see message:** Distinguish transport from visibility. Verify active bot identity with `getMe` on current `TELEGRAM_BOT_TOKEN`, then verify delivery via direct Bot API `sendMessage` to the intended `chat_id`. If API returns `ok:true` with `message_id` but user still sees nothing, check account/chat mismatch (wrong Telegram account, archived chat, different chat_id) rather than webhook logic.
