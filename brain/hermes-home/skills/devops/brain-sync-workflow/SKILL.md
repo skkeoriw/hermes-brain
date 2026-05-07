@@ -57,6 +57,18 @@ Pitfalls & gotchas
 - If HEAD~1 does not exist (fresh repo), guard against empty diffs.
 - If origin URL parsing fails, skip GitHub links or fall back to a best-effort URL.
 - If the auto_sync.sh takes long, consider running in background with notify-on-complete to return results.
+- If brain-sync TG notifications should not interfere with wiki/webhook TG notifications, decouple delivery paths:
+  - Keep wiki/webhook flow unchanged.
+  - Set brain-sync cron delivery to local/non-Telegram at scheduler level.
+  - Send brain-sync report via direct Telegram Bot API using a dedicated bot token + chat_id.
+  - This preserves wiki behavior while isolating brain-sync sender identity.
+- Telegram destination permissions still apply:
+  - Private chat: user must have started the bot at least once.
+  - Group/channel/topic: bot must be present and allowed to post.
+- If bot token was exposed in chat/logs, rotate token before production use.
+
+References
+- `references/telegram-bot-separation.md` — dedicated bot strategy, prerequisites, and validation checklist.
 
 Verification
 - The output should include:
@@ -126,6 +138,18 @@ Pitfalls & gotchas
 - If HEAD~1 does not exist (fresh repo), guard against empty diffs.
 - If origin URL parsing fails, skip GitHub links or fall back to a best-effort URL.
 - If the auto_sync.sh takes long, consider running in background with notify-on-complete to return results.
+- If brain-sync TG notifications should not interfere with wiki/webhook TG notifications, decouple delivery paths:
+  - Keep wiki/webhook flow unchanged.
+  - Set brain-sync cron delivery to local/non-Telegram at scheduler level.
+  - Send brain-sync report via direct Telegram Bot API using a dedicated bot token + chat_id.
+  - This preserves wiki behavior while isolating brain-sync sender identity.
+- Telegram destination permissions still apply:
+  - Private chat: user must have started the bot at least once.
+  - Group/channel/topic: bot must be present and allowed to post.
+- If bot token was exposed in chat/logs, rotate token before production use.
+
+References
+- `references/telegram-bot-separation.md` — dedicated bot strategy, prerequisites, and validation checklist.
 
 Verification
 - The output should include:
