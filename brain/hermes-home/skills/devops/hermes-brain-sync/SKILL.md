@@ -189,6 +189,17 @@ See `docs/conflict-policy.md` for details.
 
 SQLite files such as `state.db` are binary-ish and can conflict if multiple machines push. This project avoids that by allowing only the global push owner in `brain/sync-owner.json` to push. Old push machines auto-downgrade to pull when they see a different owner.
 
+### Learnings and improvements from this session
+- Update: Add explicit Pitfalls section to Hermes brain-sync to capture guidance for long-running commands and background execution in cron tasks.
+- Correction: If a user expresses preferences for concise reports (verbosity/format), embed that preference within the skill so future runs honor it without extra prompts.
+- New guidance: When auto_sync.sh runs, ensure we capture both HEAD and HEAD~1 diffs reliably; avoid assuming HEAD~1 exists in non-bare repos; consider using git rev-list --max-count 2 to fetch the latest two commits to compute diffs.
+
+### Pitfalls
+- Ambiguity in diff stats when the repo is in a detached HEAD state; always resolve to a known branch or tag before performing diffs.
+- Large binary files in the repo can trigger LFS warnings; consider enabling Git LFS or excluding heavy artifacts from scheduled pushes.
+- Background tasks in cron may complete after the main flow; always verify completion via exit codes and logs before reporting success.
+
+
 ## Plaintext Secret Warning
 
 This repo can include plaintext keys by design:
