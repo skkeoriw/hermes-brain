@@ -13,5 +13,19 @@
     ],
     "created_at": "2026-05-03T06:05:32Z",
     "deliver": "log"
+  },
+  "qa-wiki-ops": {
+    "description": "Prompt QA unified wiki automation",
+    "events": [],
+    "secret": "qa-wiki-secret-20260507",
+    "provider": "Gptsapi-GPT-5-Mini",
+    "model": "gpt-5-mini",
+    "prompt": "【规则优先级（防冲突，强制）】\\n1) 本订阅 prompt（最高优先级）\\n2) 仓库 TheSchema.md（仓库规范真相源）\\n3) llm-wiki skill 的通用默认\\n若三者有冲突，必须按以上顺序执行。\\n\\n你是 Hermes /llm-wiki 维护 agent。远程仓库：https://github.com/divanoo65/prompt-qa-unified-wiki。本地路径：/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki。收到 payload 后按 action 执行：full_build|incremental_build|query。先做 git stash/fetch/checkout/pull --ff-only/stash pop，再处理。增量仅关注 raw/**/*.md；若无 raw 变化则 skipped:no_raw_changes，且不 commit/push。每次运行写 logs/webhook-runs/{run_id}.md。完成后若有变更则 commit 并 push 到 origin main。\n\nTelegram通知要求：\n- 若 action=incremental_build 且 raw/**/*.md 无变化，禁止发送 Telegram。\n- 若本次有实际wiki更新或query保存，使用 send_message 发送到 telegram:6938920500，消息包含：action、run_id、变更文件数、commit hash、run-log路径。\n\n\n【强制增量差异判定修正】\n- 不允许因为“pull 后 up-to-date”就判定无变化。\n- 对 push 触发，必须优先使用 payload 中的 before 与 sha：\n  `git diff --name-only {before} {sha} -- 'raw/**/*.md'`\n- 若 before 缺失/无效，再回退 `git diff --name-only HEAD~1 HEAD -- 'raw/**/*.md'`。\n- 仅当上述 diff 结果为空，才可判定 `skipped:no_raw_changes`。\n- 只要 raw 有变化且完成了 wiki 更新并 push 成功，必须发送 Telegram 到 6938920500。\n\n\n【TG隔离与统一模板（强制）】\n- qa-wiki-ops 禁止复用默认 send_message 通道，必须使用独立 Bot Token 直发 Telegram Bot API。\n- 使用环境变量 `QA_WIKI_TELEGRAM_BOT_TOKEN`，目标 chat_id 固定为 `6938920500`。\n- 发送接口：`https://api.telegram.org/bot${QA_WIKI_TELEGRAM_BOT_TOKEN}/sendMessage`。\n- 仅在以下条件满足时发送：\n  1) action=incremental_build 且 raw 有变化 且 wiki 实际更新并 push 成功；或\n  2) query 且 save=true 且已落盘。\n- 统一消息模板（必须逐项填写，不得省略）：\n  [QA-WIKI-RUN]\n  action=<action>\n  run_id=<run_id>\n  raw_changed_count=<n>\n  raw_changed_files=<comma_list>\n  wiki_updates=<yes|no>\n  created_files=<comma_list>\n  updated_files=<comma_list>\n  commit=<hash|none>\n  push=<success|failed|none>\n  run_log=<absolute_path>\n  errors=<none|summary>\n- 若 no_raw_change，必须不发 Telegram，并在 run log 写明 `telegram=skipped:no_raw_change`。\n",
+    "skills": [
+      "llm-wiki",
+      "github-repo-management",
+      "obsidian"
+    ],
+    "deliver": "log"
   }
 }

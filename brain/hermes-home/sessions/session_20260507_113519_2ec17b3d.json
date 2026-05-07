@@ -1,0 +1,1441 @@
+{
+  "session_id": "20260507_113519_2ec17b3d",
+  "model": "gpt-5.3-codex",
+  "base_url": "https://chatgpt.com/backend-api/codex",
+  "platform": "webhook",
+  "session_start": "2026-05-07T11:35:21.640813",
+  "last_updated": "2026-05-07T11:36:33.278596",
+  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. When the user references something from a past conversation or you suspect relevant cross-session context exists, use session_search to recall it before asking them to repeat themselves. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n# Tool-use enforcement\nYou MUST use your tools to take action — do not describe what you would do or plan to do without actually doing it. When you say you will perform an action (e.g. 'I will run the tests', 'Let me check the file', 'I will create the project'), you MUST immediately make the corresponding tool call in the same response. Never end your turn with a promise of future action — execute it now.\nKeep working until the task is actually complete. Do not stop with a summary of what you plan to do next time. If you have tools available that can accomplish the task, use them instead of telling the user what you would do.\nEvery response should either (a) contain tool calls that make progress, or (b) deliver a final result to the user. Responses that only describe intentions without acting are not acceptable.\n\n# Execution discipline\n<tool_persistence>\n- Use tools whenever they improve correctness, completeness, or grounding.\n- Do not stop early when another tool call would materially improve the result.\n- If a tool returns empty or partial results, retry with a different query or strategy before giving up.\n- Keep calling tools until: (1) the task is complete, AND (2) you have verified the result.\n</tool_persistence>\n\n<mandatory_tool_use>\nNEVER answer these from memory or mental computation — ALWAYS use a tool:\n- Arithmetic, math, calculations → use terminal or execute_code\n- Hashes, encodings, checksums → use terminal (e.g. sha256sum, base64)\n- Current time, date, timezone → use terminal (e.g. date)\n- System state: OS, CPU, memory, disk, ports, processes → use terminal\n- File contents, sizes, line counts → use read_file, search_files, or terminal\n- Git history, branches, diffs → use terminal\n- Current facts (weather, news, versions) → use web_search\nYour memory and user profile describe the USER, not the system you are running on. The execution environment may differ from what the user profile says about their personal setup.\n</mandatory_tool_use>\n\n<act_dont_ask>\nWhen a question has an obvious default interpretation, act on it immediately instead of asking for clarification. Examples:\n- 'Is port 443 open?' → check THIS machine (don't ask 'open where?')\n- 'What OS am I running?' → check the live system (don't use user profile)\n- 'What time is it?' → run `date` (don't guess)\nOnly ask for clarification when the ambiguity genuinely changes what tool you would call.\n</act_dont_ask>\n\n<prerequisite_checks>\n- Before taking an action, check whether prerequisite discovery, lookup, or context-gathering steps are needed.\n- Do not skip prerequisite steps just because the final action seems obvious.\n- If a task depends on output from a prior step, resolve that dependency first.\n</prerequisite_checks>\n\n<verification>\nBefore finalizing your response:\n- Correctness: does the output satisfy every stated requirement?\n- Grounding: are factual claims backed by tool outputs or provided context?\n- Formatting: does the output match the requested format or schema?\n- Safety: if the next step has side effects (file writes, commands, API calls), confirm scope before executing.\n</verification>\n\n<missing_context>\n- If required context is missing, do NOT guess or hallucinate an answer.\n- Use the appropriate lookup tool when missing information is retrievable (search_files, web_search, read_file, etc.).\n- Ask a clarifying question only when the information cannot be retrieved by tools.\n- If you must proceed with incomplete information, label assumptions explicitly.\n</missing_context>\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [87% — 1,930/2,200 chars]\n══════════════════════════════════════════════\nGit authentication on this machine is configured for GitHub user ChangfengHU using git credential store; the llm-wiki repository lives at /home/zhouhuijuan1987/wiki/llm-wiki-obsidian-blink with origin https://github.com/ChangfengHU/llm-wiki-obsidian-blink.git.\n§\nBrain sync architecture: Hermes cron job (7e876733aba5 / hermes-brain-sync-tg) runs hourly at *:00 using gpt-5-nano (Gptsapi), executes ~/hermes-brain/scripts/auto_sync.sh to sync ~/.hermes→brain repo→GitHub, sends Telegram report. Systemd timer deleted (2026-05-06), unified on Hermes cron.\n§\ngptsapi.net: 19 custom providers configured (key: sk-Cbec6ad9324a0ae51b564b5bfd17a8405d083173fefmDd0t). Critical: https://api.gptsapi.net/v1 (subdomain mandatory). OpenAI format (7 GPT + 3 Codex), Claude format (3 models), Gemini format at /v1beta/models (5 variants). Wiki-ops webhook → gpt-5-mini; brain-sync cron → gpt-5-nano (avoids OpenAI quota).\n§\nFor llm-wiki webhook automation, user wants run IDs/delivery IDs to use a GitHub Actions-based prefix format (e.g., gh-<github_run_id>-<run_attempt>) so GitHub runs, webhook deliveries, Hermes sessions, and wiki logs can be correlated end-to-end.\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: Quality problems in wiki/KG are caused by \"three layers\" (in priority order): 1) prompt/pipeline/schema design (main), 2) raw input quality (secondary), 3) model capability (tertiary). User wants A/B testing approach to pinpoint root cause before fixing. For this user, \"define the real problem first\" > \"change model\".\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [98% — 1,350/1,375 chars]\n══════════════════════════════════════════════\nUser prefers API/webhook examples as complete copy-paste requests suitable for Postman, without requiring shell variables or dynamic signature generation.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot: a single chat/init flow should bootstrap and operate wiki systems end-to-end (local wiki setup + GitHub repo/Actions/webhook + Telegram wiring), including multi-wiki routing when needed.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - brain-sync-reporting: Standardized workflow for generating Telegram reports fro...\n    - brain-sync-workflow: Class-level skill for Hermes Brain synchronization workfl...\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube transcripts to summaries, threads, blogs.\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Thursday, May 07, 2026 11:35 AM\nModel: gpt-5.3-codex\nProvider: openai-codex",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_back",
+        "description": "Navigate back to the previous page in browser history. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_click",
+        "description": "Click on an element identified by its ref ID from the snapshot (e.g., '@e5'). The ref IDs are shown in square brackets in the snapshot output. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e5', '@e12')"
+            }
+          },
+          "required": [
+            "ref"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_console",
+        "description": "Get browser console output and JavaScript errors from the current page. Returns console.log/warn/error/info messages and uncaught JS exceptions. Use this to detect silent JavaScript errors, failed API calls, and application warnings. Requires browser_navigate to be called first. When 'expression' is provided, evaluates JavaScript in the page context and returns the result — use this for DOM inspection, reading page state, or extracting data programmatically.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clear": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, clear the message buffers after reading"
+            },
+            "expression": {
+              "type": "string",
+              "description": "JavaScript expression to evaluate in the page context. Runs in the browser like DevTools console — full access to DOM, window, document. Return values are serialized to JSON. Example: 'document.title' or 'document.querySelectorAll(\"a\").length'"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_get_images",
+        "description": "Get a list of all images on the current page with their URLs and alt text. Useful for finding images to analyze with the vision tool. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_navigate",
+        "description": "Navigate to a URL in the browser. Initializes the session and loads the page. Must be called before other browser tools. For plain-text endpoints — URLs ending in .md, .txt, .json, .yaml, .yml, .csv, .xml, raw.githubusercontent.com, or any documented API endpoint — prefer curl via the terminal tool or web_extract; the browser stack is overkill and much slower for these. Use browser tools when you need to interact with a page (click, fill forms, dynamic content). Returns a compact page snapshot with interactive elements and ref IDs — no need to call browser_snapshot separately after navigating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL to navigate to (e.g., 'https://example.com')"
+            }
+          },
+          "required": [
+            "url"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_press",
+        "description": "Press a keyboard key. Useful for submitting forms (Enter), navigating (Tab), or keyboard shortcuts. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown')"
+            }
+          },
+          "required": [
+            "key"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_scroll",
+        "description": "Scroll the page in a direction. Use this to reveal more content that may be below or above the current viewport. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "direction": {
+              "type": "string",
+              "enum": [
+                "up",
+                "down"
+              ],
+              "description": "Direction to scroll"
+            }
+          },
+          "required": [
+            "direction"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_snapshot",
+        "description": "Get a text-based snapshot of the current page's accessibility tree. Returns interactive elements with ref IDs (like @e1, @e2) for browser_click and browser_type. full=false (default): compact view with interactive elements. full=true: complete page content. Snapshots over 8000 chars are truncated or LLM-summarized. Requires browser_navigate first. Note: browser_navigate already returns a compact snapshot — use this to refresh after interactions that change the page, or with full=true for complete content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "full": {
+              "type": "boolean",
+              "description": "If true, returns complete page content. If false (default), returns compact view with interactive elements only.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_type",
+        "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e3')"
+            },
+            "text": {
+              "type": "string",
+              "description": "The text to type into the field"
+            }
+          },
+          "required": [
+            "ref",
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_vision",
+        "description": "Take a screenshot of the current page and analyze it with vision AI. Use this when you need to visually understand what's on the page - especially useful for CAPTCHAs, visual verification challenges, complex layouts, or when the text snapshot doesn't capture important visual information. Returns both the AI analysis and a screenshot_path that you can share with the user by including MEDIA:<screenshot_path> in your response. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "What you want to know about the page visually. Be specific about what you're looking for."
+            },
+            "annotate": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, overlay numbered [N] labels on interactive elements. Each [N] maps to ref @eN for subsequent browser commands. Useful for QA and spatial reasoning about page layout."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "clarify",
+        "description": "Ask the user a question when you need clarification, feedback, or a decision before proceeding. Supports two modes:\n\n1. **Multiple choice** — provide up to 4 choices. The user picks one or types their own answer via a 5th 'Other' option.\n2. **Open-ended** — omit choices entirely. The user types a free-form response.\n\nUse this tool when:\n- The task is ambiguous and you need the user to choose an approach\n- You want post-task feedback ('How did that work out?')\n- You want to offer to save a skill or update memory\n- A decision has meaningful trade-offs the user should weigh in on\n\nDo NOT use this tool for simple yes/no confirmation of dangerous commands (the terminal tool handles that). Prefer making a reasonable default choice yourself when the decision is low-stakes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "The question to present to the user."
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 4,
+              "description": "Up to 4 answer choices. Omit this parameter entirely to ask an open-ended question. When provided, the UI automatically appends an 'Other (type your answer)' option."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "cronjob",
+        "description": "Manage scheduled cron jobs with a single compressed tool.\n\nUse action='create' to schedule a new job from a prompt or one or more skills.\nUse action='list' to inspect jobs.\nUse action='update', 'pause', 'resume', 'remove', or 'run' to manage an existing job.\n\nTo stop a job the user no longer wants: first action='list' to find the job_id, then action='remove' with that job_id. Never guess job IDs — always list first.\n\nJobs run in a fresh session with no current-chat context, so prompts must be self-contained.\nIf skills are provided on create, the future cron run loads those skills in order, then follows the prompt as the task instruction.\nOn update, passing skills=[] clears attached skills.\n\nNOTE: The agent's final response is auto-delivered to the target. Put the primary\nuser-facing content in the final response. Cron jobs run autonomously with no user\npresent — they cannot ask questions or request clarification.\n\nImportant safety rule: cron-run sessions should not recursively schedule more cron jobs.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "description": "One of: create, list, update, pause, resume, remove, run"
+            },
+            "job_id": {
+              "type": "string",
+              "description": "Required for update/pause/resume/remove/run"
+            },
+            "prompt": {
+              "type": "string",
+              "description": "For create: the full self-contained prompt. If skills are also provided, this becomes the task instruction paired with those skills."
+            },
+            "schedule": {
+              "type": "string",
+              "description": "For create/update: '30m', 'every 2h', '0 9 * * *', or ISO timestamp"
+            },
+            "name": {
+              "type": "string",
+              "description": "Optional human-friendly name"
+            },
+            "repeat": {
+              "type": "integer",
+              "description": "Optional repeat count. Omit for defaults (once for one-shot, forever for recurring)."
+            },
+            "deliver": {
+              "type": "string",
+              "description": "Omit this parameter to auto-deliver back to the current chat and topic (recommended). Auto-detection preserves thread/topic context. Only set explicitly when the user asks to deliver somewhere OTHER than the current conversation. Values: 'origin' (same as omitting), 'local' (no delivery, save only), or platform:chat_id:thread_id for a specific destination. Examples: 'telegram:-1001234567890:17585', 'discord:#engineering', 'sms:+15551234567'. WARNING: 'platform:chat_id' without :thread_id loses topic targeting."
+            },
+            "skills": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional ordered list of skill names to load before executing the cron prompt. On update, pass an empty array to clear attached skills."
+            },
+            "model": {
+              "type": "object",
+              "description": "Optional per-job model override. If provider is omitted, the current main provider is pinned at creation time so the job stays stable.",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "description": "Provider name (e.g. 'openrouter', 'anthropic'). Omit to use and pin the current provider."
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Model name (e.g. 'anthropic/claude-sonnet-4', 'claude-sonnet-4')"
+                }
+              },
+              "required": [
+                "model"
+              ]
+            },
+            "script": {
+              "type": "string",
+              "description": "Optional path to a Python script that runs before each cron job execution. Its stdout is injected into the prompt as context. Use for data collection and change detection. Relative paths resolve under ~/.hermes/scripts/. On update, pass empty string to clear."
+            },
+            "context_from": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional job ID or list of job IDs whose most recent completed output is injected into the prompt as context before each run. Use this to chain cron jobs: job A collects data, job B processes it. Each entry must be a valid job ID (from cronjob action='list'). Note: injects the most recent completed output — does not wait for upstream jobs running in the same tick. On update, pass an empty array to clear."
+            },
+            "enabled_toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional list of toolset names to restrict the job's agent to (e.g. [\"web\", \"terminal\", \"file\", \"delegation\"]). When set, only tools from these toolsets are loaded, significantly reducing input token overhead. When omitted, all default tools are loaded. Infer from the job's prompt — e.g. use \"web\" if it calls web_search, \"terminal\" if it runs scripts, \"file\" if it reads files, \"delegation\" if it calls delegate_task. On update, pass an empty array to clear."
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Optional absolute path to run the job from. When set, AGENTS.md / CLAUDE.md / .cursorrules from that directory are injected into the system prompt, and the terminal/file/code_exec tools use it as their working directory — useful for running a job inside a specific project repo. Must be an absolute path that exists. When unset (default), preserves the original behaviour: no project context files, tools use the scheduler's cwd. On update, pass an empty string to clear. Jobs with workdir run sequentially (not parallel) to keep per-job directories isolated."
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "delegate_task",
+        "description": "Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window.\n\nTWO MODES (one of 'goal' or 'tasks' is required):\n1. Single task: provide 'goal' (+ optional context, toolsets)\n2. Batch (parallel): provide 'tasks' array with up to delegation.max_concurrent_children items (default 3, configurable via config.yaml, no hard ceiling). All run concurrently and results are returned together. Nested delegation requires role='orchestrator' and delegation.max_spawn_depth >= 2.\n\nWHEN TO USE delegate_task:\n- Reasoning-heavy subtasks (debugging, code review, research synthesis)\n- Tasks that would flood your context with intermediate data\n- Parallel independent workstreams (research A and B simultaneously)\n\nWHEN NOT TO USE (use these instead):\n- Mechanical multi-step work with no reasoning needed -> use execute_code\n- Single tool call -> just call the tool directly\n- Tasks needing user interaction -> subagents cannot use clarify\n- Durable long-running work that must outlive the current turn -> use cronjob (action='create') or terminal(background=True, notify_on_complete=True) instead. delegate_task runs SYNCHRONOUSLY inside the parent turn: if the parent is interrupted (user sends a new message, /stop, /new) the child is cancelled with status='interrupted' and its work is discarded. Children cannot continue in the background.\n\nIMPORTANT:\n- Subagents have NO memory of your conversation. Pass all relevant info (file paths, error messages, constraints) via the 'context' field.\n- If the user is writing in a non-English language, or asked for output in a specific language / tone / style, say so in 'context' (e.g. \"respond in Chinese\", \"return output in Japanese\"). Otherwise subagents default to English and their summaries will contaminate your final reply with the wrong language.\n- Subagent summaries are SELF-REPORTS, not verified facts. A subagent that claims \"uploaded successfully\" or \"file written\" may be wrong. For operations with external side-effects (HTTP POST/PUT, remote writes, file creation at shared paths, publishing), require the subagent to return a verifiable handle (URL, ID, absolute path, HTTP status) and verify it yourself — fetch the URL, stat the file, read back the content — before telling the user the operation succeeded.\n- Leaf subagents (role='leaf', the default) CANNOT call: delegate_task, clarify, memory, send_message, execute_code.\n- Orchestrator subagents (role='orchestrator') retain delegate_task so they can spawn their own workers, but still cannot use clarify, memory, send_message, or execute_code. Orchestrators are bounded by delegation.max_spawn_depth (default 2) and can be disabled globally via delegation.orchestrator_enabled=false.\n- Each subagent gets its own terminal session (separate working directory and state).\n- Results are always returned as an array, one entry per task.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "goal": {
+              "type": "string",
+              "description": "What the subagent should accomplish. Be specific and self-contained -- the subagent knows nothing about your conversation history."
+            },
+            "context": {
+              "type": "string",
+              "description": "Background information the subagent needs: file paths, error messages, project structure, constraints. The more specific you are, the better the subagent performs."
+            },
+            "toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Toolsets to enable for this subagent. Default: inherits your enabled toolsets. Available toolsets: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Common patterns: ['terminal', 'file'] for code work, ['web'] for research, ['browser'] for web interaction, ['terminal', 'file', 'web'] for full-stack tasks."
+            },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "goal": {
+                    "type": "string",
+                    "description": "Task goal"
+                  },
+                  "context": {
+                    "type": "string",
+                    "description": "Task-specific context"
+                  },
+                  "toolsets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Toolsets for this specific task. Available: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Use 'web' for network access, 'terminal' for shell, 'browser' for web interaction."
+                  },
+                  "acp_command": {
+                    "type": "string",
+                    "description": "Per-task ACP command override (e.g. 'claude'). Overrides the top-level acp_command for this task only."
+                  },
+                  "acp_args": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Per-task ACP args override."
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "leaf",
+                      "orchestrator"
+                    ],
+                    "description": "Per-task role override. See top-level 'role' for semantics."
+                  }
+                },
+                "required": [
+                  "goal"
+                ]
+              },
+              "description": "Batch mode: tasks to run in parallel (limit configurable via delegation.max_concurrent_children, default 3). Each gets its own subagent with isolated context and terminal session. When provided, top-level goal/context/toolsets are ignored."
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "leaf",
+                "orchestrator"
+              ],
+              "description": "Role of the child agent. 'leaf' (default) = focused worker, cannot delegate further. 'orchestrator' = can use delegate_task to spawn its own workers. Requires delegation.max_spawn_depth >= 2 in config; ignored (treated as 'leaf') when the child would exceed max_spawn_depth or when delegation.orchestrator_enabled=false."
+            },
+            "acp_command": {
+              "type": "string",
+              "description": "Override ACP command for child agents (e.g. 'claude', 'copilot'). When set, children use ACP subprocess transport instead of inheriting the parent's transport. Enables spawning Claude Code (claude --acp --stdio) or other ACP-capable agents from any parent, including Discord/Telegram/CLI."
+            },
+            "acp_args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Arguments for the ACP command (default: ['--acp', '--stdio']). Only used when acp_command is set. Example: ['--acp', '--stdio', '--model', 'claude-opus-4-6']"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "execute_code",
+        "description": "Run a Python script that can call Hermes tools programmatically. Use this when you need 3+ tool calls with processing logic between them, need to filter/reduce large tool outputs before they enter your context, need conditional branching (if X then Y else Z), or need to loop (fetch N pages, process N files, retry on failure).\n\nUse normal tool calls instead when: single tool call with no processing, you need to see the full result and apply complex reasoning, or the task requires interactive user input.\n\nAvailable via `from hermes_tools import ...`:\n\n  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n    Lines are 1-indexed. Returns {\"content\": \"...\", \"total_lines\": N}\n  write_file(path: str, content: str) -> dict\n    Always overwrites the entire file.\n  search_files(pattern: str, target=\"content\", path=\".\", file_glob=None, limit=50) -> dict\n    target: \"content\" (search inside files) or \"files\" (find files by name). Returns {\"matches\": [...]}\n  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n    Replaces old_string with new_string in the file.\n  terminal(command: str, timeout=None, workdir=None) -> dict\n    Foreground only (no background/pty). Returns {\"output\": \"...\", \"exit_code\": N}\n\nLimits: 5-minute timeout, 50KB stdout cap, max 50 tool calls per script. terminal() is foreground-only (no background or pty).\n\nScripts run in the session's working directory with the active venv's python, so project deps (pandas, etc.) and relative paths work like in terminal().\n\nPrint your final result to stdout. Use Python stdlib (json, re, math, csv, datetime, collections, etc.) for processing between tool calls.\n\nAlso available (no import needed — built into hermes_tools):\n  json_parse(text: str) — json.loads with strict=False; use for terminal() output with control chars\n  shell_quote(s: str) — shlex.quote(); use when interpolating dynamic strings into shell commands\n  retry(fn, max_attempts=3, delay=2) — retry with exponential backoff for transient failures",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Python code to execute. Import tools with `from hermes_tools import terminal, ...` and print your final result to stdout."
+            }
+          },
+          "required": [
+            "code"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "image_generate",
+        "description": "Generate high-quality images from text prompts. The underlying backend (FAL, OpenAI, etc.) and model are user-configured and not selectable by the agent. Returns either a URL or an absolute file path in the `image` field; display it with markdown ![description](url-or-path) and the gateway will deliver it.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "The text prompt describing the desired image. Be detailed and descriptive."
+            },
+            "aspect_ratio": {
+              "type": "string",
+              "enum": [
+                "landscape",
+                "square",
+                "portrait"
+              ],
+              "description": "The aspect ratio of the generated image. 'landscape' is 16:9 wide, 'portrait' is 16:9 tall, 'square' is 1:1.",
+              "default": "landscape"
+            }
+          },
+          "required": [
+            "prompt"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "memory",
+        "description": "Save durable information to persistent memory that survives across sessions. Memory is injected into future turns, so keep it compact and focused on facts that will still matter later.\n\nWHEN TO SAVE (do this proactively, don't wait to be asked):\n- User corrects you or says 'remember this' / 'don't do that again'\n- User shares a preference, habit, or personal detail (name, role, timezone, coding style)\n- You discover something about the environment (OS, installed tools, project structure)\n- You learn a convention, API quirk, or workflow specific to this user's setup\n- You identify a stable fact that will be useful again in future sessions\n\nPRIORITY: User preferences and corrections > environment facts > procedural knowledge. The most valuable memory prevents the user from having to repeat themselves.\n\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts.\nIf you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\n\nTWO TARGETS:\n- 'user': who the user is -- name, role, preferences, communication style, pet peeves\n- 'memory': your notes -- environment facts, project conventions, tool quirks, lessons learned\n\nACTIONS: add (new entry), replace (update existing -- old_text identifies it), remove (delete -- old_text identifies it).\n\nSKIP: trivial/obvious info, things easily re-discovered, raw data dumps, and temporary task state.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "add",
+                "replace",
+                "remove"
+              ],
+              "description": "The action to perform."
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "memory",
+                "user"
+              ],
+              "description": "Which memory store: 'memory' for personal notes, 'user' for user profile."
+            },
+            "content": {
+              "type": "string",
+              "description": "The entry content. Required for 'add' and 'replace'."
+            },
+            "old_text": {
+              "type": "string",
+              "description": "Short unique substring identifying the entry to replace or remove."
+            }
+          },
+          "required": [
+            "action",
+            "target"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "patch",
+        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "replace",
+                "patch"
+              ],
+              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
+              "default": "replace"
+            },
+            "path": {
+              "type": "string",
+              "description": "File path to edit (required for 'replace' mode)"
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
+              "default": false
+            },
+            "patch": {
+              "type": "string",
+              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "send_message",
+        "description": "Send a message to a connected messaging platform, or list available targets.\n\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "send",
+                "list"
+              ],
+              "description": "Action to perform. 'send' (default) sends a message. 'list' returns all available channels/contacts across connected platforms."
+            },
+            "target": {
+              "type": "string",
+              "description": "Delivery target. Format: 'platform' (uses home channel), 'platform:#channel-name', 'platform:chat_id', or 'platform:chat_id:thread_id' for Telegram topics and Discord threads. Examples: 'telegram', 'telegram:-1001234567890:17585', 'discord:999888777:555444333', 'discord:#bot-home', 'slack:#engineering', 'signal:+155****4567', 'matrix:!roomid:server.org', 'matrix:@user:server.org', 'yuanbao:direct:<account_id>' (DM), 'yuanbao:group:<group_code>' (group chat)"
+            },
+            "message": {
+              "type": "string",
+              "description": "The message text to send. To send an image or file, include MEDIA:<local_path> (e.g. 'MEDIA:/tmp/hermes/cache/img_xxx.jpg') in the message — the platform will deliver it as a native media attachment."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "session_search",
+        "description": "Search your long-term memory of past conversations, or browse recent sessions. This is your recall -- every past session is searchable, and this tool summarizes what happened.\n\nTWO MODES:\n1. Recent sessions (no query): Call with no arguments to see what was worked on recently. Returns titles, previews, and timestamps. Zero LLM cost, instant. Start here when the user asks what were we working on or what did we do recently.\n2. Keyword search (with query): Search for specific topics across all past sessions. Returns LLM-generated summaries of matching sessions.\n\nUSE THIS PROACTIVELY when:\n- The user says 'we did this before', 'remember when', 'last time', 'as I mentioned'\n- The user asks about a topic you worked on before but don't have in current context\n- The user references a project, person, or concept that seems familiar but isn't in memory\n- You want to check if you've solved a similar problem before\n- The user asks 'what did we do about X?' or 'how did we fix Y?'\n\nDon't hesitate to search when it is actually cross-session -- it's fast and cheap. Better to search and confirm than to guess or ask the user to repeat themselves.\n\nSearch syntax: keywords joined with OR for broad recall (elevenlabs OR baseten OR funding), phrases for exact match (\"docker networking\"), boolean (python NOT java), prefix (deploy*). IMPORTANT: Use OR between keywords for best results — FTS5 defaults to AND which misses sessions that only mention some terms. If a broad OR query returns nothing, try individual keyword searches in parallel. Returns summaries of the top matching sessions.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query — keywords, phrases, or boolean expressions to find in past sessions. Omit this parameter entirely to browse recent sessions instead (returns titles, previews, timestamps with no LLM cost)."
+            },
+            "role_filter": {
+              "type": "string",
+              "description": "Optional: only search messages from specific roles (comma-separated). E.g. 'user,assistant' to skip tool outputs."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max sessions to summarize (default: 3, max: 5).",
+              "default": 3
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_manage",
+        "description": "Manage skills (create, update, delete). Skills are your procedural memory — reusable approaches for recurring task types. New skills go to ~/.hermes/skills/; existing skills can be modified wherever they live.\n\nActions: create (full SKILL.md + optional category), patch (old_string/new_string — preferred for fixes), edit (full SKILL.md rewrite — major overhauls only), delete, write_file, remove_file.\n\nOn delete, pass `absorbed_into=<umbrella>` when you're merging this skill's content into another one, or `absorbed_into=\"\"` when you're pruning it with no forwarding target. This lets the curator tell consolidation from pruning without guessing, so downstream consumers (cron jobs that reference the old skill name, etc.) get updated correctly. The target you name in `absorbed_into` must already exist — create/patch the umbrella first, then delete.\n\nCreate when: complex task succeeded (5+ calls), errors overcome, user-corrected approach worked, non-trivial workflow discovered, or user asks you to remember a procedure.\nUpdate when: instructions stale/wrong, OS-specific failures, missing steps or pitfalls found during use. If you used a skill and hit issues not covered by it, patch it immediately.\n\nAfter difficult/iterative tasks, offer to save as a skill. Skip for simple one-offs. Confirm with user before creating/deleting.\n\nGood skills: trigger conditions, numbered steps with exact commands, pitfalls section, verification steps. Use skill_view() to see format examples.\n\nPinned skills are off-limits — all write actions refuse with a message pointing the user to `hermes curator unpin <name>`. Don't try to route around this by renaming or recreating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "create",
+                "patch",
+                "edit",
+                "delete",
+                "write_file",
+                "remove_file"
+              ],
+              "description": "The action to perform."
+            },
+            "name": {
+              "type": "string",
+              "description": "Skill name (lowercase, hyphens/underscores, max 64 chars). Must match an existing skill for patch/edit/delete/write_file/remove_file."
+            },
+            "content": {
+              "type": "string",
+              "description": "Full SKILL.md content (YAML frontmatter + markdown body). Required for 'create' and 'edit'. For 'edit', read the skill first with skill_view() and provide the complete updated text."
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'patch'). Must be unique unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'patch'). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "For 'patch': replace all occurrences instead of requiring a unique match (default: false)."
+            },
+            "category": {
+              "type": "string",
+              "description": "Optional category/domain for organizing the skill (e.g., 'devops', 'data-science', 'mlops'). Creates a subdirectory grouping. Only used with 'create'."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "Path to a supporting file within the skill directory. For 'write_file'/'remove_file': required, must be under references/, templates/, scripts/, or assets/. For 'patch': optional, defaults to SKILL.md if omitted."
+            },
+            "file_content": {
+              "type": "string",
+              "description": "Content for the file. Required for 'write_file'."
+            },
+            "absorbed_into": {
+              "type": "string",
+              "description": "For 'delete' only — declares intent so the curator can tell consolidation from pruning without guessing. Pass the umbrella skill name when this skill's content was merged into another (the target must already exist). Pass an empty string when the skill is truly stale and being pruned with no forwarding target. Omitting the arg on delete is supported for backward compatibility but downstream tooling (e.g. cron-job skill reference rewriting) will have to guess at intent."
+            }
+          },
+          "required": [
+            "action",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_view",
+        "description": "Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans')."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skills_list",
+        "description": "List available skills (name + description). Use skill_view(name) to load full content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional category filter to narrow results"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "text_to_speech",
+        "description": "Convert text to speech audio. Returns a MEDIA: path that the platform delivers as native audio. Compatible providers render as a voice bubble on Telegram; otherwise audio is sent as a regular attachment. In CLI mode, saves to ~/voice-memos/. Voice and provider are user-configured (built-in providers like edge/openai or custom command providers under tts.providers.<name>), not model-selected.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The text to convert to speech. Provider-specific character caps apply and are enforced automatically (OpenAI 4096, xAI 15000, MiniMax 10000, ElevenLabs 5k-40k depending on model); over-long input is truncated."
+            },
+            "output_path": {
+              "type": "string",
+              "description": "Optional custom file path to save the audio. Defaults to ~/.hermes/audio_cache/<timestamp>.mp3"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "todo",
+        "description": "Manage your task list for the current session. Use for complex tasks with 3+ steps or when the user provides multiple tasks. Call with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "todos": {
+              "type": "array",
+              "description": "Task items to write. Omit to read current list.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique item identifier"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Task description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ],
+                    "description": "Current status"
+                  }
+                },
+                "required": [
+                  "id",
+                  "content",
+                  "status"
+                ]
+              }
+            },
+            "merge": {
+              "type": "boolean",
+              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "vision_analyze",
+        "description": "Inspect an image from a URL, file path, or tool output when you need closer detail than what's visible in the conversation. If the user's image is already attached to the conversation and you can see it, just answer directly — only call this tool for images referenced by URL/path, images returned inside other tool results (browser screenshots, search thumbnails), or when you need a deeper look at a specific region the main model's vision may have missed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "description": "Image URL (http/https) or local file path to analyze."
+            },
+            "question": {
+              "type": "string",
+              "description": "Your specific question or request about the image to resolve. The AI will automatically provide a complete image description AND answer your specific question."
+            }
+          },
+          "required": [
+            "image_url",
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Complete content to write to the file"
+            }
+          },
+          "required": [
+            "path",
+            "content"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 25,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[IMPORTANT: The user has invoked the \"llm-wiki\" skill, indicating they want you to follow its instructions. The full skill content is loaded below.]\n\n---\nname: llm-wiki\ndescription: \"Karpathy's LLM Wiki: build/query interlinked markdown KB.\"\nversion: 2.1.0\nauthor: Hermes Agent\nlicense: MIT\nmetadata:\n  hermes:\n    tags: [wiki, knowledge-base, research, notes, markdown, rag-alternative]\n    category: research\n    related_skills: [obsidian, arxiv]\n---\n\n# Karpathy's LLM Wiki\n\nBuild and maintain a persistent, compounding knowledge base as interlinked markdown files.\nBased on [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).\n\nUnlike traditional RAG (which rediscovers knowledge from scratch per query), the wiki\ncompiles knowledge once and keeps it current. Cross-references are already there.\nContradictions have already been flagged. Synthesis reflects everything ingested.\n\n**Division of labor:** The human curates sources and directs analysis. The agent\nsummarizes, cross-references, files, and maintains consistency.\n\n## When This Skill Activates\n\nUse this skill when the user:\n- Asks to create, build, or start a wiki or knowledge base\n- Asks to ingest, add, or process a source into their wiki\n- Asks a question and an existing wiki is present at the configured path\n- Asks to lint, audit, or health-check their wiki\n- References their wiki, knowledge base, or \"notes\" in a research context\n\n## Wiki Location\n\n**Location:** Set via `WIKI_PATH` environment variable (e.g. in `~/.hermes/.env`).\n\nIf unset, defaults to `~/wiki`.\n\n```bash\nWIKI=\"${WIKI_PATH:-$HOME/wiki}\"\n```\n\nThe wiki is just a directory of markdown files — open it in Obsidian, VS Code, or\nany editor. No database, no special tooling required.\n\n## Architecture: Three Layers\n\n```\nwiki/\n├── SCHEMA.md           # Conventions, structure rules, domain config\n├── index.md            # Sectioned content catalog with one-line summaries\n├── log.md              # Chronological action log (append-only, rotated yearly)\n├── raw/                # Layer 1: Immutable source material\n│   ├── articles/       # Web articles, clippings\n│   ├── papers/         # PDFs, arxiv papers\n│   ├── transcripts/    # Meeting notes, interviews\n│   └── assets/         # Images, diagrams referenced by sources\n├── entities/           # Layer 2: Entity pages (people, orgs, products, models)\n├── concepts/           # Layer 2: Concept/topic pages\n├── comparisons/        # Layer 2: Side-by-side analyses\n└── queries/            # Layer 2: Filed query results worth keeping\n```\n\n**Layer 1 — Raw Sources:** Immutable. The agent reads but never modifies these.\n**Layer 2 — The Wiki:** Agent-owned markdown files. Created, updated, and\ncross-referenced by the agent.\n**Layer 3 — The Schema:** `SCHEMA.md` defines structure, conventions, and tag taxonomy.\n\n## Resuming an Existing Wiki (CRITICAL — do this every session)\n\nWhen the user has an existing wiki, **always orient yourself before doing anything**:\n\n① **Read `SCHEMA.md`** — understand the domain, conventions, and tag taxonomy.\n② **Read `index.md`** — learn what pages exist and their summaries.\n③ **Scan recent `log.md`** — read the last 20-30 entries to understand recent activity.\n\n```bash\nWIKI=\"${WIKI_PATH:-$HOME/wiki}\"\n# Orientation reads at session start\nread_file \"$WIKI/SCHEMA.md\"\nread_file \"$WIKI/index.md\"\nread_file \"$WIKI/log.md\" offset=<last 30 lines>\n```\n\nOnly after orientation should you ingest, query, or lint. This prevents:\n- Creating duplicate pages for entities that already exist\n- Missing cross-references to existing content\n- Contradicting the schema's conventions\n- Repeating work already logged\n\nFor large wikis (100+ pages), also run a quick `search_files` for the topic\nat hand before creating anything new.\n\n## Initializing a New Wiki\n\nWhen the user asks to create or start a wiki:\n\n1. Determine the wiki path (from `$WIKI_PATH` env var, or ask the user; default `~/wiki`)\n2. Create the directory structure above\n3. Ask the user what domain the wiki covers — be specific\n4. Write `SCHEMA.md` customized to the domain (see template below)\n5. Write initial `index.md` with sectioned header\n6. Write initial `log.md` with creation entry\n7. Confirm the wiki is ready and suggest first sources to ingest\n\n### SCHEMA.md Template\n\nAdapt to the user's domain. The schema constrains agent behavior and ensures consistency:\n\n```markdown\n# Wiki Schema\n\n## Domain\n[What this wiki covers — e.g., \"AI/ML research\", \"personal health\", \"startup intelligence\"]\n\n## Conventions\n- File names: lowercase, hyphens, no spaces (e.g., `transformer-architecture.md`)\n- Every wiki page starts with YAML frontmatter (see below)\n- Use `[[wikilinks]]` to link between pages (minimum 2 outbound links per page)\n- When updating a page, always bump the `updated` date\n- Every new page must be added to `index.md` under the correct section\n- Every action must be appended to `log.md`\n- **Provenance markers:** On pages that synthesize 3+ sources, append `^[raw/articles/source-file.md]`\n  at the end of paragraphs whose claims come from a specific source. This lets a reader trace each\n  claim back without re-reading the whole raw file. Optional on single-source pages where the\n  `sources:` frontmatter is enough.\n\n## Frontmatter\n  ```yaml\n  ---\n  title: Page Title\n  created: YYYY-MM-DD\n  updated: YYYY-MM-DD\n  type: entity | concept | comparison | query | summary\n  tags: [from taxonomy below]\n  sources: [raw/articles/source-name.md]\n  # Optional quality signals:\n  confidence: high | medium | low        # how well-supported the claims are\n  contested: true                        # set when the page has unresolved contradictions\n  contradictions: [other-page-slug]      # pages this one conflicts with\n  ---\n  ```\n\n`confidence` and `contested` are optional but recommended for opinion-heavy or fast-moving\ntopics. Lint surfaces `contested: true` and `confidence: low` pages for review so weak claims\ndon't silently harden into accepted wiki fact.\n\n### raw/ Frontmatter\n\nRaw sources ALSO get a small frontmatter block so re-ingests can detect drift:\n\n```yaml\n---\nsource_url: https://example.com/article   # original URL, if applicable\ningested: YYYY-MM-DD\nsha256: <hex digest of the raw content below the frontmatter>\n---\n```\n\nThe `sha256:` lets a future re-ingest of the same URL skip processing when content is unchanged,\nand flag drift when it has changed. Compute over the body only (everything after the closing\n`---`), not the frontmatter itself.\n\n## Tag Taxonomy\n[Define 10-20 top-level tags for the domain. Add new tags here BEFORE using them.]\n\nExample for AI/ML:\n- Models: model, architecture, benchmark, training\n- People/Orgs: person, company, lab, open-source\n- Techniques: optimization, fine-tuning, inference, alignment, data\n- Meta: comparison, timeline, controversy, prediction\n\nRule: every tag on a page must appear in this taxonomy. If a new tag is needed,\nadd it here first, then use it. This prevents tag sprawl.\n\n## Page Thresholds\n- **Create a page** when an entity/concept appears in 2+ sources OR is central to one source\n- **Add to existing page** when a source mentions something already covered\n- **DON'T create a page** for passing mentions, minor details, or things outside the domain\n- **Split a page** when it exceeds ~200 lines — break into sub-topics with cross-links\n- **Archive a page** when its content is fully superseded — move to `_archive/`, remove from index\n\n## Entity Pages\nOne page per notable entity. Include:\n- Overview / what it is\n- Key facts and dates\n- Relationships to other entities ([[wikilinks]])\n- Source references\n\n## Concept Pages\nOne page per concept or topic. Include:\n- Definition / explanation\n- Current state of knowledge\n- Open questions or debates\n- Related concepts ([[wikilinks]])\n\n## Comparison Pages\nSide-by-side analyses. Include:\n- What is being compared and why\n- Dimensions of comparison (table format preferred)\n- Verdict or synthesis\n- Sources\n\n## Update Policy\nWhen new information conflicts with existing content:\n1. Check the dates — newer sources generally supersede older ones\n2. If genuinely contradictory, note both positions with dates and sources\n3. Mark the contradiction in frontmatter: `contradictions: [page-name]`\n4. Flag for user review in the lint report\n```\n\n### index.md Template\n\nThe index is sectioned by type. Each entry is one line: wikilink + summary.\n\n```markdown\n# Wiki Index\n\n> Content catalog. Every wiki page listed under its type with a one-line summary.\n> Read this first to find relevant pages for any query.\n> Last updated: YYYY-MM-DD | Total pages: N\n\n## Entities\n<!-- Alphabetical within section -->\n\n## Concepts\n\n## Comparisons\n\n## Queries\n```\n\n**Scaling rule:** When any section exceeds 50 entries, split it into sub-sections\nby first letter or sub-domain. When the index exceeds 200 entries total, create\na `_meta/topic-map.md` that groups pages by theme for faster navigation.\n\n### log.md Template\n\n```markdown\n# Wiki Log\n\n> Chronological record of all wiki actions. Append-only.\n> Format: `## [YYYY-MM-DD] action | subject`\n> Actions: ingest, update, query, lint, create, archive, delete\n> When this file exceeds 500 entries, rotate: rename to log-YYYY.md, start fresh.\n\n## [YYYY-MM-DD] create | Wiki initialized\n- Domain: [domain]\n- Structure created with SCHEMA.md, index.md, log.md\n```\n\n## Core Operations\n\n### 1. Ingest\n\nWhen the user provides a source (URL, file, paste), integrate it into the wiki:\n\n① **Capture the raw source:**\n   - URL → use `web_extract` to get markdown, save to `raw/articles/`\n   - PDF → use `web_extract` (handles PDFs), save to `raw/papers/`\n   - Pasted text → save to appropriate `raw/` subdirectory\n   - Name the file descriptively: `raw/articles/karpathy-llm-wiki-2026.md`\n   - **Add raw frontmatter** (`source_url`, `ingested`, `sha256` of the body).\n     On re-ingest of the same URL: recompute the sha256, compare to the stored value —\n     skip if identical, flag drift and update if different. This is cheap enough to\n     do on every re-ingest and catches silent source changes.\n\n② **Discuss takeaways** with the user — what's interesting, what matters for\n   the domain. (Skip this in automated/cron contexts — proceed directly.)\n\n③ **Check what already exists** — search index.md and use `search_files` to find\n   existing pages for mentioned entities/concepts. This is the difference between\n   a growing wiki and a pile of duplicates.\n\n④ **Write or update wiki pages:**\n   - **New entities/concepts:** Create pages only if they meet the Page Thresholds\n     in SCHEMA.md (2+ source mentions, or central to one source)\n   - **Existing pages:** Add new information, update facts, bump `updated` date.\n     When new info contradicts existing content, follow the Update Policy.\n   - **Cross-reference:** Every new or updated page must link to at least 2 other\n     pages via `[[wikilinks]]`. Check that existing pages link back.\n   - **Tags:** Only use tags from the taxonomy in SCHEMA.md\n   - **Provenance:** On pages synthesizing 3+ sources, append `^[raw/articles/source.md]`\n     markers to paragraphs whose claims trace to a specific source.\n   - **Confidence:** For opinion-heavy, fast-moving, or single-source claims, set\n     `confidence: medium` or `low` in frontmatter. Don't mark `high` unless the\n     claim is well-supported across multiple sources.\n\n⑤ **Update navigation:**\n   - Add new pages to `index.md` under the correct section, alphabetically\n   - Update the \"Total pages\" count and \"Last updated\" date in index header\n   - Append to `log.md`: `## [YYYY-MM-DD] ingest | Source Title`\n   - List every file created or updated in the log entry\n\n⑥ **Report what changed** — list every file created or updated to the user.\n\nA single source can trigger updates across 5-15 wiki pages. This is normal\nand desired — it's the compounding effect.\n\n### 2. Query\n\nWhen the user asks a question about the wiki's domain:\n\n① **Read `index.md`** to identify relevant pages.\n② **For wikis with 100+ pages**, also `search_files` across all `.md` files\n   for key terms — the index alone may miss relevant content.\n③ **Read the relevant pages** using `read_file`.\n④ **Synthesize an answer** from the compiled knowledge. Cite the wiki pages\n   you drew from: \"Based on [[page-a]] and [[page-b]]...\"\n⑤ **File valuable answers back** — if the answer is a substantial comparison,\n   deep dive, or novel synthesis, create a page in `queries/` or `comparisons/`.\n   Don't file trivial lookups — only answers that would be painful to re-derive.\n⑥ **Update log.md** with the query and whether it was filed.\n\n### 3. Lint\n\nWhen the user asks to lint, health-check, or audit the wiki:\n\n① **Orphan pages:** Find pages with no inbound `[[wikilinks]]` from other pages.\n```python\n# Use execute_code for this — programmatic scan across all wiki pages\nimport os, re\nfrom collections import defaultdict\nwiki = \"<WIKI_PATH>\"\n# Scan all .md files in entities/, concepts/, comparisons/, queries/\n# Extract all [[wikilinks]] — build inbound link map\n# Pages with zero inbound links are orphans\n```\n\n② **Broken wikilinks:** Find `[[links]]` that point to pages that don't exist.\n\n③ **Index completeness:** Every wiki page should appear in `index.md`. Compare\n   the filesystem against index entries.\n\n④ **Frontmatter validation:** Every wiki page must have all required fields\n   (title, created, updated, type, tags, sources). Tags must be in the taxonomy.\n\n⑤ **Stale content:** Pages whose `updated` date is >90 days older than the most\n   recent source that mentions the same entities.\n\n⑥ **Contradictions:** Pages on the same topic with conflicting claims. Look for\n   pages that share tags/entities but state different facts. Surface all pages\n   with `contested: true` or `contradictions:` frontmatter for user review.\n\n⑦ **Quality signals:** List pages with `confidence: low` and any page that cites\n   only a single source but has no confidence field set — these are candidates\n   for either finding corroboration or demoting to `confidence: medium`.\n\n⑧ **Source drift:** For each file in `raw/` with a `sha256:` frontmatter, recompute\n   the hash and flag mismatches. Mismatches indicate the raw file was edited\n   (shouldn't happen — raw/ is immutable) or ingested from a URL that has since\n   changed. Not a hard error, but worth reporting.\n\n⑨ **Page size:** Flag pages over 200 lines — candidates for splitting.\n\n⑩ **Tag audit:** List all tags in use, flag any not in the SCHEMA.md taxonomy.\n\n⑪ **Log rotation:** If log.md exceeds 500 entries, rotate it.\n\n⑫ **Report findings** with specific file paths and suggested actions, grouped by\n   severity (broken links > orphans > source drift > contested pages > stale content > style issues).\n\n⑬ **Append to log.md:** `## [YYYY-MM-DD] lint | N issues found`\n\n## Git-Backed Remote Wiki Automation\n\nWhen the wiki lives in a remote Git repository rather than an already-local folder, treat the local clone as a cache of the canonical remote:\n\n1. Clone once into a stable path and set `WIKI_PATH`/`OBSIDIAN_VAULT_PATH` to that clone.\n2. Before every build, ingest, or query: verify a clean worktree, `git fetch`, `git checkout <branch>`, and `git pull --ff-only` from the canonical remote. Stop and report if there are uncommitted changes unless the user explicitly asked to preserve/commit them.\n   - If the workflow requires preserving local edits automatically, use a protective stash sequence: `git stash push -u -m \"webhook-auto-stash-<run_id>\"` → sync (`fetch/checkout/pull --ff-only`) → `git stash pop` before processing.\n   - If `stash pop` reports conflicts, log conflict details and abort the run (do not force-commit partial conflict state).\n   - If `git pull --ff-only` fails with local/remote divergence (e.g. `ahead X, behind Y`), classify as `aborted:sync_ff_only_failed` and stop wiki processing. For operator remediation in unattended environments, use: create a safety branch from local `main` (`backup/local-main-before-reset-<utc>`), then `git reset --hard origin/main`, then re-trigger webhook/job.\n3. For full builds, scan all markdown and repair/init `SCHEMA.md`, `index.md`, `log.md`, entity/concept/comparison/query pages, frontmatter, backlinks, and graph structure.\n4. For incremental builds, diff against the pulled baseline or recent commits to identify changed markdown, then update only affected pages plus `index.md` and `log.md`.\n   - Prefer payload-provided `before..sha` when both are valid. If the computed command yields an empty set because the range is malformed/degenerate (e.g., leading `..sha` with missing base), immediately fallback to `HEAD~1..HEAD` and log both commands + why fallback was used.\n   - After diffing, hard-filter to `raw/**/*.md`; if none remain, record `skipped:no_raw_changes` and stop without wiki writes/commit/push.\n5. For queries, orient first (schema/index/log), answer from wiki pages, and if the user wants query capture, write a `queries/` page and update navigation/log.\n6. After write operations: `git status`, then commit only when changes exist. Default to `git add -A && git commit -m \"chore: update llm wiki graph\"`, **but if the repo already contains unrelated untracked files from other runs, stage only the files touched by this run** to avoid accidentally bundling stale artifacts. Push to the user-approved target branch; direct `main` pushes are acceptable only when explicitly requested.\n   - Verification guard (important): immediately run `git show --name-only --oneline -n 1 <build_commit>` (or `git show --name-only --oneline -n 1 HEAD` right after commit) and confirm the expected wiki/index/log/run-log files are actually in that commit. If expected files are missing, do not continue to summary/Telegram—fix staging and recommit first.\n   - Shell pitfall: avoid chaining `&& ...` directly after a heredoc terminator in one wrapped command block (`python3 - <<'PY' ... PY && ...`) on constrained runners; some wrappers throw parse errors. Prefer two separate terminal calls (script first, then git add/commit/push).\n7. For Hermes webhook/API automation, put the operation selector in payload fields such as `action=full_build|incremental_build|query`, `question`, and `save`, and make the prompt repeat the sync-before/worktree-clean/push-after rules.\n8. When the payload requires a detailed run log under `logs/webhook-runs/<run_id>.md`, include the run log in the same run's commit, and record start time, payload, sync command/result, key files read, created/updated/deleted lists, git status, errors, and end time.\n   - If webhook payload provides `run_id`, use that exact filename (do not regenerate a new one). If `run_id` is missing, fallback to `delivery_id`, then UTC timestamp.\n   - If the run-log file already exists, append a new run section for the current execution instead of overwriting previous content. In final user/Telegram summaries, explicitly include the run-log file path.\n   - Stash-order guard: run the protective stash/sync/pop sequence first, then create or append the current run-log file. Creating the run-log before `git stash pop` can cause `already exists, no checkout` restore errors for untracked files.\n   - If `git stash pop` fails, classify the failure: abort on merge/content conflicts or non-log restore conflicts; but if the only restore collision is the current run-log path under `logs/webhook-runs/<run_id>.md`, record it as a non-blocking warning and continue.\n9. If the run log itself must contain commit hash and push result, plan for a two-commit sequence: first commit/push the wiki changes and initial log, then append the build commit hash and push result to the log and make a second one-file \"finalize webhook run log\" commit. A commit cannot truthfully contain its own final hash inside its content. In final/Telegram summaries, report both the build commit and the log-finalization commit when this happens. See `references/webhook-run-logging.md`.\n10. In busy repos (multiple webhook runs close together), do **not** assume `git rev-parse HEAD` is the build commit to report. Verify the build commit by checking which commit actually contains this run’s changed files (especially `logs/webhook-runs/<run_id>.md` and run-touched wiki files) using `git show --name-only <commit>`; then report that explicit build hash alongside the finalize-log hash.\n\nPitfalls:\n- Do not assume webhook callers get the final answer synchronously; Hermes webhooks are best for async trigger + delivery. Use the API Server (`/v1/chat/completions`) when the caller must synchronously receive the result.\n- Direct push to `main` requires working Git credentials on the server; `gh` may be absent, so verify plain `git push` auth before promising automation is complete.\n- Restart the Hermes gateway after enabling webhook/API-server platform config; creating subscriptions alone does not make ports listen.\n- For unattended webhook runs, avoid `git reset --hard` remediation inside the agent loop. It is usually approval-gated (`Dangerous command requires approval`) and can stall or discard useful local artifacts. Preferred behavior: `fetch/checkout/pull --ff-only` + stash/pop policy; if divergence cannot be fast-forwarded, log and abort with explicit manual-action guidance.\n- If a GitHub Action webhook call returns `HTTP 502`, verify gateway uptime window before debugging payload/auth. A gateway restart/drain window can produce transient 502 even when workflow and secrets are correct; correlate Action timestamp with `~/.hermes/logs/gateway.log` disconnect/start events.\n- Some existing Obsidian wiki repos are non-canonical: schema may be `TheSchema.md`, active files may live under `wiki/index.md`/`wiki/log.md`, and root `SCHEMA.md`/`index.md`/`log.md` may be missing or empty. In that case, read the available schema first, then repair/init the canonical metadata without touching `raw/`; keep compatibility by updating both root and `wiki/` index/log when the repo already uses that layout.\n- Conflict-precedence guard (important for webhook + skill coexistence): when a webhook subscription prompt defines explicit repo rules, apply precedence `webhook prompt > repository canonical schema (often TheSchema.md) > bridge SCHEMA.md > generic llm-wiki defaults`. Do not let generic skill defaults overwrite repo-specific contracts.\n- Path-unification guard: if webhook automation uses a fixed local clone path but manual queries rely on `${WIKI_PATH:-~/wiki}`, verify/align `WIKI_PATH` (and optionally `OBSIDIAN_VAULT_PATH`) to the same repo path to prevent dual-track reads/writes.\n- On some headless hosts, `python` is not installed but `python3` is. For any inline helper scripts used during webhook runs (log appenders, file list processors, quick markdown transforms), prefer `python3 - <<'PY'` to avoid avoidable runtime failure.\n- For webhook-style requests that include `save=false`, do **not** create a `queries/` page, but still append a query log entry and include `Filed query page: no` in the final/Telegram summary.\n- If the user explicitly requires Telegram delivery, send the same operational summary to Telegram after commit/push, including action, sync status, files changed, commit hash, answer/build summary, and errors.\n- If the webhook contract explicitly forbids route-level `deliver=telegram` and requires **Telegram Bot API direct-send**, use `curl` to call `https://api.telegram.org/bot<TOKEN>/sendMessage` with the provided `chat_id`, and record API success/failure in the run log. Do not substitute Hermes webhook delivery for this requirement.\n- For webhook contracts that ask for **quantitative Telegram summaries**, include explicit metrics rather than generic “graph updated” text:\n  - new entity count + entity names,\n  - changed raw source count + source file list,\n  - relation changes grouped by type (e.g., `entity->concept`, `entity->source`) plus at least 3 sample edges,\n  - affected concept-page list.\n  If any metric cannot be computed, report `unknown` and state the reason.\n- In webhook contracts that gate notifications, honor the gate strictly: e.g., **incremental_build only**, `raw/**/*.md` changed, and actual graph/wiki updates occurred. If the run is `skipped:no_raw_changes`, do not send Telegram.\n\n## Working with the Wiki\n\n### Searching\n\n```bash\n# Find pages by content\nsearch_files \"transformer\" path=\"$WIKI\" file_glob=\"*.md\"\n\n# Find pages by filename\nsearch_files \"*.md\" target=\"files\" path=\"$WIKI\"\n\n# Find pages by tag\nsearch_files \"tags:.*alignment\" path=\"$WIKI\" file_glob=\"*.md\"\n\n# Recent activity\nread_file \"$WIKI/log.md\" offset=<last 20 lines>\n```\n\n### Bulk Ingest\n\nWhen ingesting multiple sources at once, batch the updates:\n1. Read all sources first\n2. Identify all entities and concepts across all sources\n3. Check existing pages for all of them (one search pass, not N)\n4. Create/update pages in one pass (avoids redundant updates)\n5. Update index.md once at the end\n6. Write a single log entry covering the batch\n\n### Archiving\n\nWhen content is fully superseded or the domain scope changes:\n1. Create `_archive/` directory if it doesn't exist\n2. Move the page to `_archive/` with its original path (e.g., `_archive/entities/old-page.md`)\n3. Remove from `index.md`\n4. Update any pages that linked to it — replace wikilink with plain text + \"(archived)\"\n5. Log the archive action\n\n### Obsidian Integration\n\nThe wiki directory works as an Obsidian vault out of the box:\n- `[[wikilinks]]` render as clickable links\n- Graph View visualizes the knowledge network\n- YAML frontmatter powers Dataview queries\n- The `raw/assets/` folder holds images referenced via `![[image.png]]`\n\nFor best results:\n- Set Obsidian's attachment folder to `raw/assets/`\n- Enable \"Wikilinks\" in Obsidian settings (usually on by default)\n- Install Dataview plugin for queries like `TABLE tags FROM \"entities\" WHERE contains(tags, \"company\")`\n\nIf using the Obsidian skill alongside this one, set `OBSIDIAN_VAULT_PATH` to the\nsame directory as the wiki path.\n\n### Obsidian Headless (servers and headless machines)\n\nOn machines without a display, use `obsidian-headless` instead of the desktop app.\nIt syncs vaults via Obsidian Sync without a GUI — perfect for agents running on\nservers that write to the wiki while Obsidian desktop reads it on another device.\n\n**Setup:**\n```bash\n# Requires Node.js 22+\nnpm install -g obsidian-headless\n\n# Login (requires Obsidian account with Sync subscription)\nob login --email <email> --password '<password>'\n\n# Create a remote vault for the wiki\nob sync-create-remote --name \"LLM Wiki\"\n\n# Connect the wiki directory to the vault\ncd ~/wiki\nob sync-setup --vault \"<vault-id>\"\n\n# Initial sync\nob sync\n\n# Continuous sync (foreground — use systemd for background)\nob sync --continuous\n```\n\n**Continuous background sync via systemd:**\n```ini\n# ~/.config/systemd/user/obsidian-wiki-sync.service\n[Unit]\nDescription=Obsidian LLM Wiki Sync\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nExecStart=/path/to/ob sync --continuous\nWorkingDirectory=/home/user/wiki\nRestart=on-failure\nRestartSec=10\n\n[Install]\nWantedBy=default.target\n```\n\n```bash\nsystemctl --user daemon-reload\nsystemctl --user enable --now obsidian-wiki-sync\n# Enable linger so sync survives logout:\nsudo loginctl enable-linger $USER\n```\n\nThis lets the agent write to `~/wiki` on a server while you browse the same\nvault in Obsidian on your laptop/phone — changes appear within seconds.\n\n## Pitfalls\n\n- **Never modify files in `raw/`** — sources are immutable. Corrections go in wiki pages.\n- **Always orient first** — read SCHEMA + index + recent log before any operation in a new session.\n  Skipping this causes duplicates and missed cross-references.\n- **Always update index.md and log.md** — skipping this makes the wiki degrade. These are the\n  navigational backbone.\n- **Don't create pages for passing mentions** — follow the Page Thresholds in SCHEMA.md. A name\n  appearing once in a footnote doesn't warrant an entity page.\n- **Don't create pages without cross-references** — isolated pages are invisible. Every page must\n  link to at least 2 other pages.\n- **Frontmatter is required** — it enables search, filtering, and staleness detection.\n- **Tags must come from the taxonomy** — freeform tags decay into noise. Add new tags to SCHEMA.md\n  first, then use them.\n- **Keep pages scannable** — a wiki page should be readable in 30 seconds. Split pages over\n  200 lines. Move detailed analysis to dedicated deep-dive pages.\n- **Ask before mass-updating** — if an ingest would touch 10+ existing pages, confirm\n  the scope with the user first.\n- **Rotate the log** — when log.md exceeds 500 entries, rename it `log-YYYY.md` and start fresh.\n  The agent should check log size during lint.\n- **Handle contradictions explicitly** — don't silently overwrite. Note both claims with dates,\n  mark in frontmatter, flag for user review.\n\n## Related Tools\n\n[llm-wiki-compiler](https://github.com/atomicmemory/llm-wiki-compiler) is a Node.js CLI that\ncompiles sources into a concept wiki with the same Karpathy inspiration. It's Obsidian-compatible,\nso users who want a scheduled/CLI-driven compile pipeline can point it at the same vault this\nskill maintains. Trade-offs: it owns page generation (replaces the agent's judgment on page\ncreation) and is tuned for small corpora. Use this skill when you want agent-in-the-loop curation;\nuse llmwiki when you want batch compile of a source directory.\n\n[Skill directory: /home/zhouhuijuan1987/.hermes/skills/research/llm-wiki]\nResolve any relative paths in this skill (e.g. `scripts/foo.js`, `templates/config.yaml`) against that directory, then run them with the terminal tool using the absolute path.\n\n[This skill has supporting files:]\n- references/webhook-run-logging.md  ->  /home/zhouhuijuan1987/.hermes/skills/research/llm-wiki/references/webhook-run-logging.md\n\nLoad any of these with skill_view(name=\"research/llm-wiki\", file_path=\"<path>\"), or run scripts directly by absolute path (e.g. `node /home/zhouhuijuan1987/.hermes/skills/research/llm-wiki/scripts/foo.js`).\n\nThe user has provided the following instruction alongside the skill invocation: 【规则优先级（防冲突，强制）】\\n1) 本订阅 prompt（最高优先级）\\n2) 仓库 TheSchema.md（仓库规范真相源）\\n3) llm-wiki skill 的通用默认\\n若三者有冲突，必须按以上顺序执行。\\n\\n你是 Hermes /llm-wiki 维护 agent。远程仓库：https://github.com/divanoo65/prompt-qa-unified-wiki。本地路径：/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki。收到 payload 后按 action 执行：full_build|incremental_build|query。先做 git stash/fetch/checkout/pull --ff-only/stash pop，再处理。增量仅关注 raw/**/*.md；若无 raw 变化则 skipped:no_raw_changes，且不 commit/push。每次运行写 logs/webhook-runs/{run_id}.md。完成后若有变更则 commit 并 push 到 origin main。"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_Hj_8Px7B47N8Hy1MECxDx1XTyHbUkEZsYQxHiBY_gNBBRYomnSFuPW3d6bbooG3WT42nY5oUlO8bKrPhX0Og-gOuBcncgtyZK48EKGv6nX8PPcwvueWMyIIasoQqLgGiKO3BKJF3QGew8gxXRa1duI_p8Tz9h-DaoBL_JfS_VKl7O8PLthLb9j9TwL5kU7lB_8GCc7UBQSqUbcuhVvlTeqvYkgWYg7SPyhZmnC7r8cb-CFzbyG_Y8xQ8puqGWb_WcX4vP7oM9nELpWFbiis-wh5pXv6R_27IXeCcRSgIMBl2ImSNcIXZK0mtOhoxpIrLNZFl_kaD21iCAJyyxNxbf4hPOCm1lPe7_HKhKN7N18fY7dBF3C8fEibil0bRVrP8Wi6oZK7pB1XPv-6Z6teM8khsh_ESynFHKaBX8-FlMCA8ynMCbQSiKf9Mu8V1OpphNgA94TLsbiHAuTiq9xEUJA7W32EKaik9p4t21US4gYEo9osztNuwY54girIEEeotbeDUKbu0jPV5PGslyacPUsFei5W-80-VgEg7XfwO_gVrTKiHPfWturzupGe1LB5nfZbKgG8guqPHhkwhUZmMLhHnDw22cGru_Gu6eOPh_c-2nY29zrrXeBtfQukgdOs0_PinUkyBOsEYmhw67KnJhiocVN66I0Vz9f--Rtdxu4JoUSpLoRoPomAjUHivEx8cuLUB1QZNAwWaPBirIQ0WmsJBYrzcq6qXqqAVEyyOH9HfCFElWcgSCSscvjFD8Qxn6NWQX50eALzz1krXK_y2e80AXYx2GwMyUqHnhaFo_JBlSeM62JevT4caxQRqx9C9hByYKEqISa7_sZ-rmhXJhOhWouyFyeDhOAwF3LDdVAkWQgkEkK2OjjL3r8D6RkF3_RufyZ5yWvC5jzrrE5lH6tfBy433QCxdk-2ld-vu38KWgt530bgsGhQJ4rrH18slRKfdLJjxRptsxmqFh0auQwqpxqPqDY5MwA9Vc-J_GJtVeGWQXTC7S1I4wPNiO6PY3xCJwDolCjsCl3etaLHkKovm68RvzcQ37IK0GCMDlFItWZiIcjdnssisxFf3qEhDv_O_bD1FVUcKxXmlAA1IAg3wOqxFyqZF1hsO6PBI1gRrTcRZPwlscf3o5Atu6dU9d7CaFj2F1P7NMIcsH9qk8ryRmDcdHoWb8nG1GKKke5o92ol0VzS6-66Z_sfTf9VAvVGy_YG9OSBvCz7MJqRDvLoBFYF4ee2IerV8QU5IyCAFbb_M-R27zxB-a_nRHGcs3g4wtlFkm4q5UjoIV-g3Pif-E_b_k_a9dw6Aku4QuPZoPg29NNGcNyNyyVIdGwaDbwIZyTCk3sgDeX-vcKQOZT2xaOuCcsYuBxu9V4G_EUmIRo51-f9OZU9MX65XhbFZu5Lm9RGVZpb1pcOcpCQLdRcpNvNShTpxOJCXdPd8vhV5ygc5QnZt82lHDB-x80XWFOKR68eCc6e6Caoz0XzXaqnfeXAmlfen5KfXEW9vJTNj6ujPpVbb5yCTo3dzCvlo_wZDluYV83r5MuadeH8ARhRHs2whMg4AaywPmWb53_biqN87_8SXt_n2OzmYNQQqSNivVf16K3Its8lVxlmCHeejYsWr8gUnJIkgYnr01Fux0GYbfwGteAQd2DrkD41ZB_ZVWdl4oWfFFjNgTCuOd3qS9NNNG92KShCBPo311irZkBtGTcm97XwffUaYzLbqp_80XIoMjwWdEj-Rss5WoE24T0MJ57PRdNCstOaBBIfM09kNeYH21P9cvlHfOD2dOqkqHn9Y1HOhbekHrCXuNQP9akZjmJME3qM6jtt3lRoFRbbOB_SuSuJn7zyUb-xLs97rAUQlbBptcG8LcFrhFzGR3YoiolETRXtaUXHJKpSQlmUeqWZmFJyQUWXmAtGq0ord0KkJoq5VMao4Df9l3R8YCo2gJyoEKgnHM1JFldLuenx4pTYA4KjbcQAccuDxejw7v0ZJU1SVY-JF4_XPz9bHj9H6RaUXaW0q68EKMHHkWeNuu6eUtG-jrWk4QQDfulrV3rrAOBoqzlJlTma_bh96w==",
+          "id": "rs_09bc2b00a30392800169fc78fb1b108196bd54e8c03ac7c216",
+          "summary": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_sG5347xOmu77dYUTcEAWucKJ",
+          "call_id": "call_sG5347xOmu77dYUTcEAWucKJ",
+          "response_item_id": "fc_09bc2b00a30392800169fc78ff137c8196b437feb802502f6b",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\":\"*\", \"target\":\"files\", \"path\":\".\", \"limit\":200}"
+          }
+        },
+        {
+          "id": "call_yvrI2yVZdNU2q1wbchvQixkb",
+          "call_id": "call_yvrI2yVZdNU2q1wbchvQixkb",
+          "response_item_id": "fc_09bc2b00a30392800169fc78ff138c8196aa13395f51539d5e",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\":\"pwd && date\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 200, \"files\": [\"./.hermes/state.db-wal\", \"./.hermes/state.db-shm\", \"./.hermes/sessions/session_20260507_100402_a21ab2.json\", \"./.hermes/sessions/sessions.json\", \"./.hermes/sessions/session_20260507_111415_d3829b.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_110030.json\", \"./.hermes/sessions/session_20260507_110731_a9ed52.json\", \"./.hermes/sessions/session_20260507_105826_7636d3.json\", \"./.hermes/sessions/session_20260507_101236_2203af.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_100028.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_090059.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_080000.json\", \"./.hermes/sessions/session_20260507_070859_27aeca.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_070038.json\", \"./.hermes/sessions/session_20260507_060437_706c04.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_060024.json\", \"./.hermes/sessions/session_20260507_050724_cd914a.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_050003.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_040041.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_030054.json\", \"./.hermes/sessions/session_20260507_021454_f8ff85.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_020011.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_014658.json\", \"./.hermes/sessions/session_20260507_014616_354e1d.json\", \"./.hermes/sessions/session_20260507_005605_bc8cdc.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_010052.json\", \"./.hermes/sessions/20260507_005730_2490c3d1.jsonl\", \"./.hermes/sessions/session_20260507_005730_2490c3d1.json\", \"./.hermes/sessions/20260507_005724_7ab07169.jsonl\", \"./.hermes/sessions/session_20260507_005724_7ab07169.json\", \"./.hermes/sessions/session_20260507_005746_576c87.json\", \"./.hermes/sessions/20260507_005708_7b7bbd4e.jsonl\", \"./.hermes/sessions/session_20260507_005708_7b7bbd4e.json\", \"./.hermes/sessions/session_20260507_005754_f4fb45.json\", \"./.hermes/sessions/20260507_005657_21678ae1.jsonl\", \"./.hermes/sessions/session_20260507_005657_21678ae1.json\", \"./.hermes/sessions/20260507_005323_3ee78f8c.jsonl\", \"./.hermes/sessions/session_20260507_005323_3ee78f8c.json\", \"./.hermes/sessions/20260507_005343_796e3646.jsonl\", \"./.hermes/sessions/session_20260507_005343_796e3646.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260507_000043.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_230026.json\", \"./.hermes/sessions/session_20260506_222425_287f50.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_220057.json\", \"./.hermes/sessions/session_20260506_210656_ff3d77.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_210034.json\", \"./.hermes/sessions/20260506_204418_3c443fd2.jsonl\", \"./.hermes/sessions/session_20260506_204418_3c443fd2.json\", \"./.hermes/sessions/20260506_203951_ba9f6f01.jsonl\", \"./.hermes/sessions/session_20260506_203951_ba9f6f01.json\", \"./.hermes/sessions/20260506_203959_84823985.jsonl\", \"./.hermes/sessions/session_20260506_203959_84823985.json\", \"./.hermes/sessions/session_20260506_204052_8383f4.json\", \"./.hermes/sessions/session_20260506_202259_cc86fc.json\", \"./.hermes/sessions/20260506_203802_720aa4a9.jsonl\", \"./.hermes/sessions/session_20260506_203802_720aa4a9.json\", \"./.hermes/sessions/20260506_203505_9e82d54c.jsonl\", \"./.hermes/sessions/session_20260506_203505_9e82d54c.json\", \"./.hermes/sessions/20260506_203517_73dad7c0.jsonl\", \"./.hermes/sessions/session_20260506_203517_73dad7c0.json\", \"./.hermes/sessions/session_20260506_203539_f316fd.json\", \"./.hermes/sessions/20260506_203124_9a51cfeb.jsonl\", \"./.hermes/sessions/session_20260506_203124_9a51cfeb.json\", \"./.hermes/sessions/session_20260506_195211_e55a90.json\", \"./.hermes/sessions/20260506_201749_37c094b2.jsonl\", \"./.hermes/sessions/session_20260506_201749_37c094b2.json\", \"./.hermes/sessions/20260506_201246_60b60fe7.jsonl\", \"./.hermes/sessions/session_20260506_201246_60b60fe7.json\", \"./.hermes/sessions/20260506_201229_aaa383c4.jsonl\", \"./.hermes/sessions/session_20260506_201229_aaa383c4.json\", \"./.hermes/sessions/session_20260506_201300_9f7e50.json\", \"./.hermes/sessions/20260506_201025_b872fc8f.jsonl\", \"./.hermes/sessions/session_20260506_201025_b872fc8f.json\", \"./.hermes/sessions/20260504_090230_84604a51.jsonl\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_200027.json\", \"./.hermes/sessions/session_20260506_200709_898f89.json\", \"./.hermes/sessions/20260506_200345_a781818a.jsonl\", \"./.hermes/sessions/session_20260506_200345_a781818a.json\", \"./.hermes/sessions/20260506_200352_7464372f.jsonl\", \"./.hermes/sessions/session_20260506_200352_7464372f.json\", \"./.hermes/sessions/session_20260506_200418_c6bd37.json\", \"./.hermes/sessions/20260506_195926_73ff097b.jsonl\", \"./.hermes/sessions/session_20260506_195926_73ff097b.json\", \"./.hermes/sessions/session_20260506_195646_090027.json\", \"./.hermes/sessions/session_20260506_195217_2656e3.json\", \"./.hermes/sessions/session_20260506_190833_c447c7.json\", \"./.hermes/sessions/20260506_194442_83b83ca9.jsonl\", \"./.hermes/sessions/session_20260506_194442_83b83ca9.json\", \"./.hermes/sessions/20260506_194502_475e4b4c.jsonl\", \"./.hermes/sessions/session_20260506_194502_475e4b4c.json\", \"./.hermes/sessions/session_20260506_194522_6bb753.json\", \"./.hermes/sessions/20260506_194215_c2059b1b.jsonl\", \"./.hermes/sessions/session_20260506_194215_c2059b1b.json\", \"./.hermes/sessions/session_20260506_194359_84d2b1.json\", \"./.hermes/sessions/session_20260506_193501_30c213.json\", \"./.hermes/sessions/20260506_193815_5e3ced4f.jsonl\", \"./.hermes/sessions/session_20260506_193815_5e3ced4f.json\", \"./.hermes/sessions/session_20260506_192035_61c98857.json\", \"./.hermes/sessions/session_20260506_192456_d9e44d.json\", \"./.hermes/sessions/session_20260506_191710_1699aa.json\", \"./.hermes/sessions/session_20260506_191309_822c45.json\", \"./.hermes/sessions/session_20260506_190826_50dcc6.json\", \"./.hermes/sessions/session_20260506_185916_7296f1.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_190012.json\", \"./.hermes/sessions/session_20260506_190222_677c54.json\", \"./.hermes/sessions/request_dump_20260506_185916_7296f1_20260506_190021_636342.json\", \"./.hermes/sessions/session_20260506_183629_19a7e4.json\", \"./.hermes/sessions/request_dump_20260506_183629_19a7e4_20260506_183928_619296.json\", \"./.hermes/sessions/20260506_183908_47dcbdf2.jsonl\", \"./.hermes/sessions/session_20260506_183908_47dcbdf2.json\", \"./.hermes/sessions/request_dump_20260506_183908_47dcbdf2_20260506_183924_999109.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_183418.json\", \"./.hermes/sessions/session_20260506_175844_dc1a26.json\", \"./.hermes/sessions/session_20260506_183215_ae9519.json\", \"./.hermes/sessions/session_20260506_182944_399f0f.json\", \"./.hermes/sessions/session_20260506_182620_eb77d5.json\", \"./.hermes/sessions/session_20260506_181152_6f081a.json\", \"./.hermes/sessions/session_20260506_180500_203de7.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_180001.json\", \"./.hermes/sessions/request_dump_cron_7e876733aba5_20260506_180001_20260506_180016_968092.json\", \"./.hermes/sessions/request_dump_20260506_175844_dc1a26_20260506_175917_015140.json\", \"./.hermes/sessions/20260506_175343_270418dc.jsonl\", \"./.hermes/sessions/session_20260506_175343_270418dc.json\", \"./.hermes/sessions/request_dump_20260506_175343_270418dc_20260506_175401_082534.json\", \"./.hermes/sessions/session_20260506_163041_8d87de.json\", \"./.hermes/sessions/session_20260506_174428_f644e0.json\", \"./.hermes/sessions/request_dump_20260506_163041_8d87de_20260506_171555_784199.json\", \"./.hermes/sessions/request_dump_20260506_163041_8d87de_20260506_171439_910854.json\", \"./.hermes/sessions/request_dump_20260506_163041_8d87de_20260506_171314_530944.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_170015.json\", \"./.hermes/sessions/session_20260506_165948_2adf9a.json\", \"./.hermes/sessions/session_20260506_165347_0b4ecf.json\", \"./.hermes/sessions/20260506_164649_84799b36.jsonl\", \"./.hermes/sessions/session_20260506_164649_84799b36.json\", \"./.hermes/sessions/20260506_163723_ca437e13.jsonl\", \"./.hermes/sessions/session_20260506_163723_ca437e13.json\", \"./.hermes/sessions/.session_20260506_155824_10f844_mkyuz70i.tmp\", \"./.hermes/sessions/session_20260506_155824_10f844.json\", \"./.hermes/sessions/session_20260506_162715_ed28b7.json\", \"./.hermes/sessions/session_20260506_162619_4e4dd3.json\", \"./.hermes/sessions/session_20260506_162126_91e9f9.json\", \"./.hermes/sessions/20260506_161303_1d895513.jsonl\", \"./.hermes/sessions/session_20260506_161303_1d895513.json\", \"./.hermes/sessions/20260506_161222_9d1b40ea.jsonl\", \"./.hermes/sessions/session_20260506_161222_9d1b40ea.json\", \"./.hermes/sessions/session_20260506_161258_c2fb7b.json\", \"./.hermes/sessions/20260506_160638_b8330742.jsonl\", \"./.hermes/sessions/session_20260506_160638_b8330742.json\", \"./.hermes/sessions/20260506_160708_da7e6682.jsonl\", \"./.hermes/sessions/session_20260506_160708_da7e6682.json\", \"./.hermes/sessions/session_20260506_160637_2a8816.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_160041.json\", \"./.hermes/sessions/session_20260506_152248_0eaf53.json\", \"./.hermes/sessions/20260506_155538_a90ca77a.jsonl\", \"./.hermes/sessions/session_20260506_155538_a90ca77a.json\", \"./.hermes/sessions/20260506_155531_052d1521.jsonl\", \"./.hermes/sessions/session_20260506_155531_052d1521.json\", \"./.hermes/sessions/20260506_155346_dc809c07.jsonl\", \"./.hermes/sessions/session_20260506_155346_dc809c07.json\", \"./.hermes/sessions/20260506_155331_16bb508c.jsonl\", \"./.hermes/sessions/session_20260506_155331_16bb508c.json\", \"./.hermes/sessions/session_20260506_154759_fca24b.json\", \"./.hermes/sessions/session_20260506_154412_5faf82.json\", \"./.hermes/sessions/20260506_154034_d717abd5.jsonl\", \"./.hermes/sessions/session_20260506_154034_d717abd5.json\", \"./.hermes/sessions/session_20260506_154206_5b87c4.json\", \"./.hermes/sessions/20260506_152716_cb87e090.jsonl\", \"./.hermes/sessions/session_20260506_152716_cb87e090.json\", \"./.hermes/sessions/session_20260506_151232_221040.json\", \"./.hermes/sessions/session_20260506_142927_9507ce.json\", \"./.hermes/sessions/session_20260506_151119_1bad06.json\", \"./.hermes/sessions/20260506_150641_8fad51df.jsonl\", \"./.hermes/sessions/session_20260506_150641_8fad51df.json\", \"./.hermes/sessions/session_20260506_150304_de31a8.json\", \"./.hermes/sessions/20260506_150046_2c76965b.jsonl\", \"./.hermes/sessions/session_20260506_150046_2c76965b.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_150055.json\", \"./.hermes/sessions/session_20260506_145539_82e932.json\", \"./.hermes/sessions/session_20260506_145405_b5ff0f.json\", \"./.hermes/sessions/session_20260506_144525_a7d8c9.json\", \"./.hermes/sessions/20260506_143535_405261f6.jsonl\", \"./.hermes/sessions/session_20260506_143535_405261f6.json\", \"./.hermes/sessions/request_dump_20260506_143535_405261f6_20260506_144145_831771.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_142253.json\", \"./.hermes/sessions/request_dump_cron_7e876733aba5_20260506_142253_20260506_142954_698384.json\", \"./.hermes/sessions/session_20260506_141525_4d9ee0.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_140034.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_130013.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_120047.json\", \"./.hermes/sessions/session_20260506_112511_1b5a6e.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_110036.json\", \"./.hermes/sessions/session_20260506_101309_cb324c.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_101227.json\", \"./.hermes/sessions/session_20260506_073428_816e09.json\", \"./.hermes/sessions/session_20260506_100822_a1dfd7.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_100017.json\", \"./.hermes/sessions/request_dump_cron_7e876733aba5_20260506_100017_20260506_100626_760096.json\", \"./.hermes/sessions/session_cron_7e876733aba5_20260506_090043.json\", \"./.hermes/sessions/session_20260506_085657_43fbf8.json\", \"./.hermes/sessions/session_20260506_074920_c6d7da.json\"], \"truncated\": true}\n\n[Hint: Results truncated. Use offset=200 to see more, or narrow with a more specific pattern or file_glob.]",
+      "tool_call_id": "call_sG5347xOmu77dYUTcEAWucKJ"
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"/home/zhouhuijuan1987\\nThu May  7 11:35:29 UTC 2026\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_yvrI2yVZdNU2q1wbchvQixkb"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "**Inspecting webhook payload**\n\nI need to check the repository path to see if the payload is likely in the current request or a session file. It seems easier to check the latest session request dump, which may include the payload for this webhook. I'll read the current session file, something like session_20260507_111415. I could search for prompt-qa-unified-wiki in the newest sessions within the .hermes directory. Let's see what I can find!",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "**Inspecting webhook payload**\n\nI need to check the repository path to see if the payload is likely in the current request or a session file. It seems easier to check the latest session request dump, which may include the payload for this webhook. I'll read the current session file, something like session_20260507_111415. I could search for prompt-qa-unified-wiki in the newest sessions within the .hermes directory. Let's see what I can find!",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_HkG-MYejc-DMMtfR9n6JBEzctMIv4HHsZ5qnNW3gF2xp2ovuvB6L7QBOWlJhnNePzZwWkQ_UJuEZVvupXFzjIQoe8wT8uon665RsP79nfys7qMc_a7gL_yjYwvg0wimzPWy71TaJz_2Ip8xpTLpUrDUvIE6II5K-gvKHmi60kxx8pv-zCRls7QhvM5Y2KTA8BrNodWI9c3s4TEZoPHUyhNPUe0fae4vxugqmAoEAi_V0x8R1McsO_BU3Ig9R0jIjGFowGc_Iiwhw9SnpUyb34mu4w_b5uPwJwYQqMFQrps6bZNzujBN6RtfKj9w6C0CdFcLMxm9YtaKlAxOnnglgZCNHiYgG7p6MseBCkUSv3OUcHaayuHE9ZLuFsN-rPrd4VDVezI7dlQZahH3kJqm655shWmXhPI0CbSyU2gu1YxN4Bywi8-2oivgaCd7bUZsLaOAQFv4mII1AdAdxm0-fmWqFmySbIO6akadLBl944gNRWlifulgVXG-_JAQ2-8umDiDVWa8rof9Dv8LHQcMn2s9QiaZihpmawpAMMXdMBqCthnOkMayBGmh6TvMoO-maT6Oe0JQ8_N0c72NxbyuxDgPUx-8HYls_O25LsmZCK40nrXhshywVgDg0PKNS-UJIRc9QqQk5jQEfBbxNvOdQKRjEWf30lnkXUk5e3ni0fVf50XGjvdiloZGwcHlPF12CIMRFA4Sgr9pEDzBeWzqB4QdkqYZPzkEScblrK6VUsbeoOkQmjs8M3BXr1BIhNKCYV_pAQ7yj7-_EO66D09GHtjpdeucgcpGCGAyIXzTBMihLFsXEt0iViyIDiw3cCMlE949f4-o2sAnQ05UWpvy9__HLX38CgIAdcuZ6VuiQowzQtttFGOYjkotiT3pu76poxWaJzPyPYXIaT6eQRF7rzy40Z-M-cDUZg1EbVZ0lRfYDyKuJp6EODvOID1LsWJeEOClMCphxowtFSA-_4v9IWItfyF-LGarKc3x7aTCRd6k3YZhoABBy59m0Ddw0o_qM9UqG2tYySwzxmHlmtrzfudad-cFRtLsk3jzG3vWa8iji8AvlMVSJgaDWO_pye8v6mZ43a6lnptKbPWHLBuYiWQAi6po6GMzFN3w0247uZ_fe0vq7AG6rijxvVZs1brj5yF6l8uX0y-XmsmmzNTtZbx9XdiJ7M9a_BT1vYmVYP58U6ru6Y89YokBH9kDnbMtO_Xms0IguZB04uNE7M_pWzaeBr0hBFP_1UFNi5PkIR8hZMMlzUt_s-CX4whMYfOyRhdJ_XqYWLbgMMmBj8Qebt05Coxx4ZW9fVLiBusQJDc6yjI=",
+          "id": "rs_0bb6db9efbb5659e0169fc7902f7208194a7a1849ed67b0491",
+          "summary": [
+            {
+              "type": "summary_text",
+              "text": "**Inspecting webhook payload**\n\nI need to check the repository path to see if the payload is likely in the current request or a session file. It seems easier to check the latest session request dump, which may include the payload for this webhook. I'll read the current session file, something like session_20260507_111415. I could search for prompt-qa-unified-wiki in the newest sessions within the .hermes directory. Let's see what I can find!"
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_yoQrlCsu0XyflabLzTBsmqyA",
+          "call_id": "call_yoQrlCsu0XyflabLzTBsmqyA",
+          "response_item_id": "fc_0bb6db9efbb5659e0169fc7906ea48819491024c0fa817a3bb",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\":\"prompt-qa-unified-wiki|action|run_id|payload\",\"path\":\".hermes/sessions\",\"target\":\"content\",\"file_glob\":\"*.json\",\"limit\":20}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 20, \"matches\": [{\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 8, \"content\": \"  \\\"system_prompt\\\": \\\"# Hermes Agent Persona\\\\n\\\\n<!--\\\\nThis file defines the agent's personality and tone.\\\\nThe agent will embody whatever you write here.\\\\nEdit this to customize how Hermes communicates with you.\\\\n\\\\nExamples:\\\\n  - \\\\\\\"You are a warm, playful assistant who uses kaomoji occasionally.\\\\\\\"\\\\n  - \\\\\\\"You are a concise technical expert. No fluff, just facts.\\\\\\\"\\\\n  - \\\\\\\"You speak like a friendly coworker who happens to know everything.\\\\\\\"\\\\n\\\\nThis file is loaded fresh each message -- no restart need\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 137, \"content\": \"        \\\"description\\\": \\\"Get a text-based snapshot of the current page's accessibility tree. Returns interactive elements with ref IDs (like @e1, @e2) for browser_click and browser_type. full=false (default): compact view with interactive elements. full=true: complete page content. Snapshots over 8000 chars are truncated or LLM-summarized. Requires browser_navigate first. Note: browser_navigate already returns a compact snapshot — use this to refresh after interactions that change the page, or wi\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 229, \"content\": \"        \\\"description\\\": \\\"Manage scheduled cron jobs with a single compressed tool.\\\\n\\\\nUse action='create' to schedule a new job from a prompt or one or more skills.\\\\nUse action='list' to inspect jobs.\\\\nUse action='update', 'pause', 'resume', 'remove', or 'run' to manage an existing job.\\\\n\\\\nTo stop a job the user no longer wants: first action='list' to find the job_id, then action='remove' with that job_id. Never guess job IDs — always list first.\\\\n\\\\nJobs run in a fresh session with no current-cha\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 233, \"content\": \"            \\\"action\\\": {\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 294, \"content\": \"              \\\"description\\\": \\\"Optional job ID or list of job IDs whose most recent completed output is injected into the prompt as context before each run. Use this to chain cron jobs: job A collects data, job B processes it. Each entry must be a valid job ID (from cronjob action='list'). Note: injects the most recent completed output — does not wait for upstream jobs running in the same tick. On update, pass an empty array to clear.\\\"\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 309, \"content\": \"            \\\"action\\\"\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 318, \"content\": \"        \\\"description\\\": \\\"Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window.\\\\n\\\\nTWO MODES (one of 'goal' or 'tasks' is required):\\\\n1. Single task: provide 'goal' (+ optional context, toolsets)\\\\n2. Batch (parallel): provide 'tasks' array with up to delegation.max_concurrent_children items (default 3, configurable via\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 335, \"content\": \"              \\\"description\\\": \\\"Toolsets to enable for this subagent. Default: inherits your enabled toolsets. Available toolsets: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Common patterns: ['terminal', 'file'] for code work, ['web'] for research, ['browser'] for web interaction, ['terminal', 'file', 'web'] for\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 355, \"content\": \"                    \\\"description\\\": \\\"Toolsets for this specific task. Available: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Use 'web' for network access, 'terminal' for shell, 'browser' for web interaction.\\\"\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 462, \"content\": \"            \\\"action\\\": {\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 469, \"content\": \"              \\\"description\\\": \\\"The action to perform.\\\"\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 489, \"content\": \"            \\\"action\\\",\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 548, \"content\": \"            \\\"action\\\": {\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 564, \"content\": \"              \\\"description\\\": \\\"Process session ID (from terminal background output). Required for all actions except 'list'.\\\"\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 568, \"content\": \"              \\\"description\\\": \\\"Text to send to process stdin (for 'write' and 'submit' actions)\\\"\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 572, \"content\": \"              \\\"description\\\": \\\"Max seconds to block for 'wait' action. Returns partial output on timeout.\\\",\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 577, \"content\": \"              \\\"description\\\": \\\"Line offset for 'log' action (default: last 200 lines)\\\"\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 581, \"content\": \"              \\\"description\\\": \\\"Max lines to return for 'log' action\\\",\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 586, \"content\": \"            \\\"action\\\"\"}, {\"path\": \".hermes/sessions/session_20260506_200345_a781818a.json\", \"line\": 688, \"content\": \"        \\\"description\\\": \\\"Send a message to a connected messaging platform, or list available targets.\\\\n\\\\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\\\\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.\\\",\"}]}",
+      "tool_call_id": "call_yoQrlCsu0XyflabLzTBsmqyA"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_HkJO1CCpkrPWAal7Ih5cFtQqSb5ik0aXKX6jVFqR0E-_n8YPfdOL1b-gOMJyhd-prWSltGOkl33D3E3zgw5UVdryb2-5qE361GmmN9Z0PDmbrSBC70YoIuZ_VEyjuyFNd1kn7tCbC9NhAqXkbOmUr_eUhSlSiSxyL7pcaaHAa8CHC5hYKhltdGhVDefwSfgTZhxnCD4Z3I15Vsgg_lLZJuZin1wKE7_xcq9crb_7p7LlF2NnGw9aLGMdPoYTSbP88wm7XVKaWgN7smO2AC9SkyKwtJPgTWfrBfALYO_z_NHHCBm7UHJsswh_eSqZm_fYDVm5_tWF7XpajTxPEODwN3aHTmyzqHeqwYcICxvhUqDDhEQj_7wEghVDuVmHDqF9xQtG-3NY_XEXRUZK_aa66CBg2a7pKNnpO_KreLojBAMBJJdzSYZGvCai5KB-CG60NXeBuyKMrDC6vA7_H37T0s1WsCXPIo57SBMYkfLPGvt-iYnlT1fmzA9eMjsqYsjHIsgTEyjG5y7xcGAcSJ-ulrbbenUHdTYfo8MqF0KbWhTlwyWB1Jm23_L0MibpkeYGXii6rKmyv9QyS01LZCCcbS4joileQO2POf2TIHjUZ5p4k7o8T7HXSGupzrn2UWNOiKSZxMiDk40Yatq-KUOaWV7ppx8_Aw1BtTwcIo56AKk_hhJjdXOFG55ZJ9TTGiR3ZtLMJvdhWG31Gxhxbbi3ft1r_GJUHtS8LBFPsY6df-Alau5C8rmj5cgPKO6x2ZqpGC7MV1ZGh9sX7QKjQ2ytgx_3Kk5hWTtQeaeube6m-TliAavSw82kiom4VpQhuOE8U0cYQCyRmXoxL9ooeA2DDBTnwq90shBXbMHhfyOX06hDPt0XK-f5cOeGw_0M4KY47K065iCEsamEz1GgNu7bytJrwcixedfutlHpaL5IixlWpwok1yFaEjirR_QoYkwGkv_sIAYbO5HjJ9N95nSwB-UkK7WdE1ARn-7E78YwL9Py-J70SENTVVyTVlOFPkhOYqF2lUSnbdSA7quF-9_RhCjtOiP5F95ucrA6m4esU3cn6YC5uwmVuwiyaaEqye0jMeHxwrEfGbbk-lJO0-1mTFnh5V1koA1-GgnkobUDErY2grJybrXcptVIXH1_kYYTfqp",
+          "id": "rs_0646e7906da9ca970169fc79085cfc81969955c9af4e344bb2",
+          "summary": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_B3dVfUYNdZlcIaYBEWQX4m1U",
+          "call_id": "call_B3dVfUYNdZlcIaYBEWQX4m1U",
+          "response_item_id": "fc_0646e7906da9ca970169fc7909da6081968b769d0a8eef7187",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"target\":\"files\",\"path\":\".hermes/sessions\",\"pattern\":\"*111415*\",\"limit\":20}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 1, \"files\": [\".hermes/sessions/session_20260507_111415_d3829b.json\"]}",
+      "tool_call_id": "call_B3dVfUYNdZlcIaYBEWQX4m1U"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "**Reviewing user input file**\n\nI need to read this file since it might contain the user input payload, which probably includes the prompt I'm working with. I think I'll start by looking at the first few lines to see if it includes any source metadata or the payload in a JSON body. This way, I can gather the necessary information to proceed more effectively. Let's check what's inside!",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "**Reviewing user input file**\n\nI need to read this file since it might contain the user input payload, which probably includes the prompt I'm working with. I think I'll start by looking at the first few lines to see if it includes any source metadata or the payload in a JSON body. This way, I can gather the necessary information to proceed more effectively. Let's check what's inside!",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_HkNXQJq0dXWacX6lOieiqZEBBduO75bKUinDeDpQkr4X2EeqsX8fjI0pudQ0vBH_A6WFaAT_C507upo-LHLDoqIGsMU5WMt014h9TTcWXgI6At7XIk3CSW9qczE3LGOzP6BkWpw2tkSmKPFWeMtInZXoOHk2nY5ul6WL3HSrJXNhTsPE9zmmjppbZ_TpQo0MFRZb5a01LnHW8kGaS1AFy516BAKN7mQZQg6uGqP2nEKdUhsxcbPgfwWHL117PtlBgNl3u3c-QRyxWiW7_3P_aejK1RWnOrbGuM7VwBBynKDndT6xtd7vzdTvf-cDQbgiuxmo0Tjg6CmAOGAUZ_MueOgjbikrZuwFd-7M3ZWqbNzn0pCgLNa_5NifQ7ByC6cInnOq5sl4mlnN1gP8L-sBnAOXdtA6u02ZTSv7xRDCTqdHOUMb2r96YE_RAfkMc3PzMLEzjFBHYiOC3S9kgr2KEzNd-wXxzEoe3FI66ZPQDmriJyP1Lc-QWjlA57gg3U3ugKT9QGPF-Av7zuUuTeLzbPLTpcDUtuBJsbinNxd9jckHi5P1leN6tOmih44UNtjKVSCKsPiv-DxFbHDSbZ2Zvn1O0DirktRfN0StxRfZ7QPi2MY63kf3xNVhjhEYV_j3_AWuvtN4I_JkgIZZJJBl0CE-z_sZQQPZa8NEgYzOl2DRD2-R7BQ_p0CQLuL5dbugq4w8hNbh9Q2_Fb9hvU_hBQqIZXBr3uziYMt3Qze4DO6dxu8_BFAnHhzBH5EaHdBjeMu6VvvkWFs3Q_X8hAlX-81UWdQZMyEYE4HTyitPm9EFzM6v3DGKej5G0F1__x_ipKWCMnr2fgnjnocwPpheZquopqqXsCHSm4ALtn-S5kjdQchw3bi2xPQtIKmFShJv_SnOdS9wGhtudD29xEOpmnueFCEeCsouf1HKfz5ip86zWoZsN1HHkreKMKMAW4IN7Zz6vhCJNpFka5EVP1AcLjxhlr4w90T8hcGkKzlQzK2EwjsB8VUdGlkUPNfMNJTIyVEYHYD74q7RqFdLpV2Avzx-Gz-VNPBEEsi9v4ExipPFgsRq3J0JSlc04QqNWZA9dzA6_m7WzdbA-Fr6-pEFPgTOAKk2dcwc148w2jIdDOko22RHrYOUwSSukoiG4padvcU",
+          "id": "rs_04a629f86bb115c80169fc790b7bb08195b7f56a521ddb087d",
+          "summary": [
+            {
+              "type": "summary_text",
+              "text": "**Reviewing user input file**\n\nI need to read this file since it might contain the user input payload, which probably includes the prompt I'm working with. I think I'll start by looking at the first few lines to see if it includes any source metadata or the payload in a JSON body. This way, I can gather the necessary information to proceed more effectively. Let's check what's inside!"
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_8c05LiMxoez2l06SiGk5XfHL",
+          "call_id": "call_8c05LiMxoez2l06SiGk5XfHL",
+          "response_item_id": "fc_04a629f86bb115c80169fc790d9b3481959f5c6950a7e8bc4e",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\":\".hermes/sessions/session_20260507_111415_d3829b.json\",\"offset\":1,\"limit\":220}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|{\\n     2|  \\\"session_id\\\": \\\"20260507_111415_d3829b\\\",\\n     3|  \\\"model\\\": \\\"gpt-5-nano\\\",\\n     4|  \\\"base_url\\\": \\\"https://api.gptsapi.net/v1\\\",\\n     5|  \\\"platform\\\": \\\"cron\\\",\\n     6|  \\\"session_start\\\": \\\"2026-05-07T11:14:15.960668\\\",\\n     7|  \\\"last_updated\\\": \\\"2026-05-07T11:16:50.314326\\\",\\n     8|  \\\"system_prompt\\\": \\\"# Hermes Agent Persona\\\\n\\\\n<!--\\\\nThis file defines the agent's personality and tone.\\\\nThe agent will embody whatever you write here.\\\\nEdit this to customize how Hermes communicates with you.\\\\n\\\\nExamples:\\\\n  - \\\\\\\"You are a warm, playful assistant who uses kaomoji occasionally.\\\\\\\"\\\\n  - \\\\\\\"You are a concise technical expert. No fluff, just facts.\\\\\\\"\\\\n  - \\\\\\\"You speak like a friendly coworker who happens to know everything.\\\\\\\"\\\\n\\\\nThis file is loaded fresh each message -- no restart needed.\\\\nDelete the contents (or this file) to use the default personality.\\\\n-->\\\\n\\\\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\\\\n\\\\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\\\\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\\\\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\\\\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. After completing... [truncated]\\n     9|  \\\"tools\\\": [\\n    10|    {\\n    11|      \\\"type\\\": \\\"function\\\",\\n    12|      \\\"function\\\": {\\n    13|        \\\"name\\\": \\\"memory\\\",\\n    14|        \\\"description\\\": \\\"Save durable information to persistent memory that survives across sessions. Memory is injected into future turns, so keep it compact and focused on facts that will still matter later.\\\\n\\\\nWHEN TO SAVE (do this proactively, don't wait to be asked):\\\\n- User corrects you or says 'remember this' / 'don't do that again'\\\\n- User shares a preference, habit, or personal detail (name, role, timezone, coding style)\\\\n- You discover something about the environment (OS, installed tools, project structure)\\\\n- You learn a convention, API quirk, or workflow specific to this user's setup\\\\n- You identify a stable fact that will be useful again in future sessions\\\\n\\\\nPRIORITY: User preferences and corrections > environment facts > procedural knowledge. The most valuable memory prevents the user from having to repeat themselves.\\\\n\\\\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts.\\\\nIf you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\\\\n\\\\nTWO TARGETS:\\\\n- 'user': who the user is -- name, role, preferences, communication style, pet peeves\\\\n- 'memory': your notes -- environment facts, project conventions, tool quirks, lessons learned\\\\n\\\\nACTIONS: add (new entry), replace (update existing -- old_text identifies it), remove (delete -- old_text identifies it).\\\\n\\\\nSKIP: trivial/obvious info, things easily re-discovered, raw data dumps, and temporary task state.\\\",\\n    15|        \\\"parameters\\\": {\\n    16|          \\\"type\\\": \\\"object\\\",\\n    17|          \\\"properties\\\": {\\n    18|            \\\"action\\\": {\\n    19|              \\\"type\\\": \\\"string\\\",\\n    20|              \\\"enum\\\": [\\n    21|                \\\"add\\\",\\n    22|                \\\"replace\\\",\\n    23|                \\\"remove\\\"\\n    24|              ],\\n    25|              \\\"description\\\": \\\"The action to perform.\\\"\\n    26|            },\\n    27|            \\\"target\\\": {\\n    28|              \\\"type\\\": \\\"string\\\",\\n    29|              \\\"enum\\\": [\\n    30|                \\\"memory\\\",\\n    31|                \\\"user\\\"\\n    32|              ],\\n    33|              \\\"description\\\": \\\"Which memory store: 'memory' for personal notes, 'user' for user profile.\\\"\\n    34|            },\\n    35|            \\\"content\\\": {\\n    36|              \\\"type\\\": \\\"string\\\",\\n    37|              \\\"description\\\": \\\"The entry content. Required for 'add' and 'replace'.\\\"\\n    38|            },\\n    39|            \\\"old_text\\\": {\\n    40|              \\\"type\\\": \\\"string\\\",\\n    41|              \\\"description\\\": \\\"Short unique substring identifying the entry to replace or remove.\\\"\\n    42|            }\\n    43|          },\\n    44|          \\\"required\\\": [\\n    45|            \\\"action\\\",\\n    46|            \\\"target\\\"\\n    47|          ]\\n    48|        }\\n    49|      }\\n    50|    },\\n    51|    {\\n    52|      \\\"type\\\": \\\"function\\\",\\n    53|      \\\"function\\\": {\\n    54|        \\\"name\\\": \\\"skill_manage\\\",\\n    55|        \\\"description\\\": \\\"Manage skills (create, update, delete). Skills are your procedural memory — reusable approaches for recurring task types. New skills go to ~/.hermes/skills/; existing skills can be modified wherever they live.\\\\n\\\\nActions: create (full SKILL.md + optional category), patch (old_string/new_string — preferred for fixes), edit (full SKILL.md rewrite — major overhauls only), delete, write_file, remove_file.\\\\n\\\\nOn delete, pass `absorbed_into=<umbrella>` when you're merging this skill's content into another one, or `absorbed_into=\\\\\\\"\\\\\\\"` when you're pruning it with no forwarding target. This lets the curator tell consolidation from pruning without guessing, so downstream consumers (cron jobs that reference the old skill name, etc.) get updated correctly. The target you name in `absorbed_into` must already exist — create/patch the umbrella first, then delete.\\\\n\\\\nCreate when: complex task succeeded (5+ calls), errors overcome, user-corrected approach worked, non-trivial workflow discovered, or user asks you to remember a procedure.\\\\nUpdate when: instructions stale/wrong, OS-specific failures, missing steps or pitfalls found during use. If you used a skill and hit issues not covered by it, patch it immediately.\\\\n\\\\nAfter difficult/iterative tasks, offer to save as a skill. Skip for simple one-offs. Confirm with user before creating/deleting.\\\\n\\\\nGood skills: trigger conditions, numbered steps with exact commands, pitfalls section, verification steps. Use skill_view() to see format examples.\\\\n\\\\nPinned skills are off-limits — all write actions refuse with a message pointing the user to `hermes curator unpin <name>`. Don't try to route around this by renaming or recreating.\\\",\\n    56|        \\\"parameters\\\": {\\n    57|          \\\"type\\\": \\\"object\\\",\\n    58|          \\\"properties\\\": {\\n    59|            \\\"action\\\": {\\n    60|              \\\"type\\\": \\\"string\\\",\\n    61|              \\\"enum\\\": [\\n    62|                \\\"create\\\",\\n    63|                \\\"patch\\\",\\n    64|                \\\"edit\\\",\\n    65|                \\\"delete\\\",\\n    66|                \\\"write_file\\\",\\n    67|                \\\"remove_file\\\"\\n    68|              ],\\n    69|              \\\"description\\\": \\\"The action to perform.\\\"\\n    70|            },\\n    71|            \\\"name\\\": {\\n    72|              \\\"type\\\": \\\"string\\\",\\n    73|              \\\"description\\\": \\\"Skill name (lowercase, hyphens/underscores, max 64 chars). Must match an existing skill for patch/edit/delete/write_file/remove_file.\\\"\\n    74|            },\\n    75|            \\\"content\\\": {\\n    76|              \\\"type\\\": \\\"string\\\",\\n    77|              \\\"description\\\": \\\"Full SKILL.md content (YAML frontmatter + markdown body). Required for 'create' and 'edit'. For 'edit', read the skill first with skill_view() and provide the complete updated text.\\\"\\n    78|            },\\n    79|            \\\"old_string\\\": {\\n    80|              \\\"type\\\": \\\"string\\\",\\n    81|              \\\"description\\\": \\\"Text to find in the file (required for 'patch'). Must be unique unless replace_all=true. Include enough surrounding context to ensure uniqueness.\\\"\\n    82|            },\\n    83|            \\\"new_string\\\": {\\n    84|              \\\"type\\\": \\\"string\\\",\\n    85|              \\\"description\\\": \\\"Replacement text (required for 'patch'). Can be empty string to delete the matched text.\\\"\\n    86|            },\\n    87|            \\\"replace_all\\\": {\\n    88|              \\\"type\\\": \\\"boolean\\\",\\n    89|              \\\"description\\\": \\\"For 'patch': replace all occurrences instead of requiring a unique match (default: false).\\\"\\n    90|            },\\n    91|            \\\"category\\\": {\\n    92|              \\\"type\\\": \\\"string\\\",\\n    93|              \\\"description\\\": \\\"Optional category/domain for organizing the skill (e.g., 'devops', 'data-science', 'mlops'). Creates a subdirectory grouping. Only used with 'create'.\\\"\\n    94|            },\\n    95|            \\\"file_path\\\": {\\n    96|              \\\"type\\\": \\\"string\\\",\\n    97|              \\\"description\\\": \\\"Path to a supporting file within the skill directory. For 'write_file'/'remove_file': required, must be under references/, templates/, scripts/, or assets/. For 'patch': optional, defaults to SKILL.md if omitted.\\\"\\n    98|            },\\n    99|            \\\"file_content\\\": {\\n   100|              \\\"type\\\": \\\"string\\\",\\n   101|              \\\"description\\\": \\\"Content for the file. Required for 'write_file'.\\\"\\n   102|            },\\n   103|            \\\"absorbed_into\\\": {\\n   104|              \\\"type\\\": \\\"string\\\",\\n   105|              \\\"description\\\": \\\"For 'delete' only — declares intent so the curator can tell consolidation from pruning without guessing. Pass the umbrella skill name when this skill's content was merged into another (the target must already exist). Pass an empty string when the skill is truly stale and being pruned with no forwarding target. Omitting the arg on delete is supported for backward compatibility but downstream tooling (e.g. cron-job skill reference rewriting) will have to guess at intent.\\\"\\n   106|            }\\n   107|          },\\n   108|          \\\"required\\\": [\\n   109|            \\\"action\\\",\\n   110|            \\\"name\\\"\\n   111|          ]\\n   112|        }\\n   113|      }\\n   114|    },\\n   115|    {\\n   116|      \\\"type\\\": \\\"function\\\",\\n   117|      \\\"function\\\": {\\n   118|        \\\"name\\\": \\\"skill_view\\\",\\n   119|        \\\"description\\\": \\\"Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.\\\",\\n   120|        \\\"parameters\\\": {\\n   121|          \\\"type\\\": \\\"object\\\",\\n   122|          \\\"properties\\\": {\\n   123|            \\\"name\\\": {\\n   124|              \\\"type\\\": \\\"string\\\",\\n   125|              \\\"description\\\": \\\"The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans').\\\"\\n   126|            },\\n   127|            \\\"file_path\\\": {\\n   128|              \\\"type\\\": \\\"string\\\",\\n   129|              \\\"description\\\": \\\"OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content.\\\"\\n   130|            }\\n   131|          },\\n   132|          \\\"required\\\": [\\n   133|            \\\"name\\\"\\n   134|          ]\\n   135|        }\\n   136|      }\\n   137|    },\\n   138|    {\\n   139|      \\\"type\\\": \\\"function\\\",\\n   140|      \\\"function\\\": {\\n   141|        \\\"name\\\": \\\"skills_list\\\",\\n   142|        \\\"description\\\": \\\"List available skills (name + description). Use skill_view(name) to load full content.\\\",\\n   143|        \\\"parameters\\\": {\\n   144|          \\\"type\\\": \\\"object\\\",\\n   145|          \\\"properties\\\": {\\n   146|            \\\"category\\\": {\\n   147|              \\\"type\\\": \\\"string\\\",\\n   148|              \\\"description\\\": \\\"Optional category filter to narrow results\\\"\\n   149|            }\\n   150|          }\\n   151|        }\\n   152|      }\\n   153|    }\\n   154|  ],\\n   155|  \\\"message_count\\\": 54,\\n   156|  \\\"messages\\\": [\\n   157|    {\\n   158|      \\\"role\\\": \\\"user\\\",\\n   159|      \\\"content\\\": \\\"[IMPORTANT: You are running as a scheduled cron job. DELIVERY: Your final response will be automatically delivered to the user — do NOT use send_message or try to deliver the output yourself. Just produce your report/output as your final response and the system handles the rest. SILENT: If there is genuinely nothing new to report, respond with exactly \\\\\\\"[SILENT]\\\\\\\" (nothing else) to suppress delivery. Never combine [SILENT] with content — either report your findings normally, or say [SILENT] and nothing more.]\\\\n\\\\nYou are a Hermes agent tasked with synchronizing the Hermes brain and generating a comprehensive Telegram report with GitHub links.\\\\n\\\\n## Steps:\\\\n\\\\n1. **Perform sync:**\\\\n   - cd ~/hermes-brain && ./scripts/auto_sync.sh\\\\n\\\\n2. **Capture commit info:**\\\\n   - Run: git log -1 --format=\\\\\\\"%H %h %s\\\\\\\" (full SHA, short SHA, subject)\\\\n   - Run: git log -1 HEAD~1 --format=\\\\\\\"%H\\\\\\\" (previous commit SHA)\\\\n   - Run: git remote get-url origin (get repo URL)\\\\n   - Run: git diff HEAD~1 HEAD --stat\\\\n   - Run: git diff HEAD~1 HEAD --no-color | head -1000\\\\n\\\\n3. **Generate GitHub links:**\\\\n   From the repo URL, extract owner/repo name.\\\\n   Create these links:\\\\n   - Compare link: https://github.com/owner/repo/compare/PREV_SHA...CURRENT_SHA\\\\n   - Commit link: https://github.com/owner/repo/commit/CURRENT_SHA\\\\n\\\\n4. **Generate comprehensive Telegram report with THREE sections:**\\\\n\\\\n## Section A: 核心摘要 (Semantic Insights - 2-3 bullets)\\\\n   - Analyze the diffs to understand WHAT changed meaningfully\\\\n   - Be specific with details (not vague phrases)\\\\n\\\\n## Section B: 详细变更（保留原有格式 - detailed list）\\\\n   - 文件变更统计\\\\n   - 新增文件列表\\\\n   - 修改文件列表\\\\n\\\\n## Section C: 快速导航（GitHub links）\\\\n   - Direct links to view changes on GitHub\\\\n\\\\n## Format for Telegram:\\\\n\\\\n✅ Hermes Brain 同步完成\\\\n\\\\n🎯 核心更新摘要：\\\\n• [Key insight 1 - specific details]\\\\n• [Key insight 2 - specific details]\\\\n\\\\n📋 变更详情：\\\\n• 文件变更: X 个，Y 行(+)，Z 行(-)\\\\n• 新增文件: [count] 个\\\\n  - path/to/file1.json\\\\n  - path/to/file2.md\\\\n• 修改文件: [count] 个\\\\n  ... [truncated]\\n   160|    },\\n   161|    {\\n   162|      \\\"role\\\": \\\"assistant\\\",\\n   163|      \\\"content\\\": \\\"\\\",\\n   164|      \\\"reasoning\\\": null,\\n   165|      \\\"finish_reason\\\": \\\"tool_calls\\\",\\n   166|      \\\"tool_calls\\\": [\\n   167|        {\\n   168|          \\\"id\\\": \\\"call_7CApvTo1uPKBmjCnjbhG2OJk\\\",\\n   169|          \\\"call_id\\\": \\\"call_7CApvTo1uPKBmjCnjbhG2OJk\\\",\\n   170|          \\\"response_item_id\\\": \\\"fc_7CApvTo1uPKBmjCnjbhG2OJk\\\",\\n   171|          \\\"type\\\": \\\"function\\\",\\n   172|          \\\"function\\\": {\\n   173|            \\\"name\\\": \\\"terminal\\\",\\n   174|            \\\"arguments\\\": \\\"{\\\\\\\"workdir\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"command\\\\\\\":\\\\\\\"bash -lc 'cd ~/hermes-brain && ./scripts/auto_sync.sh'\\\\\\\",\\\\\\\"timeout\\\\\\\":120000}\\\"\\n   175|          }\\n   176|        }\\n   177|      ]\\n   178|    },\\n   179|    {\\n   180|      \\\"role\\\": \\\"tool\\\",\\n   181|      \\\"content\\\": \\\"{\\\\\\\"error\\\\\\\": \\\\\\\"Foreground timeout 120000s exceeds the maximum of 600s. Use background=true with notify_on_complete=true for long-running commands.\\\\\\\"}\\\",\\n   182|      \\\"tool_call_id\\\": \\\"call_7CApvTo1uPKBmjCnjbhG2OJk\\\"\\n   183|    },\\n   184|    {\\n   185|      \\\"role\\\": \\\"assistant\\\",\\n   186|      \\\"content\\\": \\\"\\\",\\n   187|      \\\"reasoning\\\": null,\\n   188|      \\\"finish_reason\\\": \\\"tool_calls\\\",\\n   189|      \\\"tool_calls\\\": [\\n   190|        {\\n   191|          \\\"id\\\": \\\"call_w0RhTK99Y0P8yIBPV2zm1LYG\\\",\\n   192|          \\\"call_id\\\": \\\"call_w0RhTK99Y0P8yIBPV2zm1LYG\\\",\\n   193|          \\\"response_item_id\\\": \\\"fc_w0RhTK99Y0P8yIBPV2zm1LYG\\\",\\n   194|          \\\"type\\\": \\\"function\\\",\\n   195|          \\\"function\\\": {\\n   196|            \\\"name\\\": \\\"terminal\\\",\\n   197|            \\\"arguments\\\": \\\"{\\\\\\\"command\\\\\\\":\\\\\\\"bash -lc 'cd ~/hermes-brain && ./scripts/auto_sync.sh'\\\\\\\",\\\\\\\"timeout\\\\\\\":600000,\\\\\\\"workdir\\\\\\\":\\\\\\\"\\\\\\\"}\\\"\\n   198|          }\\n   199|        }\\n   200|      ]\\n   201|    },\\n   202|    {\\n   203|      \\\"role\\\": \\\"tool\\\",\\n   204|      \\\"content\\\": \\\"{\\\\\\\"error\\\\\\\": \\\\\\\"Foreground timeout 600000s exceeds the maximum of 600s. Use background=true with notify_on_complete=true for long-running commands.\\\\\\\"}\\\",\\n   205|      \\\"tool_call_id\\\": \\\"call_w0RhTK99Y0P8yIBPV2zm1LYG\\\"\\n   206|    },\\n   207|    {\\n   208|      \\\"role\\\": \\\"assistant\\\",\\n   209|      \\\"content\\\": \\\"\\\",\\n   210|      \\\"reasoning\\\": null,\\n   211|      \\\"finish_reason\\\": \\\"tool_calls\\\",\\n   212|      \\\"tool_calls\\\": [\\n   213|        {\\n   214|          \\\"id\\\": \\\"call_0Z4I9T0GGzL8qGSTCc1wpjSg\\\",\\n   215|          \\\"call_id\\\": \\\"call_0Z4I9T0GGzL8qGSTCc1wpjSg\\\",\\n   216|          \\\"response_item_id\\\": \\\"fc_0Z4I9T0GGzL8qGSTCc1wpjSg\\\",\\n   217|          \\\"type\\\": \\\"function\\\",\\n   218|          \\\"function\\\": {\\n   219|            \\\"name\\\": \\\"terminal\\\",\\n   220|            \\\"arguments\\\": \\\"{\\\\\\\"command\\\\\\\":\\\\\\\"bash -lc 'cd ~/hermes-brain && /bin/true'\\\\\\\",\\\\\\\"timeout\\\\\\\":120000}\\\"\\n   221|\", \"total_lines\": 752, \"file_size\": 192836, \"truncated\": true, \"hint\": \"Use offset=221 to continue reading (showing 1-220 of 752 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_8c05LiMxoez2l06SiGk5XfHL"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "**Inspecting webhook requests**\n\nI'm thinking about performing the user task, likely related to the repo path. It seems I might need to get the payload action, which could be absent. Perhaps I should inspect the webhook request dump, so I'll look for a dump file from this session. I'll search for the latest request_dump files nearby to see if they include the payload I need. Let's see what I can find!",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "**Inspecting webhook requests**\n\nI'm thinking about performing the user task, likely related to the repo path. It seems I might need to get the payload action, which could be absent. Perhaps I should inspect the webhook request dump, so I'll look for a dump file from this session. I'll search for the latest request_dump files nearby to see if they include the payload I need. Let's see what I can find!",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_HkTh-6tpKo3BmPyGdmMyjXO9j0kOC_iRx62lywz-9-BTMsxLaPE3WOTCLQLME1qZ3bErBO6JEbm9HHm0FA3Df0PtnO8f9rmpHYNkpp8fs-gJZV-KucupjSxOtkxGVb4MQ9wj8WtISCzCt7l_2VJdXd1UJ1lhW5U8Xm_Qqrjlo5b9teqxJ8DSD7djtEVQR_29tq02EpVqKUO6b3jarkXJ586kWKI-qL4q_HpH-2HCdvht5VF8BTrAqVOcC7YB0j8sTcnJskrTnsCrT-xk-G271SD0bRvCL8qZGKcn11EIOAUa32vG0InXWnuORWkwkE8CH4DWTWiXUsqoMUO1QALBUdxTTWq_Xq6clg6njBI2hHGkEv6HmdlaeyAK2dX1MolGdJF3hdpDtovnhG49P9pcLgj-vsP-eNE1zfjCmFGRc_57UUpeWG1Ocvht5bFRzldgO9ri7NHTHTCGuVAnXSlSiz6HNeS1gFy8mgo6f6jtCq2dgJkLrIkRIQqr8Tg25AC38g2g88aKZuLyxNOrQWEF-W2Y-oDvgEviR8QFu1eH4qmyvZJvicPs9KNcAIBhorTMEeSHAJDeyxV2w71_EbvJwMJxfPL1QR_XNU3_fvKHdeMdIn7OG9TUX0CFUTZsXure5B0oxxc8M6Nwc7EKmlP-NDU4Gjlir_qSDgE0ukNTP-LtWZn7bL9kC8gYHAn4oxUaeCso2T0-YYE-rNvzr39BbMzDxc_QN4pnfvYOnR5jvHweABL88PbMwn2J9ttuLZP3urVl5gxcfgTZIfxq4tZj9fbREG-dLInb2m8QNp59Wuza1FrrDwHExndUkvvqAsdppVn2wXM-kwbennyGq7sAZ4-C6-mV1tVgQ2Sd-H7P7mBu7xhkI4KZTwEuBkSZBo-AWdlnBvYEPUFKOO1hwazpvg7nuxse3zWChCONY0a-ca1Jffi-ltAKW4lNAb7KS5_-Mj0t4iB9GnlHqGn5GjLdnaPtR2BJsmDeXyxyV0cxk963sgUTyJ_3FMyFu2oMmbkPvfMaivoJKhcFLV_2CaZBXVWkglyG2MLDUiOYM66BcuRYQngnXps7EJINWZ5U6eK3Xt5j6RFGVyQLMux168UJml4b9EyW7Cgs7OfMhGg4ehc2CJhWpQqRXdoo0TC-1cWaZReWUeCfJRA5Zs1VZkPvwx5udU_zN8B3GTudzHYMSoZkd1qFuO5eNro2-mh5Zd0bActspdcSk4X6U3aqta2rm-x47YCY9FUEEiOLSY4rthm2uXuYaotVAxzL0PANls9oft8",
+          "id": "rs_01b8124c12a645fe0169fc790fedd88196a62512af2b5d1a79",
+          "summary": [
+            {
+              "type": "summary_text",
+              "text": "**Inspecting webhook requests**\n\nI'm thinking about performing the user task, likely related to the repo path. It seems I might need to get the payload action, which could be absent. Perhaps I should inspect the webhook request dump, so I'll look for a dump file from this session. I'll search for the latest request_dump files nearby to see if they include the payload I need. Let's see what I can find!"
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_FCTvJ3nu4isbWhb0QneCAw1U",
+          "call_id": "call_FCTvJ3nu4isbWhb0QneCAw1U",
+          "response_item_id": "fc_01b8124c12a645fe0169fc79135fd481968cded49d727479fc",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"limit\":20,\"path\":\".hermes/sessions\",\"pattern\":\"request_dump_*20260507*\",\"target\":\"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 0}",
+      "tool_call_id": "call_FCTvJ3nu4isbWhb0QneCAw1U"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "**Evaluating payload actions**\n\nI need to decide what to do if no payload action is found and possibly report the need for one. I might be able to infer a default incremental build from the webhook source, like qa-wiki-ops. It might make sense to search for a pending payload file in the repo logs, possibly linked to the latest run ID. Maybe checking the environment variables for the webhook body could help too, so I’ll do that.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "**Evaluating payload actions**\n\nI need to decide what to do if no payload action is found and possibly report the need for one. I might be able to infer a default incremental build from the webhook source, like qa-wiki-ops. It might make sense to search for a pending payload file in the repo logs, possibly linked to the latest run ID. Maybe checking the environment variables for the webhook body could help too, so I’ll do that.",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_HkaFLg3b9nMHmWZNmkJet_ecIr2Hgh7O7HOSTFJqe6Wg5XJv68ofpqHazMHXwbxEsO9t3UmPnbyPkhI9n-QfARQ7CJkwsUDnN1-ZbWrluCt0mJyBOQpq49tD-qtpdLj99VwHVh-Eg4EyJjx5ZXav1YChtLjAC2MVeSv4O4wM7VIA2-dayGAItqDkqN9ABY1gx6CbrHh1RcyZS9gdQarJw4LLRbdB4pTiCaALHWJIkGplpq2C-t-g47UDjajiRDBkwmY2WIt670-rLjnnAzS98ceAxgY7bi8cBgHvB9GT-BFGy8LhzjQHNSqA3UUzbFK7wDXAU06CGbpfUzgSpYoqkWwgAoCxtgTny2177Lms9fMu1MHiIN1qFIU7Qb5DaRXxft6zDCyagrsd_Fg8A7ZUQcMkZztUhVAhCFOo3A_obeknKtD_eQP_n4tX9mJg5sV64uuBTBSQfYf0aCm37-hcmj1Yh7pE5lAY0U2STlGcr6ey6LEm99ecZStGNoszbW8i3U_O0qSXUFVEKzg8mNQXcHGYkykcFNrBL7MJvbAsv9dPFNRGHX7Mo5xQyrAfmtoxofUv8T3rJF-Z7Sao0C8g-TPjhCgW-A17WlTi730QwAdXEQyrOJIwMvLLnLhg5ZqIhzDRzkqNXSYufJt85kQvoxnQ5-_kYheOnshqK6Gk_rgfJ9VYurYhuJGdGnIph8H0Fk4iPucp6_RYt9D0_bprn7lF_-oYsvfU-ra2cYglzNgKcVc6HsvZufSzSaseWHZnkSBwLhO-nQlhJx7GNaKSy7trcABV-TnEQgsEhhBby381cwAEyxwnlmR3kuF0BsOfDr1lx51TPa5T1bVGGzQk29m_f0MS8Dcz_vko_FeakpqDWeg0wiiiRpRwTLQiJV5SYsTTrFjgzYEbmgKnaohLiejAwe3nrjmMn4TI76AzRJk9QOcAPNjbXWqniIm-qqsyegsKj2GKfVUpSXs0HOL0AxCZ2meXE6KnhRtD3NIYsct8sWWV1t9Njt1qqkPSFvHINGqa21yQgLOzMuhCTk-fHeLKUe60P9iEXPvAhQ9oLLBqiqlGX7ZIfz6Fm5niNzHpqLIZNJxA2JT7ay4PQ56Q6diWT6ici5afqEU2kIR-1FDIGX9lnd2auJAit-tKOF5IaBlNHELWUQCW9MEBXBYrhnKe2LEm3lDSmWTexc_cwQSSGZqv3j1iD8Bmz3lSSgbMDcSJmPVXfYdKFBSpAAg7XnfIgHyhfE5t1uPPl96TrZk_IwiI0iXi1ADSG1B6_eFskpwex_pW0MtAXNtFaHpunK4nesvf3pvhqDqInP_oOu6F7gNaTtzhbgj0jm__hRq_Bkj9ck86SOmJkBgwsNkJkKGaWu35GBI8SqNYqwE2VXaGsv6o71d6PTynlvnAA4-iOG0QVC5Pn9BVx9vX6Cg4xqFosdTxV3r31APRVfwsySgmmjmRZpumO3dPmxiIJchz1KRQcnnKFTwRxU1np-RhlWeUq3-0VfBelLaOiLcR0O0rsH3hSaqK_K9T7BKoLcwXpyznc1xm1UejeN9YpSrmeBVAYm6Kgr9lL2dmTNGZNHi4m97zkQ-_2T4A4e95o6ZRWPl0EeRddJRD9q8wIaKhowWdTE0sOA8WcPA9QNrmKtYbSIDF4fMNI3sJt_AEbhPJ0ZWpuqjGBxNVI7iD6vGczIFE6nB6uebAgsOPgj3ruymQ1EzSGoi_gEmAgdfJVARNwkqZJEh_vfI9XnBeROmZWpa8tNO2YNFj_Rxvf_IQOCEnXTyLHmGMbqeDwbqJpn_oItLHnFG_g6xF6SewRXguea2epD_f3bGFyl7sCw8yX_Pt4zfh4ChMNyiGfC2-JFsHt4tR8oMF5GpPt3BA1fIjUBa-3HzGsC2YL-cIZjsWLA0SPNpUEDIGLqTufizpUybDCWZIKVHUB_dVBIQ6bWrPjuGOPaRbQepmoTrA1pJAIAjePYOSua7az7f5RtnKKwcireA0A0adFN16D3A4IXPIutHlXyBBFNhasnHauQF3kLt1QUbu8fQl_V2uBLy66l_y4B6rKwt_Q9kBKt-TUwDDWczH10lGeN0R0t2O1I3qPglnp-dSU3thccOvOPSp1QyM3VjZR_TsBjz3RNN2YY11EranoiqoKQ2Pbxc76EvPEw6myBqb2_3xIq5Jx6caNtre3uunPUnZH5MBwIjid-GNByG8TchYb1VwGSEG8YmD0UkDr16JJ-PQr3Q3PpZoaVtKmeaRvmgesFCFnWbet3zZzLv9sWlNPngdpb-f_YnHL6TZytoUZXXDR2mAWSBgHYJI4zu",
+          "id": "rs_07c2a9ccb9210d260169fc791589cc819091ea9f17a7c88470",
+          "summary": [
+            {
+              "type": "summary_text",
+              "text": "**Evaluating payload actions**\n\nI need to decide what to do if no payload action is found and possibly report the need for one. I might be able to infer a default incremental build from the webhook source, like qa-wiki-ops. It might make sense to search for a pending payload file in the repo logs, possibly linked to the latest run ID. Maybe checking the environment variables for the webhook body could help too, so I’ll do that."
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_jY0FDcPYIma8l4u78el9XHfc",
+          "call_id": "call_jY0FDcPYIma8l4u78el9XHfc",
+          "response_item_id": "fc_07c2a9ccb9210d260169fc791a95e08190bc30c4f457c62f07",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\":\"python3 - <<'PY'\\nimport os, json\\nkeys=[k for k in os.environ if any(x in k.lower() for x in ['payload','action','run','webhook','question','save'])]\\nfor k in sorted(keys):\\n    print(f\\\"{k}={os.environ[k]}\\\")\\nPY\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"DISCORD_REACTIONS=true\\nTELEGRAM_REACTIONS=false\\nTERMINAL_DOCKER_RUN_AS_HOST_USER=False\\nTERMINAL_VERCEL_RUNTIME=node24\\nXDG_RUNTIME_DIR=/run/user/1000\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_jY0FDcPYIma8l4u78el9XHfc"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_Hkf92oV0AEjE2BB5r4i7d2R_eCBpjGDHGylR4_04femFLtpKJalymA5ncueSJ7EWbb9UqQeQ9wSOsbSGM1cCZhrxuLzgObHD9R3xPGoU-hiBrDIzZPdNp5dbmFrq-14xTJuzcp7x-5oX5PSaRCCTfC68Ak9A0bVRHRRqV56eWZd_U6Hyb6_jtk0_9aKbEMzIXcyCFPrKw4VL_UoIdvbjY8Whs3Hh1RSGTNMcCLnCJKqtNCEYyNy_T4vfg9v5YgMiTWq0Uh618GwGuldA0T9ai0LvBrl2ErLjSE_L-lHem3WP7HLLBUYUN4IXbg4L_nz7HTR6g5urDh2Vwc6JiBczmxyikwHNMw3fYHWWU38Vxxh8r2A0Qj-RhcoCaAaFRvDsjO0cHzlmeNZafaaZqOUmc5yzs43QcrjJy6i-Z-BHugmsj495teVqnP6LOEd2S2m63lMWSVyySY29MmGwI9IQR9SCvYaGLHPu4aWd31rfKOrcvHXb1aYJ4jA7b44u3EppIFYd6Pbccp3rFDQLkqSazQ_wmV7ujl05CbISuK8p6twM6ptOpQnMd1mgkjlb0FAQJvZGtc3Oyey6QzfjGBb5wy_GY-wopWXZz06Nm0Ipcg4HJNxHUgP51TteaEB45_YnngEXPET6M6aIkwvm7FLsbxhNtTYDHX8osWvUr6Y5_s0SxueFwQXoiBzWVWzy1vEeqClgMDxTih5cZtg4TcqhlLqupYb_b-dc2insyi-S6zYRAwG5xpGYLtptF-Hc0ehlgdhkHqlgjHaPsJpoZh5VMkBtsEfg6a2DedohPVvS9r678WCHStYWGjoUcY5Mh6DPZ_lyKzu2e87Zc_0vATO_r_zrhw9HxzpgJ88CQKv6-4S-58UcTr84VBhscONnp_K2B8SJ5-Zjcd1AUVXFWQrt7bHCICD4bHPHNl-j8S48_BL_kltvmnTnpfg0etwPh6dVa2X7cZFbvqGvjcIVP2XMXOLqIxTzTO8C75Gzl2qbybJdA43PNGfHbUSljbAU42RGqJJ8TciqIPGjZjrrRidD0mt5xcJ6Tp5lH95l-yATPpgnt8OD1VT3SHzjw0h0ZJJ15o8pfIm0fF7MJsbxuBHI7MtnqAosmXFTCWDup_Uco9b4nSZZlrL-cYeEYX34dbub3zMA6VrQbzFL3l7t0v-U0BwdkMlLrAqWb-J9wH0ZuLYjmrEZGlzZq5G0fOJTQ1yuh_yq1mwd2i3KH_1EK3ZrwfFpNe2FNYRfCLbJax8WPVHMkTufBhLyOCZZdF67Lmk_-w3AyESj3S-9gIW27Xe2iLGl7ia6vqXrX5VyKZSWWVKzL3gMskYnlLKaSsVjYhbM8Yv3uoJPunrgZIG7vMtyBhOT4wCO8mmF9ungXmILUw1K6IJa9lISFiJFpDKDJ_HYmGNlw2LVhafU0DRh4__quQbG0Sfb4wFgsdMgPfEfvF-oP6mFs9zr5JeZbC1hE6A4pXCyu3RoSNvgkIXpFRDmtIlT9SvN07TSYeUlZ6V4OqvQ80aDwbl2gwvEU4v_Aqec1DnltIMBZXX9Cy_ajX8MJY2AXE3CBVo3jWkjkMX7coi0qOihswFMyXVSTRWndAQTs0SRfUnt83J3lzVE7Ysx7T6lSiGrnsIOixEIPwuEBBz4FIgBExdPMqovZzcasCSj_OfsKGNmOSI0-5FlDZQu738eZzNpyVQwWHs3xSh2N0EcnajIBJTqx-bBEB5sYf64GdRYNuJo8NlEcrXVpz9Lac7A9XO4fXMJKUBf1Ti1gUTqOndYpD64JF0TWMt3u8tOaxi",
+          "id": "rs_047d2795c6efb9c30169fc791c893481978c805ede3e82453d",
+          "summary": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_x2yOPUYQZYZxY6gVDxAbVdTy",
+          "call_id": "call_x2yOPUYQZYZxY6gVDxAbVdTy",
+          "response_item_id": "fc_047d2795c6efb9c30169fc791f2ea48197b32ed0147db14aa1",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\":\"bash -lc 'set -euo pipefail\\nREPO=/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki\\ncd \\\"$REPO\\\"\\necho \\\"repo=$(pwd)\\\"\\n# protective stash sequence\\nSTASH_NAME=\\\"webhook-auto-stash-$(date -u +%Y%m%dT%H%M%SZ)\\\"\\ngit status --porcelain\\nif [ -n \\\"$(git status --porcelain)\\\" ]; then\\n  git stash push -u -m \\\"$STASH_NAME\\\" >/tmp/stash_out.txt || true\\n  echo \\\"stash_created=1 name=$STASH_NAME\\\"\\nelse\\n  echo \\\"stash_created=0\\\"\\nfi\\ngit fetch origin\\ngit checkout main\\ngit pull --ff-only origin main\\nif [ -n \\\"$(git stash list | grep \\\"$STASH_NAME\\\" || true)\\\" ]; then\\n  set +e\\n  git stash pop\\n  POP_RC=$?\\n  set -e\\n  echo \\\"stash_pop_rc=$POP_RC\\\"\\nfi\\ngit status -sb\\n'\",\"timeout\":600}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"repo=/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki\\nstash_created=0\\nAlready on 'main'\\nYour branch is up to date with 'origin/main'.\\nFrom https://github.com/divanoo65/prompt-qa-unified-wiki\\n * branch            main       -> FETCH_HEAD\\nAlready up to date.\\n## main...origin/main\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_x2yOPUYQZYZxY6gVDxAbVdTy"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_HkmELazPsieI9ADoUmA25DU6v29Z8NHNNXKlAgXlW0ru3EBize1R7aur6LwRgDPBCF7AVvXFlhS24_9GIs_60E1cZVu41m21W7MOuAcKF438Le0ssPuYg5XaNzchkQQyxrYiee82QuKdElxiEHAxDpNmgHmjsZ2krVLNSYxoeE4G5tTbzZQQk0HVnCvolssapWLfLQYM27LOxTyn0Mc4-AISTq9p9a3k7I6v6Tro-2cWPa6eTH923AEgGmuO-_Mfvy-qmTwD22hj9vtRGfrFYnCqaKB45tCpjTcfDTHGpUGLo4rne9GaHKDxo_RxTXjXdjZel6R55IcO8ixXO3VNTIVoeccP4v-NUpFvYociISkPLOJCshaY4uSRJo6XW1QZwGjM7qBBfesdY3oeYfCc6JYh-euMGpW0QjbKR6VZvbqCbTNun4blXQY5f9_XfLFz81VcaxjiWSoOOIsOc4o_lJiNUx6r0T6W2Ux-d58B07zXZQLdlwHACZAUiZRMd97vYRQ4J7CJGqo7_-E6wODzizIIMFRMwQ8vYaHYFpXkh_0rypbjNf2V-Bs0oOfjznEQMcBnIoGHAqa7YJNEQVHJXvg0oOe633dnF4zAbTbZbQRmyV70WKkFZndeshL5vE3liA7VfwSlsmcAvIITiQ8XjTfLT17-va1Uii-MZ88fRahCWm1la3gNG0Vgi6xajSxFSSYcOOYFLw7rNLjr7oOt_d9Vz2LRYeUQa52mebSgxYwlV-_Ns6DOFXLL7p96ZxydJ4E78v70CvMCNYTq5-2DMNwI7cscE0BEOd8HNBZZffdqoGB9fWwabp2SM1h__gSFVbBtU7t5Oi_l3l2nj52MuZS3jdGtpPTi0bUJnu31r7FfuWZux2oLzTvkgq4XpHvtY0MWUQFJzA-CAu8f-DCw4qf1FREBt0chrUaMTTGw6EFYvMtiZrGFE_FJsdesKlar71TbrB4S7IcZwKKrMl278D0QKn-cva81zQwKJO2IokdxlHsPTtD1vWFWLGeQ_NPBf3UGYOfa9rIAO4V8zYSrYOi6A==",
+          "id": "rs_057cf6545371c5980169fc7925e47c8196ad68264d27fd26d1",
+          "summary": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_rbSiwM68J9FTngaIIOT2hOkY",
+          "call_id": "call_rbSiwM68J9FTngaIIOT2hOkY",
+          "response_item_id": "fc_057cf6545371c5980169fc79291e6c8196b740bb8350339e60",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\":\"/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/TheSchema.md\",\"offset\":1,\"limit\":260}"
+          }
+        },
+        {
+          "id": "call_UkpKxqTGJlM15Q0ozEo3sEsd",
+          "call_id": "call_UkpKxqTGJlM15Q0ozEo3sEsd",
+          "response_item_id": "fc_057cf6545371c5980169fc79291e7881969578650cfc83bc58",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\":\"/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/index.md\",\"offset\":1,\"limit\":220}"
+          }
+        },
+        {
+          "id": "call_jv25xvSSJhG2sYgme40i0nkE",
+          "call_id": "call_jv25xvSSJhG2sYgme40i0nkE",
+          "response_item_id": "fc_057cf6545371c5980169fc79291e808196afd0e8588faa3bc2",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\":\"/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/log.md\",\"offset\":1,\"limit\":220}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|created: 2026-05-07\\n     3|updated: 2026-05-07\\n     4|type: guide\\n     5|tags: [schema, wiki, qa-memory]\\n     6|---\\n     7|\\n     8|# QA Unified Wiki Schema\\n     9|\\n    10|## 目标\\n    11|统一沉淀你在 GitHub、Gemini、Claude 里的“问题-答案-结论”，便于复用和检索，避免重复提问。\\n    12|\\n    13|## 三层约束\\n    14|- L1 事实层: 来自 raw/ 的原文记录，禁止改写原文。\\n    15|- L2 推断层: 基于多个 L1 的归纳，必须标记 confidence/reasoning。\\n    16|- L3 问题层: 未决问题与待验证假设。\\n    17|\\n    18|## 目录\\n    19|- raw/github/ : GitHub 相关原始问答\\n    20|- raw/gemini/ : Gemini 原始问答\\n    21|- raw/claude/ : Claude 原始问答\\n    22|- wiki/queries/ : 规范化问答沉淀页（可检索）\\n    23|- wiki/concepts/ : 常见问题模式与解决套路\\n    24|- wiki/index.md : 主索引\\n    25|- wiki/log.md : 操作日志\\n    26|\\n    27|## frontmatter（wiki 页面必填）\\n    28|```yaml\\n    29|---\\n    30|type: source|query|concept|overview|comparison|entity\\n    31|tags: [..]\\n    32|summary: 一句话\\n    33|sources: [raw/xxx.md]\\n    34|created: YYYY-MM-DD\\n    35|updated: YYYY-MM-DD\\n    36|layer: L1|L2|L3\\n    37|confidence: high|medium|low\\n    38|reasoning: 仅 L2/L3 必填\\n    39|---\\n    40|```\\n    41|\\n    42|## 命名规范\\n    43|- raw 文件名: YYYYMMDD-平台-主题.md（例如 20260507-gemini-rag-cache.md）\\n    44|- query 页: 问题语义化短标题（例如 数据库连接超时排查.md）\\n    45|\\n    46|## 处理流程\\n    47|1) 先把问答原文放进 raw 对应平台目录\\n    48|2) 生成/更新 wiki/queries 页面\\n    49|3) 更新 wiki/index.md 与 wiki/log.md\\n    50|\", \"total_lines\": 49, \"file_size\": 1367, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_rbSiwM68J9FTngaIIOT2hOkY"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"\", \"total_lines\": 0, \"file_size\": 0, \"truncated\": false, \"is_binary\": false, \"is_image\": false, \"error\": \"File not found: /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/index.md\", \"similar_files\": [\"/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/README.md\", \"/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/SCHEMA.md\"]}",
+      "tool_call_id": "call_UkpKxqTGJlM15Q0ozEo3sEsd"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"\", \"total_lines\": 0, \"file_size\": 0, \"truncated\": false, \"is_binary\": false, \"is_image\": false, \"error\": \"File not found: /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/log.md\"}",
+      "tool_call_id": "call_jv25xvSSJhG2sYgme40i0nkE"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "**Reviewing wiki files**\n\nI need to read through the `wiki/index.md` and `wiki/log.md` following TheSchema to understand everything. I’m also considering if there's any bridge in SCHEMA that might be relevant. Plus, I want to check the most recent 30 lines of the log to make sure I'm up-to-date on everything. It sounds straightforward, but I’ll definitely need to pay attention to details as I go through these files!",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "**Reviewing wiki files**\n\nI need to read through the `wiki/index.md` and `wiki/log.md` following TheSchema to understand everything. I’m also considering if there's any bridge in SCHEMA that might be relevant. Plus, I want to check the most recent 30 lines of the log to make sure I'm up-to-date on everything. It sounds straightforward, but I’ll definitely need to pay attention to details as I go through these files!",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_Hkt6nhrz0F7ok_kfy9uDTDUpHCSR81eAY_wOBJRnNBFMkN4VkT9ZLvD4qO96QHRWxQOfcncs-5d8DI8WHBHjIHU7Zwj9-Eb9s6OiFTmFNHBMmhdKFkPgrlRfup8KMbqrbdjcQecRVIzvCxlGl4YC9R-QyZFzrMSasgY2HHVP_oJZe9bQQ8za67eY64e21G8gF1-3Ym4RzQx79VvT8II0BAMwKJjnU2k_-IXFs1FDq70GqHhT5drb0IxaP3G8H-Q1qezFYGyEaACo0ByfHK7n7C_HSzgAkFITXt3-ZjKYBYiQfDM3LIxlqzBnene3tG_DkgGpNltkl70K20kR4kjT0s8bBGtcdFWoavJKbKS0Rw3g4T1qe49muofUc8Z7rvuhzUrTwFD_i6cumCmvRji7AzJ4rnq3vSobddk3QjFuR2OtwqhagJHTxLeH27wE5Omj_oLqHmfGYZ2l3WKyfLH6i3WJrX2kPS7fl37lpSfnNtMEoEqZT12Y0RuZ6zinxHCWbXjskP0XVjhzzU0TRa2V-utGv7pAzcNcJm1L-a-YhDdKBraWq6gNraxhcpCEBuGR3E5J06SXoq894AvWSLhorBm_1d_VDEEuH_8iYi_LGxMMQ2wSNdg5zP0U8x67HCTVcNu48AvnnzmNGkbUjWCJE2ZwP5WN7a635KslsYlqz3DtWyqxStz-Nwkqnm9YjWEGFA0bN40afKX_Eg15fNHJ66daXDjsKTxyLD_KGyZL4Bmy_52vHlOfNnuTmVWvgzJYjTxgmA5xX1PgrIe0g9-Ye8aBh35uZhwWyO5D4LyKdNz0UYMmoXKySRPks7qZUJe6E2IlfL5iAey329UW8_CnwyGcSUxbJ4-po4HCV97sPdw6XebjNJoTskvCtQPeabWLQ4pFUx-fg9qYqPCsuM6sAGzRzPMQ1HbDdvp_9onvPUikOqbpkgv7rn2WytzqkXwd4BnFKV3zGu-i5SHfOAq_k53WPfIJu3VNZTuLZ0n6v2yn5whfF25v4Ue8sC6mnSp3dgCGr5aKHxEJj4HNHtEVKvZnh3jiz9cZeunTWItV6AXYSSFFKfoPitD2DBYcLZ11w6nTrxOYilMUNk7RqRJZclb9w==",
+          "id": "rs_07de2aa4d4ca5a480169fc792b32948196b170330c2d98249a",
+          "summary": [
+            {
+              "type": "summary_text",
+              "text": "**Reviewing wiki files**\n\nI need to read through the `wiki/index.md` and `wiki/log.md` following TheSchema to understand everything. I’m also considering if there's any bridge in SCHEMA that might be relevant. Plus, I want to check the most recent 30 lines of the log to make sure I'm up-to-date on everything. It sounds straightforward, but I’ll definitely need to pay attention to details as I go through these files!"
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_Tm8QAhdASd6i8UdVRamCT9no",
+          "call_id": "call_Tm8QAhdASd6i8UdVRamCT9no",
+          "response_item_id": "fc_07de2aa4d4ca5a480169fc792eb3bc81968b0e9270c994a1b5",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\":\"/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/wiki/index.md\",\"offset\":1,\"limit\":260}"
+          }
+        },
+        {
+          "id": "call_nxC6gOHMC4dUSqzYC4zbuqX3",
+          "call_id": "call_nxC6gOHMC4dUSqzYC4zbuqX3",
+          "response_item_id": "fc_07de2aa4d4ca5a480169fc792eb3d08196b26d35b9cabffe4c",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\":\"/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/wiki/log.md\",\"offset\":1,\"limit\":260}"
+          }
+        },
+        {
+          "id": "call_cvreplO6x89FjB94PScCR9Ut",
+          "call_id": "call_cvreplO6x89FjB94PScCR9Ut",
+          "response_item_id": "fc_07de2aa4d4ca5a480169fc792eb3d88196b4498a1b6729183d",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\":\"/home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki/SCHEMA.md\",\"offset\":1,\"limit\":260}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Wiki Index\\n     2|\\n     3|Last updated: 2026-05-07\\n     4|\\n     5|## Queries\\n     6|- [[queries/初始化-50条-ai-agent-workflow-高质量问答]] 初始化高质量问答种子（50条）\\n     7|\\n     8|## Concepts\\n     9|- (empty)\\n    10|\\n    11|## Sources\\n    12|- (empty)\\n    13|\", \"total_lines\": 12, \"file_size\": 202, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_Tm8QAhdASd6i8UdVRamCT9no"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Wiki Log\\n     2|\\n     3|## [2026-05-07] create | wiki initialized\\n     4|- Initialized QA unified wiki structure and schema.\\n     5|\\n     6|## [2026-05-07] ingest | 初始化50条问答种子\\n     7|- Added raw/seed/2026-05-07-seed-agent-workflow-qa-50.md\\n     8|- Added wiki/queries/初始化-50条-ai-agent-workflow-高质量问答.md\\n     9|- Updated wiki/index.md\\n    10|\", \"total_lines\": 9, \"file_size\": 314, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_nxC6gOHMC4dUSqzYC4zbuqX3"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Wiki Schema\\n     2|\\n     3|> Canonical schema: `TheSchema.md`.\\n     4|> `SCHEMA.md` is compatibility bridge for generic llm-wiki tooling.\\n     5|> Precedence: webhook prompt > TheSchema.md > SCHEMA.md > skill defaults.\\n     6|\\n     7|## Domain\\n     8|Personal unified Q&A memory for GitHub/Gemini/Claude.\\n     9|\", \"total_lines\": 8, \"file_size\": 258, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_cvreplO6x89FjB94PScCR9Ut"
+    },
+    {
+      "role": "assistant",
+      "content": "结论：**当前未收到可执行的 payload（缺少 `action` / `run_id` 等字段），本次不执行 build/query。**\n\n我已按你的优先级完成了前置校验并确认规则落地：\n\n- 已执行仓库同步前置序列：`git stash/fetch/checkout main/pull --ff-only/stash pop`\n- 仓库状态：`main` 与 `origin/main` 同步，工作区干净\n- 已完成定向（按优先级读取）：\n  1) 你的订阅 prompt 规则（最高）  \n  2) `TheSchema.md`（仓库真相源）  \n  3) `SCHEMA.md`（兼容桥接）  \n  并确认 `wiki/index.md`、`wiki/log.md` 位置与当前结构一致\n\n请直接发下一条 payload（JSON 即可），我会按你定义流程立即执行。建议最小格式：\n\n```json\n{\n  \"action\": \"incremental_build\",\n  \"run_id\": \"gh-<run_id>-<attempt>\",\n  \"question\": \"\",\n  \"save\": true\n}\n```\n\n支持 `action`: `full_build | incremental_build | query`。",
+      "reasoning": "**Considering log and actions**\n\nI'm thinking about using a fallback run_id since the delivery ID is missing. I could generate a timestamp and write a log noting that there's no payload. Even though we did receive a message, maybe it counts as a control payload that doesn't require action, which might lead to an error. It seems I should log the process by creating a run log and considering whether I should commit any changes before proceeding.\n**Responding to user query**\n\nThe user likely expects automation to handle runs with a payload. I think this message is intended to set behavior, indicating that it shouldn't run. So, the best response would be: \"已加载规则，将按此执行。当前未含action payload，待发payload.\" It seems no further tools are needed at this point, and I just need to keep my response concise in Chinese, focusing on the binary response first.",
+      "finish_reason": "stop",
+      "reasoning_content": "**Considering log and actions**\n\nI'm thinking about using a fallback run_id since the delivery ID is missing. I could generate a timestamp and write a log noting that there's no payload. Even though we did receive a message, maybe it counts as a control payload that doesn't require action, which might lead to an error. It seems I should log the process by creating a run log and considering whether I should commit any changes before proceeding.\n**Responding to user query**\n\nThe user likely expects automation to handle runs with a payload. I think this message is intended to set behavior, indicating that it shouldn't run. So, the best response would be: \"已加载规则，将按此执行。当前未含action payload，待发payload.\" It seems no further tools are needed at this point, and I just need to keep my response concise in Chinese, focusing on the binary response first.",
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "encrypted_content": "gAAAAABp_HlAYTeLqhCPdiS3aIA7v8EcXvNc9WCOXipS5d6SnMxCEuR_jiXUCsVVxroP_GeokXckbLufrK3rMBp6ma0x1yIaxmO3Q15HLkZ2lha-cdW5wpfcge8jdMF-Gj5t8N6uI_-e2I1X1IoketpR2Ca5h_alnCj0Y4_o3P_PkRYmyOhe8lYQgE5lX_ljrw7mPGo0pHfUDQtT8kpJljadoRsOkJaz4GBOnyJ4TPDdt0PVrSP83Rd_WKE0-5Qa2R5T5BTVeIn7C2WSaZwHquU9OR1yv0nL-aeuQoXnMEVe8gUIR5Ebb7IABZhZq07ECYLVgPHYohPIyy52uKzE5CW2nGGCkwas8CTcgaNBcPcmHzM6wLohpKLzHofsyhPvIkRuUhBFLhTnbOM-C0V-c3tTYAyuuKMwD7rhJRFMBJyHJ1-hZ4VhK276XxfhXvou_1vJ2Uij_XdNdwIFTy3NnrBt4ajsItcfS5Cuspo-VNYlUvOm5hR5irRl3B_ZtrzOEY7mSR9RL0PL-K7ZZ4zvDUjCIHSVvuxvHtxbiiEFx7UK5KxqCDI6-RhG70ocX_AElWLyfpiwAFy4qLutEh6MASHuHBZV3khpy6gNhkx8oZiuJKeiNI67PnkPDxcZ730pnBGcLul2aR0joT40Gf9YYSQNDEO0gd5d3uQiFyHGo-87dCaOdwsKb6KcViaHySZFoPMWomXk9AzfFilrNciGZFky-OEJa7CmpYehSUVk3DvauLaBENLq7bFLEsmvhWjxdnJL8sNEkNNgH0J9RED3LioqPSFuvWSNPr8sza7YkAkurWKUiElrmHztpLSdP5CljLBllr8mxxwXZt0nWTvzrYj55zfkIy56x8oyJqFwajchQ_Ta3ebgNfozJ1NHikVCaxtJlQc-_OeGUZFueV1kWG9iAP7vwI-TKHXHttPJda8YjBwy0F7lwUcaR3o9TUIYujN4Q9VZV5a4WHe9keaMyE6ykw3MTr7m_5CYDSskYcyFSjWUf9RpnmhDZk8CWd4V796iHsO5qLQDyk3d8t7rRe3TyPDq2nAD7qtyou1odY7mQ-KnicHKQ9WCgqtg3CZVn-Z-BLi8M6w_mGOV8SBTanexlcykfsrTsBqcFORrxzRuXeLo9fa6w1rceFmuMPGL3fIXCABMZmBImGqXtyO8e8aKsJ22aMJuFSFwZ6aSpgrzOr0E7itQhI0W2AZzZkgLGh4XZi1sXpOMqhmDrB9Cmyvue7pCLkV8EtrksdMOh5E3HQuy-vwXicWuKp3KQk2OBdrpuT0LMuK-Sjnhr6yOb4HYtclfhQtGpULgu4eL79BIXhHDiFhjqEYrAWjMrzMHIevoWQteTMGZ0_bhgK2VOUTfHYgyF_mA6zW1yzSLhTXf8hY6TJhvG9H4X7m1TXjKHhEsDwQ0d0FnZQLB3wOGt9mEx1iz5uy2OND9WkIDaEBvkjyHWviB_X7Ao1OfQsgU0Tr1xIv-2yTR8TmLw3jBVLdSUHABcaiMRTvArjwEn7WN5_9To1NwJmWoWk3cUpWP8kuBqdqkLeICmfPMh7kW-KiV7Ool49-D-iwKkK8m-f5Z-RumxrqaoGSw-lJXBf6ML4zxZ3C-KrNN92UGmliNFdryVCsyxgq1xTExJf-cZR0CVhsiX_4R35Ha_Uf0kD6gOdjqJr4HnWkmBH1Mwa5lz6TxbThFCmc3RNVQZ8B6WJtUcPxN9BYbVcdx5EqDx8nk2B1G7BDnQ0eXZJ3zbVJ6OG7eS9rGRz4JPoNZW21GYgdJFNRmRxO4_-eG9_ldU2mid-ZcvtBbXdmzeA4HehyZZsy-oL-Mk-SQGbv4m37P07Wgi1bIA1RL15ku3lmCqC_Eb_DbQrCiBuN0vT8Q6D8wpf2qi19S8gC-AtDVUJRvFnz6AvHVdv-wc85ulQBSqq9HKnTV5qcZ6TRvgI7_aBbYwabJv3g7Asys0638NT70DZPUov9IMgV16bclwRUIwDqOSJYPuxiF1-0ya9utts5z54NGsBEpyQtJRD2sVscvgRZuc2FYfpX9U7wxjOu68Dj1tq5tGKJmngFSB8dcfERkQLjBr5PXFigZJ2Z3gc8I98qD3B0VOIA01Uy7QSEv4UkyZHUpRodjdNyJURlVUJQxNLCDFZ1EwoEBu-tfgp54bfnmOR1dP22D4OUSYUsah2i5Xo2BW94Yw01HP6zmKAUw4b8XeNccQeFreatQFygNBeFg_RgfQNrvb42aclYl76kR0O9_hmGplsAlofMxvQz8HFanYq8MMW9f1d_QICifM0u3BdGCB3H2-CZp82aQl6uagiM3vmLuamm4cIMJpONxMobBnfNoRdEzmPjflz-yZorNJ3rOQapF8nHcWvz1Wr9J0vZyxpNYXtqRe2pWP3tSejRFEHbm7rGhWvWzqpaydBedIJyn53_cDavVeOegYd51VbYyCdnlQUB0fFNaqIjk7WSpWxJadLKPElgBerjT1Qe9CFAYkx1pvy-mmD8T3AkLdGyOo_atFo-q3PrW5QmllsluM7Epqt1MH6t-Q8Cy0ndxayvlQm0-LDjMrACPw4pmtGj0W5dTW-F_E281y6GGIZ2sj4mN07LkEM8trLYbSNINChP2gFa5xYVBtPlLh2yiZBBWMx81MCB2g6f2e5KxqA_vw_aRuEfthMejTjy0uWKaFEvJHppGzExjZPaOYg-hH9G2Q5mroA0sCK2wCRhulLtbkVoqRkNUtY9IuXkjsU49OiK00PRKum1AnBGKZYBBE289tfYskVd6KpzdjQPqSUBef-KZF2lXrZH8EhwZEH3pM32CrKY1FA2Gm_M_rTKTGjv5VF6ulEiVSTTpFURNLM6ys7vmpUJyJKJWSGNHNT6tLm0xMVcV8EaM3hhp6FgBW9aqI9S0AR2QBtwkJhNZRAiV5Vwn7xYLApbUj9APvRwovER62E_UZcvlOKsVyZLVO2j-Totc6XTJLQGc8b2r3K1R3bJAhzX1VTAalJjCumRkJNAhp2SJ4cVyNjFtZZmXt33_3NuaG8W5XoM4GwWGepLA3VSsKcBkuancr79c3aQK7AbP3Z4JeDU6hwLOIxuwks8b5qY96427TwyyCu2bjeq43DnDTnro14jmgHcUsiP5uXAaRetXgGE1jBE1dQVkV5N_R6inVrw4BpIJyZCEa6qbUfOeAIpAfEEQyAtGtjJM2ESqUs54Qejjh1E3cVTAGL3he3oq6QaaRdT1A-JPyw7NUohBQ62bMtScUVp6Sydo87bNBpq9Eixbo2Gqo0YQP5mUyQjacXuF6Net8XPHX9Iel2wvuQApkTUzHKWKbn566etsCoccmFP0OM7cccEKqp0XQZVx6_p79QuRNFWda_fnRSPB4epyFsrRaQFMI_usCa-QdChOr9c2O75mU9TAgOlE5_bKN6m_5UgLQIxalz9OBdciJc0qKDOwq9lI5PvpJ3cUqJ-RXrnTgZ8VsOHrHvk_LuDbxXE-fbUWXWnU4s7iSdddIgbSo0MRS1ZAWW4hxuo2ugs2-md3eMjhcWZLbddakhQT7WO2IYDmXXcD0OJ9BB2-4DwKCOzhaC0VkarlpXFxPSJqwVRiNW-E18_PVVXn6v-mKbmOaMqxk5db7ynqV0wRvB7qpLGuEJsYsrmzbOhQHAh1vDCvPIbgOS8RYrYHBnlqFa8VRnh3iiH9_i4fqaXh1HTWXQkynhkmzaKstGyz5XX6LJuEgs2RI7-nvGrokNmOs4HsX2sfi2nlDr0jl7Uw2BeTvg==",
+          "id": "rs_00f3d11edbde63390169fc7930b3dc8197af3c152550e7e7d8",
+          "summary": [
+            {
+              "type": "summary_text",
+              "text": "**Considering log and actions**\n\nI'm thinking about using a fallback run_id since the delivery ID is missing. I could generate a timestamp and write a log noting that there's no payload. Even though we did receive a message, maybe it counts as a control payload that doesn't require action, which might lead to an error. It seems I should log the process by creating a run log and considering whether I should commit any changes before proceeding."
+            },
+            {
+              "type": "summary_text",
+              "text": "**Responding to user query**\n\nThe user likely expects automation to handle runs with a payload. I think this message is intended to set behavior, indicating that it shouldn't run. So, the best response would be: \"已加载规则，将按此执行。当前未含action payload，待发payload.\" It seems no further tools are needed at this point, and I just need to keep my response concise in Chinese, focusing on the binary response first."
+            }
+          ]
+        }
+      ],
+      "codex_message_items": [
+        {
+          "type": "message",
+          "role": "assistant",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "结论：**当前未收到可执行的 payload（缺少 `action` / `run_id` 等字段），本次不执行 build/query。**\n\n我已按你的优先级完成了前置校验并确认规则落地：\n\n- 已执行仓库同步前置序列：`git stash/fetch/checkout main/pull --ff-only/stash pop`\n- 仓库状态：`main` 与 `origin/main` 同步，工作区干净\n- 已完成定向（按优先级读取）：\n  1) 你的订阅 prompt 规则（最高）  \n  2) `TheSchema.md`（仓库真相源）  \n  3) `SCHEMA.md`（兼容桥接）  \n  并确认 `wiki/index.md`、`wiki/log.md` 位置与当前结构一致\n\n请直接发下一条 payload（JSON 即可），我会按你定义流程立即执行。建议最小格式：\n\n```json\n{\n  \"action\": \"incremental_build\",\n  \"run_id\": \"gh-<run_id>-<attempt>\",\n  \"question\": \"\",\n  \"save\": true\n}\n```\n\n支持 `action`: `full_build | incremental_build | query`。"
+            }
+          ],
+          "id": "msg_00f3d11edbde63390169fc79407318819785222be36f7876a2",
+          "phase": "final_answer"
+        }
+      ]
+    }
+  ]
+}

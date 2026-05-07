@@ -1,0 +1,117 @@
+name: Trigger Hermes Wiki Ops
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "incremental_build | full_build | query"
+        required: true
+        default: "incremental_build"
+      question:
+        description: "Optional query"
+        required: false
+        default: ""
+      save:
+        description: "Save query result"
+        required: false
+        default: "true"
+
+concurrency:
+  group: hermes-webhook-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  notify-hermes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether raw changed
+        id: gate
+        shell: bash
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=manual_dispatch" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BEFORE='${{ github.event.before }}'
+          AFTER='${{ github.sha }}'
+
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=first_push_or_unknown_before" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=before_not_found_fail_open" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED_COUNT=$(git diff --name-only "$BEFORE" "$AFTER" -- 'raw/**/*.md' | wc -l | tr -d ' ')
+          echo "before=$BEFORE after=$AFTER changed_count=$CHANGED_COUNT"
+
+          if [ "${CHANGED_COUNT:-0}" -gt 0 ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=raw_changed" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "reason=no_raw_change" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stop when raw unchanged
+        if: steps.gate.outputs.should_run != 'true'
+        run: |
+          echo "Skip webhook: ${{ steps.gate.outputs.reason }}"
+          exit 0
+
+      - name: Build payload
+        if: steps.gate.outputs.should_run == 'true'
+        run: |
+          ACTION="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action || 'incremental_build' }}"
+          QUESTION="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.question || '' }}"
+          SAVE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.save || 'true' }}"
+          RUN_ID="gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cat > payload.json <<JSON
+          {
+            "wiki_id": "REPLACE_WIKI_ID",
+            "event": "${GITHUB_EVENT_NAME}",
+            "repo": "${GITHUB_REPOSITORY}",
+            "ref": "${GITHUB_REF}",
+            "sha": "${GITHUB_SHA}",
+            "before": "${{ github.event.before }}",
+            "action": "${ACTION}",
+            "question": "${QUESTION}",
+            "save": ${SAVE},
+            "run_id": "${RUN_ID}",
+            "delivery_id": "${RUN_ID}",
+            "actor": "${GITHUB_ACTOR}",
+            "compare": "${{ github.event.compare }}",
+            "gate_reason": "${{ steps.gate.outputs.reason }}"
+          }
+          JSON
+
+      - name: Call Hermes webhook
+        if: steps.gate.outputs.should_run == 'true'
+        env:
+          HERMES_WEBHOOK_URL: ${{ vars.HERMES_WEBHOOK_URL != '' && vars.HERMES_WEBHOOK_URL || secrets.HERMES_WEBHOOK_URL }}
+          HERMES_WEBHOOK_TOKEN: ${{ vars.HERMES_WEBHOOK_TOKEN != '' && vars.HERMES_WEBHOOK_TOKEN || secrets.HERMES_WEBHOOK_TOKEN }}
+        run: |
+          test -n "$HERMES_WEBHOOK_URL"
+          test -n "$HERMES_WEBHOOK_TOKEN"
+          HTTP_CODE=$(curl -sS -o response.json -w "%{http_code}" \
+            -X POST "$HERMES_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Gitlab-Token: $HERMES_WEBHOOK_TOKEN" \
+            -H "X-Request-ID: gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --data @payload.json)
+          cat response.json
+          test "$HTTP_CODE" -ge 200 -a "$HTTP_CODE" -lt 300
