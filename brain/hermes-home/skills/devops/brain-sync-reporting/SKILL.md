@@ -30,4 +30,4 @@ Usage notes
 References
 - brain-sync-reporting content is complemented by a detailed file at references/brain-sync-reporting.md
 
-Note: This umbrella skill now includes a concrete reference doc to guide future reporters and to standardize the message formatting across sessions.
+Note: This umbrella skill now includes a concrete reference doc to guide future reporters and to standardize the message formatting across sessions.\n\nEnhancements (new):\n- Added a dedicated references/brain-sync-reporting.md guide for session references and templates.\n- Standardized the Telegram report sections into A/B/C blocks with explicit data fields.\n- Documented a fallback for large files via Git LFS guidance in the reporting narrative.\n- Encourage session-aware improvements by storing session-derived templates in references/ and linking from SKILL.md.
