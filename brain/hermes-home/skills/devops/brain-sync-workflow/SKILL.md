@@ -67,6 +67,7 @@ Verification
 
 Notes
 - This is a class-level skill; it should not embed session-specific data by default. Session data should be captured in a dedicated references file.
+- References: references/usage-example.md to aid reproducibility across sessions.\n- References: references/telegram-report-format.md to codify the Telegram report structure across sessions.
 
 category: devops
 description: |
