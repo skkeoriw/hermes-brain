@@ -1,5 +1,7 @@
 ---
 name: brain-sync-reporting
+version: 1.1.0
+
 description: Standardized workflow for generating Telegram reports from Hermes brain sync events, including GitHub link construction and message formatting.
 version: 1.0.0
 author: Hermes Agent
