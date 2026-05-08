@@ -287,6 +287,45 @@ These capabilities are available via CLI but not in NotebookLM's web interface:
 | **Source fulltext** | `source fulltext <id>` | Retrieve the indexed text content of any source |
 | **Save chat to note** | `ask "..." --save-as-note` / `history --save` | Save Q&A answers or conversation history as notebook notes |
 | **Programmatic sharing** | `share` commands | Manage sharing permissions without the UI |
+| **Knowledge/Wiki Integration** | Custom workflows | Integrate NotebookLM outputs with knowledge systems like llm-wiki (see examples below) |
+
+## Knowledge/Wiki Integration Patterns
+
+NotebookLM CLI outputs can be integrated with knowledge/wiki systems to create compounding knowledge bases. Here's a pattern for integrating with llm-wiki-style systems:
+
+### YouTube Video Processing Workflow
+
+When processing YouTube videos or other media through NotebookLM:
+
+1. **Extract insights**: Use NotebookLM to generate reports, mindmaps, Q&A, etc. from video content
+2. **Structure outputs**: Save reports as markdown and mindmaps as JSON in your raw directory
+3. **Update knowledge graph**: 
+   - Create source summary pages from reports
+   - Extract entities and concepts to create/update wiki pages
+   - Link related content through wikilinks
+   - Update index and log files
+4. **Version control**: Commit changes with descriptive messages
+5. **Notifications**: Send completion notifications (Telegram, etc.)
+
+### Example Integration Commands
+
+```bash
+# After generating NotebookLM artifacts:
+notebooklm generate audio "Focus on key insights" --json
+# → Capture task_id, wait for completion, download
+
+notebooklm generate mind-map --json
+# → Capture mindmap JSON for knowledge graph integration
+
+# Process outputs with custom scripts to:
+# - Extract entities/concepts from reports
+# - Create wiki pages in llm-wiki format
+# - Update index.md and log.md
+# - Git commit and push
+# - Send notifications
+```
+
+See the `llm-wiki` skill for detailed knowledge base patterns that work well with NotebookLM outputs.
 
 ## Common Workflows
 
@@ -409,6 +448,32 @@ notebooklm source add-research "topic" --mode deep --import-all
 **Research sources:**
 - `--from web`: Search the web (default)
 - `--from drive`: Search Google Drive
+
+### YouTube Wiki Processing (Automated Pipeline)
+**Time:** Varies by source count, typically 1-5 minutes per URL
+
+Automated workflow for processing YouTube URLs in a wiki repository:
+
+1. **Detect changes**: Scan `raw/youtube-links/` for new/modified markdown files
+2. **Extract URLs**: Use regex `https://youtu(\\.be|\\.com)/` to find YouTube URLs
+3. **Process with NotebookLM**: For each URL:
+   - Create notebook titled \"YouTube: [video-id]\"
+   - Add URL as YouTube source
+   - Wait for processing to complete
+   - Generate report (format: study-guide) and mind-map
+   - Save outputs to temporary locations
+4. **Move outputs**:
+   - Move report files to `raw/notebooklm-analysis/`
+   - Move mind-map files to `raw/notebooklm-mindmaps/`
+5. **Git commit**: Commit changes with message `chore: add notebooklm analysis from {{url_count}} videos`
+6. **Push**: Push to trigger second-stage llm-wiki incremental compilation
+
+**Implementation notes:**
+- This workflow is typically orchestrated by a custom Python script (e.g., `notebooklm_processor.py`)
+- The script handles idempotency: skips already-processed URLs unless content changed
+- Language is set to `zh_Hans` (Simplified Chinese) for all outputs
+- Uses explicit notebook IDs and avoids relying on context in automated environments
+- After push, a second webhook triggers llm-wiki incremental compilation to update wiki graph
 
 ## Output Style
 

@@ -1,112 +1,60 @@
-# TheSchema.md Layout Reference
+# TheSchema.md Layout Variant
 
-Used by repos like `llm-wiki-obsidian-blink` and `prompt-qa-unified-wiki`.
-Source of truth: https://github.com/ChangfengHU/llm-wiki-obsidian-blink/blob/main/TheSchema.md
+Some repositories (like llm-wiki-obsidian-blink) use `TheSchema.md` instead of `SCHEMA.md` as the schema file. This layout has specific characteristics:
 
 ## Directory Structure
-
+When `TheSchema.md` is present, the expected layout is:
 ```
-raw/                        # source files, read-only after ingestion
 wiki/
-  sources/                  # one page per raw source (summary)
-  entities/                 # people, projects, tools, orgs
-  concepts/                 # methods, theories, models
-  comparisons/              # side-by-side analyses
-  overview/                 # synthesis / survey pages
-  queries/                  # Q&A worth keeping
-  index.md                  # wiki-level index
-  log.md                    # wiki-level log
-TheSchema.md                # canonical schema (not SCHEMA.md)
-index.md                    # root index
-log.md                      # root log
+├── TheSchema.md          # Schema file (replaces SCHEMA.md)
+├── index.md              # Global index (may be synchronized with wiki/index.md)
+├── log.md                # Global log (may be synchronized with wiki/log.md)
+├── raw/                  # Layer 1: Immutable sources
+│   └── ...               # Source files
+└── wiki/                 # Layer 2: Wiki maintenance layer
+    ├── sources/          # Source summary pages (type: source)
+    ├── entities/         # Entity pages (type: entity)
+    ├── concepts/         # Concept pages (type: concept)
+    ├── comparisons/      # Comparison pages (type: comparison)
+    ├── overview/         # Overview/summary pages (type: overview)
+    └── queries/          # Query result pages (type: query)
 ```
 
-## Three-Layer Model (strictly enforced)
-
-| Layer | Name | Rule |
-|-------|------|------|
-| L1 | Fact | Must be directly supported by raw/**/*.md. No speculation. |
-| L2 | Inference | Inferred from 2+ L1 facts. MUST have confidence + reasoning. |
-| L3 | Question | Open questions, gaps, hypotheses. Not facts. |
-
-## Frontmatter (all wiki pages)
+## Frontmatter Requirements (L1/L2/L3 Model)
+TheSchema.md enforces a strict three-layer model in all wiki page frontmatter:
 
 ```yaml
 ---
+title: Page Title
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
 type: source|entity|concept|comparison|overview|query
-tags: [tag1, tag2]
-summary: 一句话说明核心内容
-sources: [raw/xxx.md]
-created: 2026-05-07
-updated: 2026-05-07
-layer: L1           # L1 | L2 | L3
-confidence: high    # required for L2/L3; optional for L1
-reasoning: ...      # required for L2/L3
+tags: [from taxonomy]
+summary: One-sentence summary
+sources: [relative/path/to/raw/file.md]
+layer: L1|L2|L3          # REQUIRED - knowledge layer
+confidence: high|medium|low  # REQUIRED for L2/L3
+reasoning: Short explanation # REQUIRED for L2/L3
 ---
 ```
 
-Required fields: `type`, `tags`, `summary`, `sources`, `updated`, `layer`
-L2/L3 additionally require: `confidence`, `reasoning`
+### Layer Definitions:
+- **L1 (Fact Layer)**: Only facts directly supported by raw sources. No inference.
+- **L2 (Inference Layer)**: Inductive/deductive reasoning from multiple L1 facts. Must show work.
+- **L3 (Question Layer)**: Open questions, hypotheses, knowledge gaps. Not treated as established fact.
 
-## Raw File Format (translated arxiv sources)
+### Required Fields for L2/L3:
+When `layer: L2` or `layer: L3`, both `confidence` and `reasoning` fields are mandatory.
 
-When ingesting arxiv papers with Chinese translation:
+## Migration Notes
+If a repository has both `SCHEMA.md` and `TheSchema.md`:
+1. `TheSchema.md` takes precedence as the canonical schema
+2. The agent should read and follow `TheSchema.md` rules
+3. `SCHEMA.md` may be ignored or treated as historical
 
-```yaml
----
-title: "中文标题"
-title_en: "English Title"
-source_url: https://arxiv.org/abs/XXXX.XXXXX
-arxiv_id: "XXXX.XXXXX"
-ingested: 2026-05-07
-tags: [agent, rag, llm, research]
----
-
-# 中文标题
-
-**原文标题：** English Title
-**来源：** https://arxiv.org/abs/XXXX.XXXXX
-**采集日期：** 2026-05-07
-
-## 摘要
-
-（完整中文翻译，无英文对照）
-```
-
-## Arxiv Scrape + Google Translate Pattern
-
-```python
-import urllib.request, urllib.parse, json, re
-
-def fetch_arxiv(arxiv_id):
-    url = f"http://export.arxiv.org/abs/{arxiv_id}"
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    html = urllib.request.urlopen(req, timeout=15).read().decode('utf-8', 'ignore')
-    title_m = re.search(r'<h1 class="title mathjax"><span class="descriptor">Title:</span>\s*(.+?)</h1>', html, re.S)
-    title = re.sub(r'\s+', ' ', title_m.group(1).strip()) if title_m else ''
-    abs_m = re.search(r'<blockquote class="abstract mathjax">\s*<span class="descriptor">Abstract:</span>\s*(.+?)</blockquote>', html, re.S)
-    abstract = re.sub(r'\s+', ' ', abs_m.group(1).strip()) if abs_m else ''
-    return title, abstract
-
-def translate(text):
-    url = 'https://translate.googleapis.com/translate_a/single?' + urllib.parse.urlencode({
-        'client': 'gtx', 'sl': 'en', 'tl': 'zh-CN', 'dt': 't', 'q': text
-    })
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    data = json.loads(urllib.request.urlopen(req, timeout=20).read().decode('utf-8', 'ignore'))
-    return ''.join([x[0] for x in data[0] if x and x[0]])
-```
-
-Pitfalls:
-- HTML may contain `<a href=...>` tags inside abstract text — strip or leave as-is (renders fine in Obsidian)
-- Sleep 0.5-1s between requests to avoid rate limiting on both arxiv and gtx
-- `idx = int(f.name.split('-')[2])` fails if filename format differs — always inspect filenames before parsing
-
-## Git Auth with PAT
-
-```bash
-git remote set-url origin https://<PAT>@github.com/<owner>/<repo>.git
-git push origin main
-```
-
-No other setup needed. Works for any repo the PAT has write access to.
+## Validation Rules
+- Every wiki page must specify `layer: L1|L2|L3`
+- L2/L3 pages must have both `confidence` and `reasoning`
+- `sources` must point to files under `raw/`
+- `tags` must be defined in TheSchema.md's taxonomy
+- Every page needs at least 2 outgoing `[[wikilinks]]`

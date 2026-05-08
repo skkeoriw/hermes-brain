@@ -70,16 +70,22 @@ cross-referenced by the agent.
 
 ## Resuming an Existing Wiki (CRITICAL — do this every session)
 
-When the user has an existing wiki, **always orient yourself before doing anything**:
+When the user has an existing wiki, **always orient yourself before doing anything**—following the priority order: webhook prompt > repo TheSchema.md/SCHEMA.md > skill defaults.
 
-① **Read `SCHEMA.md`** — understand the domain, conventions, and tag taxonomy.
+① **Check for TheSchema.md first** (higher priority if present):
+   - If `TheSchema.md` exists, read it to understand the domain, conventions, and tag taxonomy
+   - If only `SCHEMA.md` exists, read it instead
 ② **Read `index.md`** — learn what pages exist and their summaries.
 ③ **Scan recent `log.md`** — read the last 20-30 entries to understand recent activity.
 
 ```bash
 WIKI="${WIKI_PATH:-$HOME/wiki}"
-# Orientation reads at session start
-read_file "$WIKI/SCHEMA.md"
+# Orientation reads at session start (follow priority order)
+if [ -f "$WIKI/TheSchema.md" ]; then
+    read_file "$WIKI/TheSchema.md"
+elif [ -f "$WIKI/SCHEMA.md" ]; then
+    read_file "$WIKI/SCHEMA.md"
+fi
 read_file "$WIKI/index.md"
 read_file "$WIKI/log.md" offset=<last 30 lines>
 ```
@@ -89,6 +95,18 @@ Only after orientation should you ingest, query, or lint. This prevents:
 - Missing cross-references to existing content
 - Contradicting the schema's conventions
 - Repeating work already logged
+
+**TheSchema.md layout variant:** When a repo uses `TheSchema.md` (vs `SCHEMA.md`), the expected wiki layout is:
+```
+wiki/
+├── sources/          # Source summary pages
+├── entities/         # Entity pages (people, orgs, products, models)
+├── concepts/         # Concept/topic pages
+├── comparisons/      # Side-by-side analyses
+├── overview/         # Overview / synthesis pages
+└── queries/          # Filed query results worth keeping
+```
+This layout also enforces a strict L1/L2/L3 layer model in frontmatter (`layer: L1|L2|L3`, with `confidence` and `reasoning` required for L2/L3 layers). See `references/theschema-layout.md` for full details.
 
 For large wikis (100+ pages), also run a quick `search_files` for the topic
 at hand before creating anything new.
@@ -537,6 +555,8 @@ vault in Obsidian on your laptop/phone — changes appear within seconds.
 - **Never modify files in `raw/`** — sources are immutable. Corrections go in wiki pages.
 - **Always orient first** — read SCHEMA + index + recent log before any operation in a new session.
   Skipping this causes duplicates and missed cross-references.
+- **Never delete or modify SCHEMA.md** — it defines the wiki's structure, conventions, and layer model.
+  Deleting it breaks orientation and causes the agent to lose domain context.
 - **Always update index.md and log.md** — skipping this makes the wiki degrade. These are the
   navigational backbone.
 - **Don't create pages for passing mentions** — follow the Page Thresholds in SCHEMA.md. A name
@@ -555,16 +575,9 @@ vault in Obsidian on your laptop/phone — changes appear within seconds.
 - **Handle contradictions explicitly** — don't silently overwrite. Note both claims with dates,
   mark in frontmatter, flag for user review.
 
-## References
+## References\n\n- `references/incremental-build-gate-checklist.md` — strict webhook incremental gate runbook (`before..sha` diff precedence, skip semantics, Telegram gating, fixed run-log behavior).\n- `references/webhook-run-logging.md` — two-commit run-log finalization pattern and reporting expectations.\n- `references/webhook-automation-pattern.md` — canonical webhook automation pattern for llm-wiki (precedence order, stash/sync workflow, run-log requirements, git discipline).\n- `references/notebooklm-integration.md` — pattern for integrating NotebookLM-generated outputs (reports, mindmaps) into llm-wiki knowledge base.\n\n## Related Tools\n\n[llm-wiki-compiler](https://github.com/atomicmemory/llm-wiki-compiler) is a Node.js CLI that\ncompiles sources into a concept wiki with the same Karpathy inspiration. It's Obsidian-compatible,\nso users who want a scheduled/CLI-driven compile pipeline can point it at the same vault this\nskill maintains. Trade-offs: it owns page generation (replaces the agent's judgment on page\ncreation) and is tuned for small corpora. Use this skill when you want agent-in-the-loop curation;\nuse llmwiki when you want batch compile of a source directory.\n\n## YouTube Wiki Processing Pattern\n\nSee `references/youtube-wiki-processing.md` for the pattern used to process YouTube video links\ninto a structured wiki using NotebookLM for analysis and llm-wiki for knowledge graph construction.
 
-- `references/incremental-build-gate-checklist.md` — strict webhook incremental gate runbook (`before..sha` diff precedence, skip semantics, Telegram gating, fixed run-log behavior).
-- `references/webhook-run-logging.md` — two-commit run-log finalization pattern and reporting expectations.
+## YouTube Wiki Processing Pattern
 
-## Related Tools
-
-[llm-wiki-compiler](https://github.com/atomicmemory/llm-wiki-compiler) is a Node.js CLI that
-compiles sources into a concept wiki with the same Karpathy inspiration. It's Obsidian-compatible,
-so users who want a scheduled/CLI-driven compile pipeline can point it at the same vault this
-skill maintains. Trade-offs: it owns page generation (replaces the agent's judgment on page
-creation) and is tuned for small corpora. Use this skill when you want agent-in-the-loop curation;
-use llmwiki when you want batch compile of a source directory.
+See `references/youtube-wiki-processing.md` for the pattern used to process YouTube video links
+into a structured wiki using NotebookLM for analysis and llm-wiki for knowledge graph construction.

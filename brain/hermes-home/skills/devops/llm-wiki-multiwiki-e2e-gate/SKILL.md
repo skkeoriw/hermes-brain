@@ -114,10 +114,22 @@ Use when creating a new wiki repo that must run fully automated webhook compilat
 - gateway restarted after webhook config change
 - repository has HERMES_WEBHOOK_URL/TOKEN configured (vars or secrets)
 - action logs show gate_reason and skip behavior as expected
+- control-plane consistency check passes across three layers:
+  1) GitHub workflow gate (push/manual trigger + before..sha raw diff)
+  2) Hermes webhook route prompt (stage routing + commit/push/notify policy)
+  3) Repo schema contract (TheSchema.md/SCHEMA.md run rules)
+
+# Control-plane anti-drift (important)
+- Treat the automation as layered control, not a single controller.
+- Primary gate should live in GitHub workflow; webhook prompt should validate/consume gate outcome and only do fail-open fallback when context is missing.
+- Avoid duplicated but different raw-change logic in workflow and webhook prompt; that causes split-brain outcomes (workflow says run, prompt says skip, or vice versa).
+- Prefer script-backed stage execution (scripts/) over long imperative prompt blocks for Stage1/Stage2; keep prompt orchestration thin and deterministic.
+- Normalize run-log schema for all routes: action, gate_reason, raw_changed_count, raw_changed_files, wiki_updates, created_files, updated_files, commit, push, errors.
 
 # Packaged assets
 - Template workflow: `templates/hermes-webhook-on-push.yml` (known-good gate + webhook payload + vars/secrets fallback).
 - Validation notes: `references/e2e-validation-notes.md` (failure signatures, fixes, and proof checklist).
 - Telegram isolation/template: `references/telegram-qa-wiki-template.md` (per-wiki bot isolation, send gate, quantitative message schema).
 - Incident playbook: `references/no-raw-change-false-skip-and-tg-proof.md` (raw-changed-but-skipped diagnosis + Telegram proof checklist).
+- Control-plane notes: `references/control-plane-layering-and-anti-drift.md` (workflow gate vs webhook prompt vs schema layering, anti-drift policy).
 - Article quality rubric: `references/ai-agent-article-quality-rubric.md` (>=500中文、结构完整、反模板化、图谱联动验收)。

@@ -1,4 +1,4 @@
-User prefers API/webhook examples as complete copy-paste requests suitable for Postman, without requiring shell variables or dynamic signature generation.
+User prefers Chinese communication for all interactions.
 §
 User wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.
 §
@@ -9,3 +9,5 @@ User prefers one-shot automation via Hermes/Copilot and wants reusable copy-past
 User expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.
 §
 User prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).
+§
+User expects continuous progress updates during execution, including current status and any issues encountered.

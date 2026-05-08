@@ -61,11 +61,59 @@ PY`
 ## Required Files
 - `vendor/summarize/.env` must include keys for selected providers.
 - `vendor/summarize/summarizer.yaml` should include provider profiles.
-
 ## Common Pitfalls
+
 1) Container is up but no API keys configured in `.env`.
 2) Using host python instead of container command path.
 3) Assuming `--provider deepseek` controls transcription backend; summarization and transcription backend can differ.
+
+## Provider and Model Configuration
+
+The summarization provider and model are configured in two places:
+
+1. `vendor/summarize/.env` – contains API keys for each provider (e.g., `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`).
+
+2. `vendor/summarize/summarizer.yaml` – defines provider profiles and default model.
+
+Example `.env` snippet:
+```
+# Provider API keys
+DEEPSEEK_API_KEY=sk-...
+OPENAI_API_KEY=sk-...
+```
+
+Example `summarizer.yaml` snippet:
+```
+providers:
+  deepseek:
+    api_key: ${DEEPSEEK_API_KEY}
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-chat
+  openai:
+    api_key: ${OPENAI_API_KEY}
+    base_url: https://api.openai.com/v1
+    model: gpt-4o-mini
+default_provider: deepseek
+```
+
+When invoking the summarizer via the skill, you can override the provider with `--provider <name>` (e.g., `--provider openai`).
+
+**Note:** The transcription step (extracting captions/audio-to-text) is independent of the summarization provider and uses its own configuration (see `transcription_method` in the transcript extraction example).
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| Start services | `cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && docker compose up -d` |
+| Health check | `cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && docker compose ps` |
+| Run summary (stdout) | `cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && docker compose exec -T summarizer python -m summarizer --source "https://www.youtube.com/watch?v=VIDEO_ID" --provider deepseek --prompt-type "Distill Wisdom" --no-save` |
+| Run summary (save to file) | `cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && docker compose exec -T summarizer python -m summarizer --source "https://www.youtube.com/watch?v=VIDEO_ID" --provider deepseek --prompt-type "Distill Wisdom" --output ./summary.txt` |
+| Extract full transcript (stdout) | `cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && docker compose exec -T summarizer python - <<'PY'\nfrom summarizer.transcription import get_transcript\ncfg={\n  'type_of_source':'YouTube Video',\n  'source_url_or_path':'https://www.youtube.com/watch?v=VIDEO_ID',\n  'use_youtube_captions':True,\n  'force_download':False,\n  'verbose':False,\n  'language':'auto',\n  'use_proxy':False,\n  'cache_transcript':False,\n  'audio_speed':1.0,\n  'transcription_method':'Cloud Whisper',\n  'whisper_model':'tiny'\n}\nprint(get_transcript(cfg))\nPY` |
+| Extract transcript and save to file | `cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && docker compose exec -T summarizer python - <<'PY'\nfrom summarizer.transcription import get_transcript\ncfg={\n  'type_of_source':'YouTube Video',\n  'source_url_or_path':'https://www.youtube.com/watch?v=VIDEO_ID',\n  'use_youtube_captions':True,\n  'force_download':False,\n  'verbose':False,\n  'language':'auto',\n  'use_proxy':False,\n  'cache_transcript':False,\n  'audio_speed':1.0,\n  'transcription_method':'Cloud Whisper',\n  'whisper_model':'tiny'\n}\nwith open('transcript.txt', 'w', encoding='utf-8') as f:\n    f.write(get_transcript(cfg))\nPY` |
+
+## Provider Configuration Examples
+
+See `references/provider-examples.md` for detailed examples of `.env` and `summarizer.yaml` configurations for various providers (DeepSeek, OpenAI, Anthropic, etc.).
 
 ## Verification Checklist
 - [ ] `docker compose ps` shows `summarizer` and `cobalt` running
