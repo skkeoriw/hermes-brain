@@ -47,33 +47,12 @@ fi
 
   if [ "$EFFECTIVE_ROLE" = "push" ]; then
     echo "mode=push: local Hermes -> repo -> GitHub"
-    
-    # 先执行同步（会把 state.db 复制到 repo）
     ./scripts/sync_from_local_to_repo.sh --git --push -m "sync: auto update Hermes brain from $(hostname)"
-    
-    # 然后备份并移除 state.db（避免大文件被追踪）
-    echo "+ Backing up and removing state.db..."
-    ./scripts/state_db_backup.sh backup || true
-    
-    # 如果 push 失败了，从 repo 中移除 state.db 并重新 push
-    if ! git diff --quiet HEAD~1 HEAD -- brain/hermes-home/state.db 2>/dev/null; then
-      echo "⚠️  state.db was committed, removing and re-pushing..."
-      git rm --cached brain/hermes-home/state.db 2>/dev/null || true
-      git commit --amend --no-edit || true
-      git push -f origin main || true
-    fi
   else
     echo "mode=pull: GitHub -> repo -> local Hermes"
     # If this machine used to think it was push but no longer owns the global owner, downgrade local role.
     python3 scripts/hermes_brain_role.py downgrade-if-needed || true
     ./scripts/sync_from_repo_to_local.sh --pull --skip-if-same
-    
-    # Restore state.db if needed
-    RESTORE_CHECK=$(./scripts/state_db_backup.sh check || echo "")
-    if [ "$RESTORE_CHECK" = "RESTORE_NEEDED" ]; then
-      echo "+ Restoring state.db..."
-      ./scripts/state_db_backup.sh restore
-    fi
   fi
 
   echo "== $(date -Is) hermes-brain auto sync success =="
