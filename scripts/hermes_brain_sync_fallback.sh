@@ -61,30 +61,20 @@ FREE_MODELS=(
   for MODEL in "${FREE_MODELS[@]}"; do
     echo "+ Trying model: $MODEL"
     
-    # 构建 hermes 命令 - 用 printf 处理转义序列
-    read -r -d '' HERMES_PROMPT << 'EOF' || true
-Analyze this git diff and provide a brief Chinese summary (3-5 bullet points) of key changes:
+    # 简化 prompt，避免过长
+    HERMES_PROMPT="请用中文简要总结以下 Git 变更（3-5 个要点）：
 
-```
-${DIFF_STAT}
+变更统计：
+$DIFF_STAT
 
-${DIFF_CONTENT}
-```
-
-Format:
-- 简明扼要
-- 列出主要改动
-- 中文输出
-EOF
+关键变更内容（前500字符）：
+${DIFF_CONTENT:0:500}"
     
-    # 用变量替换
-    HERMES_PROMPT="${HERMES_PROMPT//\$\{DIFF_STAT\}/$DIFF_STAT}"
-    HERMES_PROMPT="${HERMES_PROMPT//\$\{DIFF_CONTENT\}/$DIFF_CONTENT}"
-    
-    # 尝试用这个模型调用 hermes
-    if AI_OUTPUT=$(hermes chat -m "$MODEL" --provider openrouter -q "$HERMES_PROMPT" --quiet 2>&1 | head -500); then
+    # 尝试用这个模型调用 hermes - 添加超时
+    if timeout 45 hermes chat -m "$MODEL" --provider openrouter -q "$HERMES_PROMPT" --quiet > /tmp/ai_out_$$.txt 2>&1; then
+      AI_OUTPUT=$(cat /tmp/ai_out_$$.txt)
       # 检查是否成功（没有错误信息）
-      if ! echo "$AI_OUTPUT" | grep -qi "error\|fail\|not supported\|404\|http\|api"; then
+      if ! echo "$AI_OUTPUT" | grep -qi "error\|fail\|not supported\|404\|http\|api\|failed"; then
         AI_REPORT_SUCCESS=true
         echo "✅ Model $MODEL succeeded"
         break
@@ -93,6 +83,7 @@ EOF
     
     FAILED_MODELS+=("$MODEL")
     echo "⚠️  Model $MODEL failed, trying next..."
+    rm -f /tmp/ai_out_$$.txt
   done
   
   # Step 4: 生成报告（AI 或简单 diff）
