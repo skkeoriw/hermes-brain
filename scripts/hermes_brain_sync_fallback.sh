@@ -27,15 +27,11 @@ FREE_MODELS=(
 {
   echo "=== $(date -Is) hermes-brain sync with fallback start ==="
   
-  # Step 1: 执行同步（允许 push 失败）
+  # Step 1: 执行同步
   echo "+ Running auto_sync.sh"
   /home/zhouhuijuan1987/hermes-brain/scripts/auto_sync.sh || {
     echo "⚠️  auto_sync.sh had issues but continuing..."
   }
-  
-  # 确保压缩备份存在
-  echo "+ Ensuring state.db backup..."
-  /home/zhouhuijuan1987/hermes-brain/scripts/state_db_backup.sh backup || true
   
   # Step 2: 收集信息
   echo "+ Capturing commit info"
