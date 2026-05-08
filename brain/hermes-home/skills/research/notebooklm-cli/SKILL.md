@@ -71,9 +71,10 @@ For automated environments, multiple accounts, or parallel agent workflows:
 
 Before starting workflows, verify the CLI is ready:
 
-1. `notebooklm status` → Should show "Authenticated as: email@..."
-2. `notebooklm list --json` → Should return valid JSON (even if empty notebooks list)
-3. If either fails → Run `notebooklm login`
+1. `notebooklm list --json` → definitive auth check; should return valid JSON (even if empty notebooks list)
+2. `notebooklm status` → context check (selected notebook), not a definitive login check
+3. If `status` says `No notebook selected. Use 'notebooklm use <id>' to set one.` but `list --json` works, you are authenticated and only missing active notebook context
+4. If `list --json` fails with auth/cookie errors → run `notebooklm login`
 
 ## When This Skill Activates
 
