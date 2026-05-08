@@ -47,12 +47,24 @@ fi
 
   if [ "$EFFECTIVE_ROLE" = "push" ]; then
     echo "mode=push: local Hermes -> repo -> GitHub"
+    
+    # Backup state.db before sync (compress to fit GitHub 100MB limit)
+    echo "+ Backing up state.db..."
+    ./scripts/state_db_backup.sh backup
+    
     ./scripts/sync_from_local_to_repo.sh --git --push -m "sync: auto update Hermes brain from $(hostname)"
   else
     echo "mode=pull: GitHub -> repo -> local Hermes"
     # If this machine used to think it was push but no longer owns the global owner, downgrade local role.
     python3 scripts/hermes_brain_role.py downgrade-if-needed || true
     ./scripts/sync_from_repo_to_local.sh --pull --skip-if-same
+    
+    # Restore state.db if needed
+    RESTORE_CHECK=$(./scripts/state_db_backup.sh check || echo "")
+    if [ "$RESTORE_CHECK" = "RESTORE_NEEDED" ]; then
+      echo "+ Restoring state.db..."
+      ./scripts/state_db_backup.sh restore
+    fi
   fi
 
   echo "== $(date -Is) hermes-brain auto sync success =="
