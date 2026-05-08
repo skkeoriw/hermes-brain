@@ -65,9 +65,9 @@ FREE_MODELS=(
     HERMES_PROMPT="Analyze this git diff and provide a brief Chinese summary (3-5 bullet points) of key changes:\n\n\`\`\`\n${DIFF_STAT}\n\n${DIFF_CONTENT}\n\`\`\`\n\nFormat:\n- 简明扼要\n- 列出主要改动\n- 中文输出"
     
     # 尝试用这个模型调用 hermes
-    if AI_OUTPUT=$(hermes chat --model "$MODEL" --provider openrouter "$HERMES_PROMPT" 2>&1 | head -500); then
+    if AI_OUTPUT=$(hermes chat -m "$MODEL" --provider openrouter -q "$HERMES_PROMPT" --quiet 2>&1 | head -500); then
       # 检查是否成功（没有错误信息）
-      if ! echo "$AI_OUTPUT" | grep -qi "error\|fail\|not supported"; then
+      if ! echo "$AI_OUTPUT" | grep -qi "error\|fail\|not supported\|404"; then
         AI_REPORT_SUCCESS=true
         echo "✅ Model $MODEL succeeded"
         break
