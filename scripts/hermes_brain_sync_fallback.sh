@@ -103,27 +103,21 @@ ${DIFF_STAT}
   else
     echo "⚠️  All AI models failed, using simple diff report"
     
-    # 构建失败模型列表
-    FAILED_MODELS_STR="已尝试的免费模型（均不可用）：
-"
-    for failed_model in "${FAILED_MODELS[@]}"; do
-      FAILED_MODELS_STR="${FAILED_MODELS_STR}  ❌ ${failed_model}
-"
-    done
+    # 构建失败模型列表（简化版）
+    FAILED_COUNT=${#FAILED_MODELS[@]}
+    FAILED_MODELS_STR="已尝试 $FAILED_COUNT 个免费模型，均不可用"
     
-    REPORT="✅ Hermes Brain 同步完成 (简要报告)
+    # 简化报告内容以适应 TG 限制
+    REPORT="✅ Hermes Brain 同步完成
 
 ⚠️ AI 分析不可用
 ${FAILED_MODELS_STR}
 
-📊 变更统计：
-\`\`\`
-${DIFF_STAT}
-\`\`\`
+📊 变更：
+$(echo "$DIFF_STAT" | head -10)
 
-🔗 快速导航：
-🔹 查看本次详细变更: ${COMPARE_LINK}
-🔹 查看提交详情: ${COMMIT_LINK}
+🔗 详情：
+${COMMIT_LINK}
 
 🏠 ${HOSTNAME} ⏰ ${ISO_TIME}"
   fi
