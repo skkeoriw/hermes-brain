@@ -104,15 +104,47 @@ webhook 收到 `stage=notebooklm-research`
 > **此阶段独立于 Phase 2，即使 Phase 2 部分失败，也必须执行 Phase 3。**
 
 11. 记录结束时间：`END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
-12. 用 write_file 工具写执行日志到 `{wiki_local_path}/logs/webhook-runs/{run_id}.md`，必须包含：
-    - `start_time` / `end_time`
-    - `videos_processed`：处理的 URL 数量
+
+11b. **写入 pipeline-context.json**（供后续阶段读取）：
+    - 路径：`{wiki_local_path}/raw/pipeline-context.json`
+    - 读取已有内容（如果存在）并追加 stage_b 节点，使用 write_file 工具：
+    ```json
+    {
+      "pipeline_id": "pipe-{sha前7位}",
+      "stage_b": {
+        "run_id": "{run_id}",
+        "start_time": "{START_TIME}",
+        "end_time": "{END_TIME}",
+        "duration_s": {DURATION},
+        "api_calls": "从 Hermes 本次会话统计，若无法获取则写 unknown",
+        "videos_processed": {处理的视频数量},
+        "reports_generated": {生成的报告数},
+        "mindmaps_generated": {生成的脑图数}
+      }
+    }
+    ```
+    - **必须用 write_file 工具写入**，不用 shell echo/heredoc
+    - 在 `git add` 命令里加上 `raw/pipeline-context.json`
+
+12. 用 write_file 工具写执行日志到 `{wiki_local_path}/logs/webhook-runs/{run_id}.md`，必须包含 frontmatter：
+    ```yaml
+    ---
+    run_id: {run_id}
+    stage: stage_b
+    start_time: {START_TIME}
+    end_time: {END_TIME}
+    duration_s: {DURATION}
+    api_calls: {从 Hermes 本次会话统计，若无法获取则写 unknown}
+    videos_processed: {处理的 URL 数量}
+    status: success / partial / skipped
+    ---
+    ```
+    以及正文内容：
     - `files_generated`：生成的文件列表（中文名）
-    - `status`：success / partial / skipped
 13. **检查并提交所有变更**：
     ```bash
     cd {wiki_local_path}
-    git add raw/notebooklm-analysis/ raw/notebooklm-mindmaps/ logs/
+    git add raw/notebooklm-analysis/ raw/notebooklm-mindmaps/ raw/pipeline-context.json logs/
     if [ -n "$(git status --porcelain)" ]; then
       git commit -m "chore: add notebooklm analysis [run:{run_id}]"
     fi
