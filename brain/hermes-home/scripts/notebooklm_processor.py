@@ -213,6 +213,27 @@ class NotebookLMProcessor:
         row["report_path"] = str(report_path)
         row["mindmap_path"] = str(mindmap_path)
         row["success"] = True
+
+        # 注入元数据 frontmatter — 让 report 文件自携带关联信息
+        # Stage B copy 时原样保留，Stage C 读取时直接获取 video_url / mindmap_file
+        try:
+            with open(report_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            if not content.startswith("---"):
+                fm = (
+                    f"---\n"
+                    f"video_id: {vid}\n"
+                    f"video_url: {url}\n"
+                    f"source_id: {sid}\n"
+                    f"mindmap_file: {mindmap_path.name}\n"
+                    f"processed_at: {ts}\n"
+                    f"---\n\n"
+                )
+                with open(report_path, "w", encoding="utf-8") as f:
+                    f.write(fm + content)
+        except Exception as e:
+            self.results["errors"].append(f"Frontmatter inject failed for {vid}: {e}")
+
         return row
 
     def process_youtube_links(self, youtube_links: List[str], notebook_title: str) -> Dict:

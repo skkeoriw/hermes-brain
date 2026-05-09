@@ -62,7 +62,15 @@ webhook 收到 `stage=notebooklm-research`
    - 1：部分成功（`status: partial_success`）— 继续执行 Phase 3
    - 2：全部失败（`status: failed`）— 仍然执行 Phase 3 记录失败日志
 9. 对每个生成文件，按以下规则**重命名后**复制到仓库：
-   - 读取 report 文件第一行 `# 标题`，提取中文标题
+   - **读取标题前需跳过 YAML frontmatter**：report 文件以 YAML frontmatter（`---`）开头，`# 标题` 位于 frontmatter 之后的第 1 行。以下命令可正确提取标题：
+     ```bash
+     grep -m1 '^# ' /tmp/notebooklm_processor/xxxxx_report.md | sed 's/^# //'
+     ```
+     或跳过 frontmatter 后取首个 `#` 行：
+     ```bash
+     awk '/^---/ {skip=!skip; next} !skip && /^# / {print; exit}' /tmp/notebooklm_processor/xxxxx_report.md | sed 's/^# //'
+     ```
+     使用 `head -1` 会返回 `---`，**不是标题**。
    - 清理特殊字符生成 slug：
      - **保留：** 汉字（Unicode `\u4e00`-`\u9fff`）、英文字母（a-z A-Z）、数字（0-9）
      - **替换为 `-`：** 中文标点（`：` `，` `。` `！` `？` `“` `”` 等）、英文标点、空格、符号
@@ -133,7 +141,12 @@ NotebookLM 对同一视频的生成结果通常是确定性的。如果同一组
 ### 5. Stage C 触发条件
 Stage C 由新 push 触发。如果只有日志变更而无分析内容变更，Stage C 会在 Diff 检测阶段发现 `raw/notebooklm-analysis/` 和 `raw/notebooklm-mindmaps/` 无变化，直接跳过 KG 编译。
 
-### 6. 脑图生成可能失败，但报告仍有效
+### 6. YAML frontmatter 导致标题提取失败
+NotebookLM 生成的 report 文件包含 YAML frontmatter（`---` ... `---`）在 `# 标题` 之前。若直接 `head -1` 读取文件得到的是 `---`，而非标题。
+
+**正确处理**：使用 `grep -m1 '^# '` 或 `awk` 跳过 frontmatter 提取标题行。详见 Step 9。
+
+### 7. 脑图生成可能失败，但报告仍有效
 RPC `GENERATE_MIND_MAP` 有时会因 NotebookLM 侧限流或超时而失败（尤其是连续处理多个视频时）。processor 返回 `partial_success`（exit 1），报告仍成功生成。
 
 **正确处理**：不要重试或终止。带着已有文件继续 Phase 3，日志记录 `partial`。Stage C 会处理缺失脑图的视频（仅对报告建 KG，跳过脑图解构）。

@@ -46,20 +46,44 @@ webhook 收到 `stage=wiki-build`
 
 ### 命名陷阱（常见错误）
 
-1. **Entity 文件名必须匹配 wikilink**：如果你在 source 页写 `[[Hermes Agent]]`，则 entity 文件必须命名为 `Hermes Agent.md`。不要用 slug 格式（`hermes-agent.md`），否则会死链。创建所有页面后立即运行链接健康检查（Step 14）即可发现此问题。
+1. **Entity 命名规范：遵循 TheSchema.md 小写 slug**：TheSchema.md §2 要求 entity 文件使用 `{实体名}.md（小写 slug）` 命名（如 `hermes-agent.md`），而非 readable 名称（如 `Hermes Agent.md`）。**这是最高优先级规范**，skill 的 slug-generation.md 参考文件已更新对齐。在所有页面中使用 `[[slug]]` 引用时，必须与 entity 文件名完全一致。
 
-2. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。
+2. **特殊字符导致文件名损坏**：避免在文件名中使用以下字符：
+   - `+`（加号）→ 文件系统显示为 `-+-`
+   - `：`（全角冒号）、`/`、`\`、`?`、`*`、`<`、`>`
+   - 推荐使用中文汉字、英文连字符 `-`、空格（空格在 Linux 文件系统中受支持但请注意 wikilink 一致性）
+   
+3. **Linux 文件系统大小写敏感**：`Token-自由.md` 与 `token-自由.md` 是不同的文件。wikilink 中的名称必须与文件名的大小写完全一致。创建所有页面后运行链接健康检查（Step 14）可发现此问题。
 
-3. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。
+4. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。
+
+5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。
 
 ### 对每个分析报告执行：
 
-### 对每个分析报告执行：
-9. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：
+9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：
+   ```
+   video_id, video_url, source_id, mindmap_file, processed_at
+   ```
+   - `video_url`：直接用于 source 页，比从内容推断更可靠
+   - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在
+   - 若无 frontmatter，退化到从报告正文推断
+
+10. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：
    - frontmatter 必填：`title/type/tags/summary/sources/created/updated/layer/confidence`
-   - 视频元数据（标题、URL）、执行摘要（3-5句）、核心要点（5-10条）
+   - **新增 frontmatter 字段**（建立三方关联）：
+     ```yaml
+     video_url: {从报告 frontmatter 读取}
+     mindmap: raw/notebooklm-mindmaps/{mindmap_file}
+     ```
+   - `sources` 字段同时列出报告路径和脑图路径
+   - 页面正文**必须包含**视频 URL 和脑图引用：
+     ```
+     - 视频：{video_url}
+     - 思维导图：[[{mindmap_file去掉.json}]]（指向 raw/notebooklm-mindmaps/）
+     ```
+   - 执行摘要（3-5句）、核心要点（5-10条）
    - 关联实体 `[[实体名]]`，关联概念 `[[概念名]]`
-   - `sources` 字段指向对应的 `raw/notebooklm-analysis/` 文件
    - 每个视频**唯一一个** source 页，若已存在则更新
 
 10. 创建/更新 **Entity 页**（`wiki/entities/{实体名}.md`）：
@@ -76,6 +100,16 @@ webhook 收到 `stage=wiki-build`
 
 ### 链接健康检查：
 14. 扫描所有新建/修改页面的 `[[wikilink]]`，确认目标文件存在。死链处理：立即创建缺失页面，或删除该链接。
+
+### 质量核查（创建所有页面后执行）：
+14b. 运行以下自动化检查，所有项必须通过才能提交：
+    - 每个新页面 frontmatter 6 个必填字段齐全（title/type/tags/summary/sources/layer）
+    - 每个新页面 ≥ 2 个有效出链 wikilinks（目标文件存在）
+    - source 页内容 ≥ 400 字（中文）
+    - entity/concept 页内容 ≥ 200 字
+    - sources 字段的文件真实存在于 raw/ 目录
+    - 无死链（Step 14 已确认）
+14c. 若为**首次构建**（index.md 显示 Total pages: 0 或仅模板内容），跳过"检查现有页面避免重复"的逻辑，直接为所有分析文件创建新页面。
 
 ### 更新索引：
 15. 更新 `index.md`（按 type 分类，字母序，每条带 summary，更新 Last updated 和 Total pages）
@@ -110,7 +144,7 @@ webhook 收到 `stage=wiki-build`
     done
     ```
 21. 验证 push 成功：`git log --oneline -1` 确认本地 HEAD 与 origin/main 一致。
-22. **发送 Telegram（仅在 push 成功且有实际 wiki 更新时）**：
+22. **发送 Telegram（仅在 push 成功且有实际 wiki 更新时）**，格式遵循 TheSchema.md §8：
     ```bash
     TOKEN=$(printenv {tg_token_env})
     curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
@@ -118,14 +152,16 @@ webhook 收到 `stage=wiki-build`
       -d "disable_web_page_preview=true" \
       --data-urlencode "text=[YOUTUBE-WIKI-RUN]
 run_id: {run_id}
-新增 source: <n>个
-新增 entity: <n>个
-新增 concept: <n>个
-新增 comparison: <n>个
-commit: <hash>
-耗时: <duration>s
+新增 source: {n} 个 — {标题列表}
+新增 entity: {n} 个 — {名称列表}
+新增 concept: {n} 个 — {名称列表}
+新增 comparison: {n} 个（如有）
+新增 overview: {n} 个（如有）
+commit: {hash}
+耗时: {duration}s
 log: logs/webhook-runs/{run_id}.md"
     ```
+    注意：如果新增项为 0，仍显示 `0 个` 但省略名称列表。
 
 ## 注意
 - push 全部失败 → 记录 `status: push_failed`，**禁止发 Telegram**。

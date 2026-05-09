@@ -5,17 +5,25 @@
 - 直接使用分析文件的语义化中文标题，不加 video_id 前缀。
 - 示例：`Hermes + Qwen 3.6 本地最强 AI Agent 组合部署与应用简报.md`
 
-## Entity 页 → ⚠️ 关键：文件名必须与 wikilink 名称完全一致
-格式：`{实体名}.md`
+## Entity 页 → ⚠️ 遵循 TheSchema.md 的小写 slug 规范
+格式：`{小写-slug}.md`
 
-**硬性规则**：entity 文件名必须严格匹配你在 source/concept 等页面中使用的 `[[wikilink]]` 名称。
+**硬性规则**：entity 文件名使用**小写 slug 格式**，与 `[[wikilink]]` 中使用的名称完全一致（大小写敏感）。
 
-- 如果你在 source 页中写 `[[Hermes Agent]]`，则 entity 文件必须命名为 `Hermes Agent.md`（含空格、大小写敏感）
-- 如果你在 source 页中写 `[[OpenAI]]`，则 entity 文件必须命名为 `OpenAI.md`
-- **不要**使用小写 slug 格式（`hermes-agent.md`、`openai.md`），因为 wikilink 走的是 readable 名称匹配
-- **例外**：如果某个 entity 有约定俗成的 slug 别名（如 `GPT-5.5 Instant`），可直接使用该别名作为文件名，但务必在所有页面中使用一致的 `[[别名]]`
+- TheSchema.md §2 定义 entity 命名规范为 `{实体名}.md（小写 slug）`
+- 如果你在 source 页中写 `[[hermes-agent]]`，entity 文件必须命名为 `hermes-agent.md`
+- 如果你在 source 页中写 `[[openai]]`，entity 文件必须命名为 `openai.md`
+- **不要**使用带空格的 readable 名称（`Hermes Agent.md`、`OpenAI.md`），因为 TheSchema.md 要求小写 slug
+- 对于中文实体名（如 `chatgpt`、`evomap`），直接使用英文 slug 或全小写拼音
 
-**检查方法**：创建完所有页面后，执行 grep -rho '\[\[[^]]*\]\]' wiki/ --include='*.md' 提取所有 wikilink，验证每个 wikilink 的目标文件都存在。
+**一致性规则**：在所有页面中使用 `[[slug]]` 引用实体时，必须与 entity 文件名完全一致（Linux 文件系统大小写敏感）。
+
+**检查方法**：创建完所有页面后执行：
+```bash
+cd {wiki_local_path}/wiki
+grep -rho '\[\[[^]]*\]\]' sources/ entities/ concepts/ comparisons/ overview/ --include='*.md' | sort -u
+```
+然后遍历每个 wikilink 确认目标文件存在于对应的 entities/, concepts/ 等目录中。
 
 ## Concept 页
 格式：`{概念名}.md`

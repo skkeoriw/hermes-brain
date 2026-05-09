@@ -1,0 +1,1834 @@
+{
+  "session_id": "20260509_065838_9221ba51",
+  "model": "deepseek-v4-flash",
+  "base_url": "https://api.deepseek.com/v1",
+  "platform": "webhook",
+  "session_start": "2026-05-09T06:58:39.176640",
+  "last_updated": "2026-05-09T07:04:09.226600",
+  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. When the user references something from a past conversation or you suspect relevant cross-session context exists, use session_search to recall it before asking them to repeat themselves. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [99% — 2,195/2,200 chars]\n══════════════════════════════════════════════\nprompt-qa-unified-wiki: https://github.com/divanoo65/prompt-qa-unified-wiki, local /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki, PAT: 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 (divanoo65). Wiki uses TheSchema.md layout (raw/ + wiki/sources|entities|concepts|comparisons|overview|queries). llm-wiki webhook run IDs use gh-<run_id>-<attempt> prefix format.\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to handle stash pop conflicts by resetting to origin/main and dropping stash changes when conflicts occur during protected sync step.\n§\nUpdated sop-notebooklm-research skill to reflect actual notebooklm_processor.py output structure: JSON includes generated_files list with type and path; copy files preserving original filenames.\n§\nUpdated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.\n§\nSuccessfully executed SOP Stage B for youtube-video-research-wiki: processed 3 YouTube links, generated reports and mindmaps, committed and pushed changes. Updated the skill to include timing logs and enhanced log requirements.\n§\nReviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [98% — 1,358/1,375 chars]\n══════════════════════════════════════════════\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - brain-sync-reporting: Standardized workflow for generating Telegram reports fro...\n    - brain-sync-workflow: Class-level skill for Hermes Brain synchronization workfl...\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - llm-wiki-multiwiki-e2e-gate: Bootstrap and validate multi-wiki factory flow: push->Git...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - sop-notebooklm-research: SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图...\n    - sop-wiki-build: SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n    - youtube-wiki-processing: Automated workflow for processing YouTube video research ...\n  devops/video-summarizer-local/vendor/summarize/.agent/skills:\n    - summarize: Transcribe and summarize videos from YouTube, local files...\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube transcripts to summaries, threads, blogs.\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Saturday, May 09, 2026 06:58 AM\nModel: deepseek-v4-flash\nProvider: deepseek",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_back",
+        "description": "Navigate back to the previous page in browser history. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_click",
+        "description": "Click on an element identified by its ref ID from the snapshot (e.g., '@e5'). The ref IDs are shown in square brackets in the snapshot output. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e5', '@e12')"
+            }
+          },
+          "required": [
+            "ref"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_console",
+        "description": "Get browser console output and JavaScript errors from the current page. Returns console.log/warn/error/info messages and uncaught JS exceptions. Use this to detect silent JavaScript errors, failed API calls, and application warnings. Requires browser_navigate to be called first. When 'expression' is provided, evaluates JavaScript in the page context and returns the result — use this for DOM inspection, reading page state, or extracting data programmatically.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clear": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, clear the message buffers after reading"
+            },
+            "expression": {
+              "type": "string",
+              "description": "JavaScript expression to evaluate in the page context. Runs in the browser like DevTools console — full access to DOM, window, document. Return values are serialized to JSON. Example: 'document.title' or 'document.querySelectorAll(\"a\").length'"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_get_images",
+        "description": "Get a list of all images on the current page with their URLs and alt text. Useful for finding images to analyze with the vision tool. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_navigate",
+        "description": "Navigate to a URL in the browser. Initializes the session and loads the page. Must be called before other browser tools. For plain-text endpoints — URLs ending in .md, .txt, .json, .yaml, .yml, .csv, .xml, raw.githubusercontent.com, or any documented API endpoint — prefer curl via the terminal tool or web_extract; the browser stack is overkill and much slower for these. Use browser tools when you need to interact with a page (click, fill forms, dynamic content). Returns a compact page snapshot with interactive elements and ref IDs — no need to call browser_snapshot separately after navigating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL to navigate to (e.g., 'https://example.com')"
+            }
+          },
+          "required": [
+            "url"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_press",
+        "description": "Press a keyboard key. Useful for submitting forms (Enter), navigating (Tab), or keyboard shortcuts. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown')"
+            }
+          },
+          "required": [
+            "key"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_scroll",
+        "description": "Scroll the page in a direction. Use this to reveal more content that may be below or above the current viewport. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "direction": {
+              "type": "string",
+              "enum": [
+                "up",
+                "down"
+              ],
+              "description": "Direction to scroll"
+            }
+          },
+          "required": [
+            "direction"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_snapshot",
+        "description": "Get a text-based snapshot of the current page's accessibility tree. Returns interactive elements with ref IDs (like @e1, @e2) for browser_click and browser_type. full=false (default): compact view with interactive elements. full=true: complete page content. Snapshots over 8000 chars are truncated or LLM-summarized. Requires browser_navigate first. Note: browser_navigate already returns a compact snapshot — use this to refresh after interactions that change the page, or with full=true for complete content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "full": {
+              "type": "boolean",
+              "description": "If true, returns complete page content. If false (default), returns compact view with interactive elements only.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_type",
+        "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e3')"
+            },
+            "text": {
+              "type": "string",
+              "description": "The text to type into the field"
+            }
+          },
+          "required": [
+            "ref",
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_vision",
+        "description": "Take a screenshot of the current page and analyze it with vision AI. Use this when you need to visually understand what's on the page - especially useful for CAPTCHAs, visual verification challenges, complex layouts, or when the text snapshot doesn't capture important visual information. Returns both the AI analysis and a screenshot_path that you can share with the user by including MEDIA:<screenshot_path> in your response. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "What you want to know about the page visually. Be specific about what you're looking for."
+            },
+            "annotate": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, overlay numbered [N] labels on interactive elements. Each [N] maps to ref @eN for subsequent browser commands. Useful for QA and spatial reasoning about page layout."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "clarify",
+        "description": "Ask the user a question when you need clarification, feedback, or a decision before proceeding. Supports two modes:\n\n1. **Multiple choice** — provide up to 4 choices. The user picks one or types their own answer via a 5th 'Other' option.\n2. **Open-ended** — omit choices entirely. The user types a free-form response.\n\nUse this tool when:\n- The task is ambiguous and you need the user to choose an approach\n- You want post-task feedback ('How did that work out?')\n- You want to offer to save a skill or update memory\n- A decision has meaningful trade-offs the user should weigh in on\n\nDo NOT use this tool for simple yes/no confirmation of dangerous commands (the terminal tool handles that). Prefer making a reasonable default choice yourself when the decision is low-stakes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "The question to present to the user."
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 4,
+              "description": "Up to 4 answer choices. Omit this parameter entirely to ask an open-ended question. When provided, the UI automatically appends an 'Other (type your answer)' option."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "cronjob",
+        "description": "Manage scheduled cron jobs with a single compressed tool.\n\nUse action='create' to schedule a new job from a prompt or one or more skills.\nUse action='list' to inspect jobs.\nUse action='update', 'pause', 'resume', 'remove', or 'run' to manage an existing job.\n\nTo stop a job the user no longer wants: first action='list' to find the job_id, then action='remove' with that job_id. Never guess job IDs — always list first.\n\nJobs run in a fresh session with no current-chat context, so prompts must be self-contained.\nIf skills are provided on create, the future cron run loads those skills in order, then follows the prompt as the task instruction.\nOn update, passing skills=[] clears attached skills.\n\nNOTE: The agent's final response is auto-delivered to the target. Put the primary\nuser-facing content in the final response. Cron jobs run autonomously with no user\npresent — they cannot ask questions or request clarification.\n\nImportant safety rule: cron-run sessions should not recursively schedule more cron jobs.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "description": "One of: create, list, update, pause, resume, remove, run"
+            },
+            "job_id": {
+              "type": "string",
+              "description": "Required for update/pause/resume/remove/run"
+            },
+            "prompt": {
+              "type": "string",
+              "description": "For create: the full self-contained prompt. If skills are also provided, this becomes the task instruction paired with those skills."
+            },
+            "schedule": {
+              "type": "string",
+              "description": "For create/update: '30m', 'every 2h', '0 9 * * *', or ISO timestamp"
+            },
+            "name": {
+              "type": "string",
+              "description": "Optional human-friendly name"
+            },
+            "repeat": {
+              "type": "integer",
+              "description": "Optional repeat count. Omit for defaults (once for one-shot, forever for recurring)."
+            },
+            "deliver": {
+              "type": "string",
+              "description": "Omit this parameter to auto-deliver back to the current chat and topic (recommended). Auto-detection preserves thread/topic context. Only set explicitly when the user asks to deliver somewhere OTHER than the current conversation. Values: 'origin' (same as omitting), 'local' (no delivery, save only), or platform:chat_id:thread_id for a specific destination. Examples: 'telegram:-1001234567890:17585', 'discord:#engineering', 'sms:+15551234567'. WARNING: 'platform:chat_id' without :thread_id loses topic targeting."
+            },
+            "skills": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional ordered list of skill names to load before executing the cron prompt. On update, pass an empty array to clear attached skills."
+            },
+            "model": {
+              "type": "object",
+              "description": "Optional per-job model override. If provider is omitted, the current main provider is pinned at creation time so the job stays stable.",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "description": "Provider name (e.g. 'openrouter', 'anthropic'). Omit to use and pin the current provider."
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Model name (e.g. 'anthropic/claude-sonnet-4', 'claude-sonnet-4')"
+                }
+              },
+              "required": [
+                "model"
+              ]
+            },
+            "script": {
+              "type": "string",
+              "description": "Optional path to a Python script that runs before each cron job execution. Its stdout is injected into the prompt as context. Use for data collection and change detection. Relative paths resolve under ~/.hermes/scripts/. On update, pass empty string to clear."
+            },
+            "context_from": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional job ID or list of job IDs whose most recent completed output is injected into the prompt as context before each run. Use this to chain cron jobs: job A collects data, job B processes it. Each entry must be a valid job ID (from cronjob action='list'). Note: injects the most recent completed output — does not wait for upstream jobs running in the same tick. On update, pass an empty array to clear."
+            },
+            "enabled_toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional list of toolset names to restrict the job's agent to (e.g. [\"web\", \"terminal\", \"file\", \"delegation\"]). When set, only tools from these toolsets are loaded, significantly reducing input token overhead. When omitted, all default tools are loaded. Infer from the job's prompt — e.g. use \"web\" if it calls web_search, \"terminal\" if it runs scripts, \"file\" if it reads files, \"delegation\" if it calls delegate_task. On update, pass an empty array to clear."
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Optional absolute path to run the job from. When set, AGENTS.md / CLAUDE.md / .cursorrules from that directory are injected into the system prompt, and the terminal/file/code_exec tools use it as their working directory — useful for running a job inside a specific project repo. Must be an absolute path that exists. When unset (default), preserves the original behaviour: no project context files, tools use the scheduler's cwd. On update, pass an empty string to clear. Jobs with workdir run sequentially (not parallel) to keep per-job directories isolated."
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "delegate_task",
+        "description": "Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window.\n\nTWO MODES (one of 'goal' or 'tasks' is required):\n1. Single task: provide 'goal' (+ optional context, toolsets)\n2. Batch (parallel): provide 'tasks' array with up to delegation.max_concurrent_children items (default 3, configurable via config.yaml, no hard ceiling). All run concurrently and results are returned together. Nested delegation requires role='orchestrator' and delegation.max_spawn_depth >= 2.\n\nWHEN TO USE delegate_task:\n- Reasoning-heavy subtasks (debugging, code review, research synthesis)\n- Tasks that would flood your context with intermediate data\n- Parallel independent workstreams (research A and B simultaneously)\n\nWHEN NOT TO USE (use these instead):\n- Mechanical multi-step work with no reasoning needed -> use execute_code\n- Single tool call -> just call the tool directly\n- Tasks needing user interaction -> subagents cannot use clarify\n- Durable long-running work that must outlive the current turn -> use cronjob (action='create') or terminal(background=True, notify_on_complete=True) instead. delegate_task runs SYNCHRONOUSLY inside the parent turn: if the parent is interrupted (user sends a new message, /stop, /new) the child is cancelled with status='interrupted' and its work is discarded. Children cannot continue in the background.\n\nIMPORTANT:\n- Subagents have NO memory of your conversation. Pass all relevant info (file paths, error messages, constraints) via the 'context' field.\n- If the user is writing in a non-English language, or asked for output in a specific language / tone / style, say so in 'context' (e.g. \"respond in Chinese\", \"return output in Japanese\"). Otherwise subagents default to English and their summaries will contaminate your final reply with the wrong language.\n- Subagent summaries are SELF-REPORTS, not verified facts. A subagent that claims \"uploaded successfully\" or \"file written\" may be wrong. For operations with external side-effects (HTTP POST/PUT, remote writes, file creation at shared paths, publishing), require the subagent to return a verifiable handle (URL, ID, absolute path, HTTP status) and verify it yourself — fetch the URL, stat the file, read back the content — before telling the user the operation succeeded.\n- Leaf subagents (role='leaf', the default) CANNOT call: delegate_task, clarify, memory, send_message, execute_code.\n- Orchestrator subagents (role='orchestrator') retain delegate_task so they can spawn their own workers, but still cannot use clarify, memory, send_message, or execute_code. Orchestrators are bounded by delegation.max_spawn_depth (default 2) and can be disabled globally via delegation.orchestrator_enabled=false.\n- Each subagent gets its own terminal session (separate working directory and state).\n- Results are always returned as an array, one entry per task.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "goal": {
+              "type": "string",
+              "description": "What the subagent should accomplish. Be specific and self-contained -- the subagent knows nothing about your conversation history."
+            },
+            "context": {
+              "type": "string",
+              "description": "Background information the subagent needs: file paths, error messages, project structure, constraints. The more specific you are, the better the subagent performs."
+            },
+            "toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Toolsets to enable for this subagent. Default: inherits your enabled toolsets. Available toolsets: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Common patterns: ['terminal', 'file'] for code work, ['web'] for research, ['browser'] for web interaction, ['terminal', 'file', 'web'] for full-stack tasks."
+            },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "goal": {
+                    "type": "string",
+                    "description": "Task goal"
+                  },
+                  "context": {
+                    "type": "string",
+                    "description": "Task-specific context"
+                  },
+                  "toolsets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Toolsets for this specific task. Available: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Use 'web' for network access, 'terminal' for shell, 'browser' for web interaction."
+                  },
+                  "acp_command": {
+                    "type": "string",
+                    "description": "Per-task ACP command override (e.g. 'claude'). Overrides the top-level acp_command for this task only."
+                  },
+                  "acp_args": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Per-task ACP args override."
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "leaf",
+                      "orchestrator"
+                    ],
+                    "description": "Per-task role override. See top-level 'role' for semantics."
+                  }
+                },
+                "required": [
+                  "goal"
+                ]
+              },
+              "description": "Batch mode: tasks to run in parallel (limit configurable via delegation.max_concurrent_children, default 3). Each gets its own subagent with isolated context and terminal session. When provided, top-level goal/context/toolsets are ignored."
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "leaf",
+                "orchestrator"
+              ],
+              "description": "Role of the child agent. 'leaf' (default) = focused worker, cannot delegate further. 'orchestrator' = can use delegate_task to spawn its own workers. Requires delegation.max_spawn_depth >= 2 in config; ignored (treated as 'leaf') when the child would exceed max_spawn_depth or when delegation.orchestrator_enabled=false."
+            },
+            "acp_command": {
+              "type": "string",
+              "description": "Override ACP command for child agents (e.g. 'claude', 'copilot'). When set, children use ACP subprocess transport instead of inheriting the parent's transport. Enables spawning Claude Code (claude --acp --stdio) or other ACP-capable agents from any parent, including Discord/Telegram/CLI."
+            },
+            "acp_args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Arguments for the ACP command (default: ['--acp', '--stdio']). Only used when acp_command is set. Example: ['--acp', '--stdio', '--model', 'claude-opus-4-6']"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "execute_code",
+        "description": "Run a Python script that can call Hermes tools programmatically. Use this when you need 3+ tool calls with processing logic between them, need to filter/reduce large tool outputs before they enter your context, need conditional branching (if X then Y else Z), or need to loop (fetch N pages, process N files, retry on failure).\n\nUse normal tool calls instead when: single tool call with no processing, you need to see the full result and apply complex reasoning, or the task requires interactive user input.\n\nAvailable via `from hermes_tools import ...`:\n\n  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n    Lines are 1-indexed. Returns {\"content\": \"...\", \"total_lines\": N}\n  write_file(path: str, content: str) -> dict\n    Always overwrites the entire file.\n  search_files(pattern: str, target=\"content\", path=\".\", file_glob=None, limit=50) -> dict\n    target: \"content\" (search inside files) or \"files\" (find files by name). Returns {\"matches\": [...]}\n  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n    Replaces old_string with new_string in the file.\n  terminal(command: str, timeout=None, workdir=None) -> dict\n    Foreground only (no background/pty). Returns {\"output\": \"...\", \"exit_code\": N}\n\nLimits: 5-minute timeout, 50KB stdout cap, max 50 tool calls per script. terminal() is foreground-only (no background or pty).\n\nScripts run in the session's working directory with the active venv's python, so project deps (pandas, etc.) and relative paths work like in terminal().\n\nPrint your final result to stdout. Use Python stdlib (json, re, math, csv, datetime, collections, etc.) for processing between tool calls.\n\nAlso available (no import needed — built into hermes_tools):\n  json_parse(text: str) — json.loads with strict=False; use for terminal() output with control chars\n  shell_quote(s: str) — shlex.quote(); use when interpolating dynamic strings into shell commands\n  retry(fn, max_attempts=3, delay=2) — retry with exponential backoff for transient failures",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Python code to execute. Import tools with `from hermes_tools import terminal, ...` and print your final result to stdout."
+            }
+          },
+          "required": [
+            "code"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "image_generate",
+        "description": "Generate high-quality images from text prompts. The underlying backend (FAL, OpenAI, etc.) and model are user-configured and not selectable by the agent. Returns either a URL or an absolute file path in the `image` field; display it with markdown ![description](url-or-path) and the gateway will deliver it.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "The text prompt describing the desired image. Be detailed and descriptive."
+            },
+            "aspect_ratio": {
+              "type": "string",
+              "enum": [
+                "landscape",
+                "square",
+                "portrait"
+              ],
+              "description": "The aspect ratio of the generated image. 'landscape' is 16:9 wide, 'portrait' is 16:9 tall, 'square' is 1:1.",
+              "default": "landscape"
+            }
+          },
+          "required": [
+            "prompt"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "memory",
+        "description": "Save durable information to persistent memory that survives across sessions. Memory is injected into future turns, so keep it compact and focused on facts that will still matter later.\n\nWHEN TO SAVE (do this proactively, don't wait to be asked):\n- User corrects you or says 'remember this' / 'don't do that again'\n- User shares a preference, habit, or personal detail (name, role, timezone, coding style)\n- You discover something about the environment (OS, installed tools, project structure)\n- You learn a convention, API quirk, or workflow specific to this user's setup\n- You identify a stable fact that will be useful again in future sessions\n\nPRIORITY: User preferences and corrections > environment facts > procedural knowledge. The most valuable memory prevents the user from having to repeat themselves.\n\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts.\nIf you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\n\nTWO TARGETS:\n- 'user': who the user is -- name, role, preferences, communication style, pet peeves\n- 'memory': your notes -- environment facts, project conventions, tool quirks, lessons learned\n\nACTIONS: add (new entry), replace (update existing -- old_text identifies it), remove (delete -- old_text identifies it).\n\nSKIP: trivial/obvious info, things easily re-discovered, raw data dumps, and temporary task state.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "add",
+                "replace",
+                "remove"
+              ],
+              "description": "The action to perform."
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "memory",
+                "user"
+              ],
+              "description": "Which memory store: 'memory' for personal notes, 'user' for user profile."
+            },
+            "content": {
+              "type": "string",
+              "description": "The entry content. Required for 'add' and 'replace'."
+            },
+            "old_text": {
+              "type": "string",
+              "description": "Short unique substring identifying the entry to replace or remove."
+            }
+          },
+          "required": [
+            "action",
+            "target"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "patch",
+        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "replace",
+                "patch"
+              ],
+              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
+              "default": "replace"
+            },
+            "path": {
+              "type": "string",
+              "description": "File path to edit (required for 'replace' mode)"
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
+              "default": false
+            },
+            "patch": {
+              "type": "string",
+              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "send_message",
+        "description": "Send a message to a connected messaging platform, or list available targets.\n\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "send",
+                "list"
+              ],
+              "description": "Action to perform. 'send' (default) sends a message. 'list' returns all available channels/contacts across connected platforms."
+            },
+            "target": {
+              "type": "string",
+              "description": "Delivery target. Format: 'platform' (uses home channel), 'platform:#channel-name', 'platform:chat_id', or 'platform:chat_id:thread_id' for Telegram topics and Discord threads. Examples: 'telegram', 'telegram:-1001234567890:17585', 'discord:999888777:555444333', 'discord:#bot-home', 'slack:#engineering', 'signal:+155****4567', 'matrix:!roomid:server.org', 'matrix:@user:server.org', 'yuanbao:direct:<account_id>' (DM), 'yuanbao:group:<group_code>' (group chat)"
+            },
+            "message": {
+              "type": "string",
+              "description": "The message text to send. To send an image or file, include MEDIA:<local_path> (e.g. 'MEDIA:/tmp/hermes/cache/img_xxx.jpg') in the message — the platform will deliver it as a native media attachment."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "session_search",
+        "description": "Search your long-term memory of past conversations, or browse recent sessions. This is your recall -- every past session is searchable, and this tool summarizes what happened.\n\nTWO MODES:\n1. Recent sessions (no query): Call with no arguments to see what was worked on recently. Returns titles, previews, and timestamps. Zero LLM cost, instant. Start here when the user asks what were we working on or what did we do recently.\n2. Keyword search (with query): Search for specific topics across all past sessions. Returns LLM-generated summaries of matching sessions.\n\nUSE THIS PROACTIVELY when:\n- The user says 'we did this before', 'remember when', 'last time', 'as I mentioned'\n- The user asks about a topic you worked on before but don't have in current context\n- The user references a project, person, or concept that seems familiar but isn't in memory\n- You want to check if you've solved a similar problem before\n- The user asks 'what did we do about X?' or 'how did we fix Y?'\n\nDon't hesitate to search when it is actually cross-session -- it's fast and cheap. Better to search and confirm than to guess or ask the user to repeat themselves.\n\nSearch syntax: keywords joined with OR for broad recall (elevenlabs OR baseten OR funding), phrases for exact match (\"docker networking\"), boolean (python NOT java), prefix (deploy*). IMPORTANT: Use OR between keywords for best results — FTS5 defaults to AND which misses sessions that only mention some terms. If a broad OR query returns nothing, try individual keyword searches in parallel. Returns summaries of the top matching sessions.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query — keywords, phrases, or boolean expressions to find in past sessions. Omit this parameter entirely to browse recent sessions instead (returns titles, previews, timestamps with no LLM cost)."
+            },
+            "role_filter": {
+              "type": "string",
+              "description": "Optional: only search messages from specific roles (comma-separated). E.g. 'user,assistant' to skip tool outputs."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max sessions to summarize (default: 3, max: 5).",
+              "default": 3
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_manage",
+        "description": "Manage skills (create, update, delete). Skills are your procedural memory — reusable approaches for recurring task types. New skills go to ~/.hermes/skills/; existing skills can be modified wherever they live.\n\nActions: create (full SKILL.md + optional category), patch (old_string/new_string — preferred for fixes), edit (full SKILL.md rewrite — major overhauls only), delete, write_file, remove_file.\n\nOn delete, pass `absorbed_into=<umbrella>` when you're merging this skill's content into another one, or `absorbed_into=\"\"` when you're pruning it with no forwarding target. This lets the curator tell consolidation from pruning without guessing, so downstream consumers (cron jobs that reference the old skill name, etc.) get updated correctly. The target you name in `absorbed_into` must already exist — create/patch the umbrella first, then delete.\n\nCreate when: complex task succeeded (5+ calls), errors overcome, user-corrected approach worked, non-trivial workflow discovered, or user asks you to remember a procedure.\nUpdate when: instructions stale/wrong, OS-specific failures, missing steps or pitfalls found during use. If you used a skill and hit issues not covered by it, patch it immediately.\n\nAfter difficult/iterative tasks, offer to save as a skill. Skip for simple one-offs. Confirm with user before creating/deleting.\n\nGood skills: trigger conditions, numbered steps with exact commands, pitfalls section, verification steps. Use skill_view() to see format examples.\n\nPinned skills are off-limits — all write actions refuse with a message pointing the user to `hermes curator unpin <name>`. Don't try to route around this by renaming or recreating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "create",
+                "patch",
+                "edit",
+                "delete",
+                "write_file",
+                "remove_file"
+              ],
+              "description": "The action to perform."
+            },
+            "name": {
+              "type": "string",
+              "description": "Skill name (lowercase, hyphens/underscores, max 64 chars). Must match an existing skill for patch/edit/delete/write_file/remove_file."
+            },
+            "content": {
+              "type": "string",
+              "description": "Full SKILL.md content (YAML frontmatter + markdown body). Required for 'create' and 'edit'. For 'edit', read the skill first with skill_view() and provide the complete updated text."
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'patch'). Must be unique unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'patch'). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "For 'patch': replace all occurrences instead of requiring a unique match (default: false)."
+            },
+            "category": {
+              "type": "string",
+              "description": "Optional category/domain for organizing the skill (e.g., 'devops', 'data-science', 'mlops'). Creates a subdirectory grouping. Only used with 'create'."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "Path to a supporting file within the skill directory. For 'write_file'/'remove_file': required, must be under references/, templates/, scripts/, or assets/. For 'patch': optional, defaults to SKILL.md if omitted."
+            },
+            "file_content": {
+              "type": "string",
+              "description": "Content for the file. Required for 'write_file'."
+            },
+            "absorbed_into": {
+              "type": "string",
+              "description": "For 'delete' only — declares intent so the curator can tell consolidation from pruning without guessing. Pass the umbrella skill name when this skill's content was merged into another (the target must already exist). Pass an empty string when the skill is truly stale and being pruned with no forwarding target. Omitting the arg on delete is supported for backward compatibility but downstream tooling (e.g. cron-job skill reference rewriting) will have to guess at intent."
+            }
+          },
+          "required": [
+            "action",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_view",
+        "description": "Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans')."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skills_list",
+        "description": "List available skills (name + description). Use skill_view(name) to load full content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional category filter to narrow results"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "text_to_speech",
+        "description": "Convert text to speech audio. Returns a MEDIA: path that the platform delivers as native audio. Compatible providers render as a voice bubble on Telegram; otherwise audio is sent as a regular attachment. In CLI mode, saves to ~/voice-memos/. Voice and provider are user-configured (built-in providers like edge/openai or custom command providers under tts.providers.<name>), not model-selected.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The text to convert to speech. Provider-specific character caps apply and are enforced automatically (OpenAI 4096, xAI 15000, MiniMax 10000, ElevenLabs 5k-40k depending on model); over-long input is truncated."
+            },
+            "output_path": {
+              "type": "string",
+              "description": "Optional custom file path to save the audio. Defaults to ~/.hermes/audio_cache/<timestamp>.mp3"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "todo",
+        "description": "Manage your task list for the current session. Use for complex tasks with 3+ steps or when the user provides multiple tasks. Call with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "todos": {
+              "type": "array",
+              "description": "Task items to write. Omit to read current list.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique item identifier"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Task description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ],
+                    "description": "Current status"
+                  }
+                },
+                "required": [
+                  "id",
+                  "content",
+                  "status"
+                ]
+              }
+            },
+            "merge": {
+              "type": "boolean",
+              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "vision_analyze",
+        "description": "Inspect an image from a URL, file path, or tool output when you need closer detail than what's visible in the conversation. If the user's image is already attached to the conversation and you can see it, just answer directly — only call this tool for images referenced by URL/path, images returned inside other tool results (browser screenshots, search thumbnails), or when you need a deeper look at a specific region the main model's vision may have missed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "description": "Image URL (http/https) or local file path to analyze."
+            },
+            "question": {
+              "type": "string",
+              "description": "Your specific question or request about the image to resolve. The AI will automatically provide a complete image description AND answer your specific question."
+            }
+          },
+          "required": [
+            "image_url",
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Complete content to write to the file"
+            }
+          },
+          "required": [
+            "path",
+            "content"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 69,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[IMPORTANT: The user has invoked the \"sop-wiki-build\" skill, indicating they want you to follow its instructions. The full skill content is loaded below.]\n\n---\nname: sop-wiki-build\ndescription: \"SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。\"\nversion: 2.0.0\n---\n\n# SOP Stage C: Wiki Incremental Build\n\n## 触发条件\nwebhook 收到 `stage=wiki-build`\n\n---\n\n## Phase 1: Pre-Execution（准备阶段）\n\n**目标：读取配置，同步仓库，确认有分析文件需要处理**\n\n1. 记录开始时间：`START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`\n2. `cd {wiki_local_path}`\n3. **首先读取 `TheSchema.md`**（最高优先级，知识图谱构建的唯一规范）。\n4. 保护性同步：\n   ```bash\n   git stash push -u -m \"sop-c-{run_id}\" 2>/dev/null || true\n   git fetch origin && git checkout main && git pull --ff-only origin main\n   if ! git stash pop 2>/dev/null; then\n       git reset --hard origin/main && git stash drop 2>/dev/null || true\n   fi\n   ```\n5. **扫描分析文件**（不依赖 git diff，直接扫目录）：\n   ```bash\n   ls {wiki_local_path}/raw/notebooklm-analysis/*.md 2>/dev/null | grep -v 'trigger'\n   ```\n6. **若无分析文件**：写跳过日志，git add + commit + push 日志，停止执行（禁止发 Telegram）。\n7. 读取 `index.md` 和 `log.md`（最近 10 条）了解现有内容，避免重复创建。\n8. 确保目录存在：`mkdir -p wiki/sources wiki/entities wiki/concepts wiki/comparisons wiki/overview wiki/queries logs/webhook-runs`\n\n---\n\n## Phase 2: Action（知识图谱构建）\n\n**目标：将分析文件转化为结构化 wiki 页面，严格遵循 TheSchema.md**\n\n### 文件写入约束（必须遵守）\n- **必须用 write_file 工具写入所有 wiki 文件**，禁止 `echo`、`heredoc`、`cat <<EOF`。\n- shell 方式导致 `\\n` 变成字面字符串，破坏 frontmatter 格式。\n\n### 命名陷阱（常见错误）\n\n1. **Entity 命名规范：遵循 TheSchema.md 小写 slug**：TheSchema.md §2 要求 entity 文件使用 `{实体名}.md（小写 slug）` 命名（如 `hermes-agent.md`），而非 readable 名称（如 `Hermes Agent.md`）。**这是最高优先级规范**，skill 的 slug-generation.md 参考文件已更新对齐。在所有页面中使用 `[[slug]]` 引用时，必须与 entity 文件名完全一致。\n\n2. **特殊字符导致文件名损坏**：避免在文件名中使用以下字符：\n   - `+`（加号）→ 文件系统显示为 `-+-`\n   - `：`（全角冒号）、`/`、`\\`、`?`、`*`、`<`、`>`\n   - 推荐使用中文汉字、英文连字符 `-`、空格（空格在 Linux 文件系统中受支持但请注意 wikilink 一致性）\n   \n3. **Linux 文件系统大小写敏感**：`Token-自由.md` 与 `token-自由.md` 是不同的文件。wikilink 中的名称必须与文件名的大小写完全一致。创建所有页面后运行链接健康检查（Step 14）可发现此问题。\n\n4. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。\n\n5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。\n\n### 对每个分析报告执行：\n\n9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：\n   ```\n   video_id, video_url, source_id, mindmap_file, processed_at\n   ```\n   - `video_url`：直接用于 source 页，比从内容推断更可靠\n   - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在\n   - 若无 frontmatter，退化到从报告正文推断\n\n10. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：\n   - frontmatter 必填：`title/type/tags/summary/sources/created/updated/layer/confidence`\n   - **新增 frontmatter 字段**（建立三方关联）：\n     ```yaml\n     video_url: {从报告 frontmatter 读取}\n     mindmap: raw/notebooklm-mindmaps/{mindmap_file}\n     ```\n   - `sources` 字段同时列出报告路径和脑图路径\n   - 页面正文**必须包含**视频 URL 和脑图引用：\n     ```\n     - 视频：{video_url}\n     - 思维导图：[[{mindmap_file去掉.json}]]（指向 raw/notebooklm-mindmaps/）\n     ```\n   - 执行摘要（3-5句）、核心要点（5-10条）\n   - 关联实体 `[[实体名]]`，关联概念 `[[概念名]]`\n   - 每个视频**唯一一个** source 页，若已存在则更新\n\n10. 创建/更新 **Entity 页**（`wiki/entities/{实体名}.md`）：\n    - 先查 index.md 确认是否已存在，已存在则更新不新建\n    - 基本定位、核心特征、关系网络（≥2 个 `[[wikilink]]`）、出现的视频来源\n\n11. 创建/更新 **Concept 页**（`wiki/concepts/{概念名}.md`）：\n    - 先查 index.md 确认是否已存在\n    - 定义、本库具体例子、关联概念（≥2 个）、关联实体（≥1 个）\n\n12. **检查 Comparison 触发**：同一视频或不同视频中有直接对比的两个实体 → 创建 `wiki/comparisons/{A}-vs-{B}.md`（对比表格+分析+结论）\n\n13. **检查 Overview 触发**：同主题 source 页 ≥2 个 → 创建或更新 `wiki/overview/{主题}.md`（跨视频综合，L2 推断）\n\n### 链接健康检查：\n14. 扫描所有新建/修改页面的 `[[wikilink]]`，确认目标文件存在。死链处理：立即创建缺失页面，或删除该链接。\n\n### 质量核查（创建所有页面后执行）：\n14b. 运行以下自动化检查，所有项必须通过才能提交：\n    - 每个新页面 frontmatter 6 个必填字段齐全（title/type/tags/summary/sources/layer）\n    - 每个新页面 ≥ 2 个有效出链 wikilinks（目标文件存在）\n    - source 页内容 ≥ 400 字（中文）\n    - entity/concept 页内容 ≥ 200 字\n    - sources 字段的文件真实存在于 raw/ 目录\n    - 无死链（Step 14 已确认）\n14c. 若为**首次构建**（index.md 显示 Total pages: 0 或仅模板内容），跳过\"检查现有页面避免重复\"的逻辑，直接为所有分析文件创建新页面。\n\n### 更新索引：\n15. 更新 `index.md`（按 type 分类，字母序，每条带 summary，更新 Last updated 和 Total pages）\n16. 追加 `log.md`（run_id、日期、新增文件列表）\n\n---\n\n## Phase 3: Post-Execution（提交阶段）⚠️ 强制执行\n\n**目标：无论 Phase 2 是否完整，必须 commit + push + 通知**\n\n> **此阶段独立于 Phase 2，即使 Phase 2 部分失败，也必须执行 Phase 3。**\n\n17. 记录结束时间：`END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`\n18. 用 write_file 工具写执行日志到 `{wiki_local_path}/logs/webhook-runs/{run_id}.md`，必须包含：\n    - `start_time` / `end_time`\n    - `new_sources` / `new_entities` / `new_concepts` / `new_comparisons` / `new_overviews`\n    - `status`：success / partial / skipped\n19. **检查并提交所有变更**：\n    ```bash\n    cd {wiki_local_path}\n    git add wiki/ index.md log.md logs/\n    if [ -n \"$(git status --porcelain)\" ]; then\n      git commit -m \"chore: update llm wiki graph [run:{run_id}]\"\n    fi\n    ```\n20. **push，最多重试 3 次**：\n    ```bash\n    for i in 1 2 3; do\n      git push origin main && break\n      git pull --ff-only origin main\n    done\n    ```\n21. 验证 push 成功：`git log --oneline -1` 确认本地 HEAD 与 origin/main 一致。\n22. **发送 Telegram（仅在 push 成功且有实际 wiki 更新时）**，格式遵循 TheSchema.md §8：\n    ```bash\n    TOKEN=$(printenv {tg_token_env})\n    curl -s -X POST \"https://api.telegram.org/bot${TOKEN}/sendMessage\" \\\n      -d \"chat_id={tg_chat_id}\" \\\n      -d \"disable_web_page_preview=true\" \\\n      --data-urlencode \"text=[YOUTUBE-WIKI-RUN]\nrun_id: {run_id}\n新增 source: {n} 个 — {标题列表}\n新增 entity: {n} 个 — {名称列表}\n新增 concept: {n} 个 — {名称列表}\n新增 comparison: {n} 个（如有）\n新增 overview: {n} 个（如有）\ncommit: {hash}\n耗时: {duration}s\nlog: logs/webhook-runs/{run_id}.md\"\n    ```\n    注意：如果新增项为 0，仍显示 `0 个` 但省略名称列表。\n\n## 注意\n- push 全部失败 → 记录 `status: push_failed`，**禁止发 Telegram**。\n- TG 发送失败 → 在 run-log 记录，不影响整体成功状态。\n\n[Skill directory: /home/zhouhuijuan1987/.hermes/skills/devops/sop-wiki-build]\nResolve any relative paths in this skill (e.g. `scripts/foo.js`, `templates/config.yaml`) against that directory, then run them with the terminal tool using the absolute path.\n\n[This skill has supporting files:]\n- references/run-log-format.md  ->  /home/zhouhuijuan1987/.hermes/skills/devops/sop-wiki-build/references/run-log-format.md\n- references/slug-generation.md  ->  /home/zhouhuijuan1987/.hermes/skills/devops/sop-wiki-build/references/slug-generation.md\n\nLoad any of these with skill_view(name=\"devops/sop-wiki-build\", file_path=\"<path>\"), or run scripts directly by absolute path (e.g. `node /home/zhouhuijuan1987/.hermes/skills/devops/sop-wiki-build/scripts/foo.js`).\n\nThe user has provided the following instruction alongside the skill invocation: 执行 SOP Stage C: llm-wiki 增量知识图谱构建。\n\n仓库路径: /home/zhouhuijuan1987/wiki/youtube-video-research-wiki\nGitHub repo: divanoo65/youtube-video-research-wiki\nRun ID: gh-25594744968-1\n当前 SHA: 8cbf8b71ed31807d1a4e8d52895c512e5e950a3c\n之前 SHA: 9b920ca83daabef58028f81f5c9eb5d5b1ca74a8\nTG Token 环境变量: YOUTUBE_WIKI_TG_TOKEN\nTG Chat ID: 6938920500\n构建模式: incremental\n\n请严格按照 sop-wiki-build skill 的定义执行，完成后 push 到 divanoo65/youtube-video-research-wiki 并发送 Telegram 通知。"
+    },
+    {
+      "role": "assistant",
+      "content": "好的，开始执行 SOP Stage C：llm-wiki 增量知识图谱构建。\n\n**Run ID:** `gh-25594744968-1`\n**仓库:** `/home/zhouhuijuan1987/wiki/youtube-video-research-wiki`\n\n---\n\n## Phase 1: Pre-Execution — 准备阶段\n\n先记录开始时间，读取 TheSchema.md，然后同步仓库并扫描分析文件。",
+      "reasoning": "The user wants me to execute the SOP Stage C: Wiki Incremental Build workflow. Let me follow the steps carefully.\n\nLet me start with Phase 1: Pre-Execution.\n\nI need to:\n1. Record start time\n2. cd to wiki local path\n3. Read TheSchema.md\n4. Protective sync\n5. Scan analysis files\n6. Read index.md and log.md\n\nLet me begin.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The user wants me to execute the SOP Stage C: Wiki Incremental Build workflow. Let me follow the steps carefully.\n\nLet me start with Phase 1: Pre-Execution.\n\nI need to:\n1. Record start time\n2. cd to wiki local path\n3. Read TheSchema.md\n4. Protective sync\n5. Scan analysis files\n6. Read index.md and log.md\n\nLet me begin.",
+      "tool_calls": [
+        {
+          "id": "call_00_TXPzQH6Egplp7I880anC7439",
+          "call_id": "call_00_TXPzQH6Egplp7I880anC7439",
+          "response_item_id": "fc_00_TXPzQH6Egplp7I880anC7439",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"date -u +%Y-%m-%dT%H:%M:%SZ\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"2026-05-09T06:58:44Z\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_TXPzQH6Egplp7I880anC7439"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Start time: 2026-05-09T06:58:44Z\n\nNow let me read TheSchema.md, and also do the protective sync and scan analysis files.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Start time: 2026-05-09T06:58:44Z\n\nNow let me read TheSchema.md, and also do the protective sync and scan analysis files.",
+      "tool_calls": [
+        {
+          "id": "call_00_asghduhkW5JBO0AZXuG32321",
+          "call_id": "call_00_asghduhkW5JBO0AZXuG32321",
+          "response_item_id": "fc_00_asghduhkW5JBO0AZXuG32321",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/TheSchema.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|created: 2026-05-09\\n     3|updated: 2026-05-09\\n     4|type: guide\\n     5|tags: [schema, wiki, knowledge-management, youtube-research]\\n     6|---\\n     7|\\n     8|## 0. 目标与边界\\n     9|\\n    10|> 核心目标：将 YouTube 视频内容转化为**可复利、可游走、可审计**的知识图谱。\\n    11|> 衡量标准：从任意一个节点出发，沿 wikilinks 至少可以游走 3 步不断链。\\n    12|\\n    13|- `raw/` 是唯一事实来源，**只读不改**。\\n    14|- 知识层维护仅在 `wiki/`、`index.md`、`log.md` 内进行。\\n    15|\\n    16|---\\n    17|\\n    18|## 1. 三层模型（强约束）\\n    19|\\n    20|### L1 事实层\\n    21|- 只写入可由 `raw/notebooklm-analysis/` 直接支持的事实。\\n    22|- 每条关键断言必须能回溯到具体的 source 页。\\n    23|- **禁止把推测写成事实。**\\n    24|\\n    25|### L2 推断层\\n    26|- 基于 2 个以上 L1 事实的归纳或跨视频综合。\\n    27|- 必须标注：`confidence: high|medium|low` + `reasoning: 推理依据（一句话）`\\n    28|- 典型场景：某个趋势在多个视频中反复出现，可以 L2 归纳。\\n    29|\\n    30|### L3 问题层\\n    31|- 记录尚未被现有视频回答的问题、假设、证据缺口。\\n    32|- 指导下一轮视频选题，不作为既定事实。\\n    33|\\n    34|---\\n    35|\\n    36|## 2. 目录结构\\n    37|\\n    38|| 目录 | 用途 | 命名规范 |\\n    39||------|------|--------|\\n    40|| `raw/youtube-links/` | 输入的 YouTube 链接文件 | `{video-id}.md` |\\n    41|| `raw/notebooklm-analysis/` | NotebookLM 生成的研究报告（只读）| `{中文标题}.md` |\\n    42|| `raw/notebooklm-mindmaps/` | NotebookLM 生成的思维导图（只读）| `{中文标题}.json` |\\n    43|| `wiki/sources/` | 每个视频的来源摘要页 | `{中文标题}.md` |\\n    44|| `wiki/entities/` | 人物、产品、组织、AI 模型 | `{实体名}.md`（小写 slug）|\\n    45|| `wiki/concepts/` | 技术方法、框架、行业趋势 | `{概念名}.md`（中文可直接用）|\\n    46|| `wiki/comparisons/` | 两个或多个实体/方案的对比分析 | `{A}-vs-{B}.md` |\\n    47|| `wiki/overview/` | 跨视频的主题综合分析 | `{主题名}.md` |\\n    48|| `wiki/queries/` | 重要问答沉淀 | `{问题-slug}.md` |\\n    49|\\n    50|---\\n    51|\\n    52|## 3. Frontmatter 规范（必填字段）\\n    53|\\n    54|```yaml\\n    55|---\\n    56|title: 页面标题（必填）\\n    57|type: source|entity|concept|comparison|overview|query\\n    58|tags: [tag1, tag2]\\n    59|summary: 一句话核心内容\\n    60|sources: [raw/notebooklm-analysis/xxx.md]\\n    61|created: YYYY-MM-DD\\n    62|updated: YYYY-MM-DD\\n    63|layer: L1|L2|L3\\n    64|confidence: high|medium|low  # L2/L3 必填\\n    65|reasoning: 推理依据           # L2/L3 必填\\n    66|---\\n    67|```\\n    68|\\n    69|**硬性约束：** `title/type/tags/summary/sources/layer` 缺一不可。\\n    70|\\n    71|---\\n    72|\\n    73|## 4. 五种页面类型规范\\n    74|\\n    75|### 4.1 Source 页（`wiki/sources/`）\\n    76|**每个视频必须有且仅有一个 source 页。**\\n    77|\\n    78|必须包含：\\n    79|- 视频元数据（标题、URL、发布者）\\n    80|- 执行摘要（3-5 句，核心价值主张）\\n    81|- 核心要点（5-10 条，具体而非泛泛）\\n    82|- 关键引言（原话 + 背景分析）\\n    83|- 关联实体：`[[实体名]]`（凡在视频中提到的关键实体）\\n    84|- 关联概念：`[[概念名]]`（凡在视频中介绍的核心概念）\\n    85|\\n    86|### 4.2 Entity 页（`wiki/entities/`）\\n    87|**只为在本库视频中有实质性描述的实体创建页面。**\\n    88|\\n    89|必须包含：\\n    90|- 基本定位（一句话）\\n    91|- 核心特征/能力（列表，具体）\\n    92|- **关系网络**（与其他实体的关系，`[[wikilink]]`，至少 2 条）\\n    93|- 出现的视频来源（`[[source页标题]]`，至少 1 条）\\n    94|\\n    95|### 4.3 Concept 页（`wiki/concepts/`）\\n    96|**只为在本库中有足够描述的概念创建，避免创建只有定义没有例子的空洞页面。**\\n    97|\\n    98|必须包含：\\n    99|- 定义（精确，不超过 3 句）\\n   100|- 在本库的具体例子（引用本库实际内容，非泛泛而谈）\\n   101|- 关联概念：`[[xxx]]`（至少 2 条）\\n   102|- 关联实体：`[[xxx]]`（至少 1 条）\\n   103|\\n   104|### 4.4 Comparison 页（`wiki/comparisons/`）\\n   105|**触发条件：同一视频或不同视频中，两个实体被直接对比时，必须创建。**\\n   106|\\n   107|必须包含：\\n   108|- 对比维度表格（维度 | A | B）\\n   109|- 核心差异分析\\n   110|- 适用场景结论\\n   111|- 双向链接到被比较的 entity 页：`[[实体A]]` `[[实体B]]`\\n   112|\\n   113|### 4.5 Overview 页（`wiki/overview/`）\\n   114|**触发条件：同一主题的 source 页达到 2 个或以上时，必须创建或更新。**\\n   115|\\n   116|必须包含：\\n   117|- 主题范围与边界\\n   118|- 跨视频综合发现（L2 推断，附 reasoning）\\n   119|- 开放问题/L3（指导后续视频选题）\\n   120|- 引用所有相关 source 页：`[[source1]]` `[[source2]]`\\n   121|\\n   122|---\\n   123|\\n   124|## 5. 链接健康规则（硬性约束，每次构建必须执行）\\n   125|\\n   126|1. **死链检测**：扫描所有 `[[wikilink]]`，确认目标文件存在。\\n   127|   - 目标文件不存在 → 立即创建该页面，或删除该链接\\n   128|   - **禁止带死链提交**\\n   129|\\n   130|2. **孤立页检测**：每个 wiki 页面至少被 1 个其他页面引用。\\n   131|   - 孤立页在 log 中记录，下次构建时处理。\\n   132|\\n   133|3. **Sources 字段验证**：`sources:` 列出的文件必须真实存在于 `raw/`。\\n   134|\\n   135|---\\n   136|\\n   137|## 6. 增量构建工作流（执行顺序不可调换）\\n   138|\\n   139|**Step 1 — 定向阅读**\\n   140|```\\n   141|读 TheSchema.md → 读 index.md → 读 log.md（最近 10 条）\\n   142|```\\n   143|\\n   144|**Step 2 — 处理每个新报告**\\n   145|1. 创建/更新 source 页（每视频一个，唯一）\\n   146|2. 创建/更新 entity 页（查 index 确认是否已存在，存在则更新不重建）\\n   147|3. 创建/更新 concept 页（同上）\\n   148|4. **检查 comparison 触发**：本视频是否有两个实体直接对比？→ 创建 comparison 页\\n   149|5. **检查 overview 触发**：同主题 source 页是否已有 2+ 个？→ 创建或更新 overview 页\\n   150|\\n   151|**Step 3 — 链接健康检查**\\n   152|扫描所有新建/修改页面的 wikilinks，修复死链。\\n   153|\\n   154|**Step 4 — 更新 index.md 和 log.md**\\n   155|- index.md：按 type 分类，字母序，每条带 summary，更新 Last updated 和总页数\\n   156|- log.md：追加本次运行记录（run_id、新增文件列表）\\n   157|\\n   158|**Step 5 — 质量核查（必须全部通过再提交）**\\n   159|- [ ] 每个新页面 frontmatter 6 个必填字段齐全\\n   160|- [ ] 每个新页面至少 2 个有效出链 wikilinks（目标文件存在）\\n   161|- [ ] source 页内容 ≥ 400 字\\n   162|- [ ] entity/concept 页内容 ≥ 200 字\\n   163|- [ ] sources 字段文件存在于 raw/\\n   164|- [ ] 无死链\\n   165|\\n   166|**Step 6 — 提交**\\n   167|```bash\\n   168|git add wiki/ index.md log.md logs/\\n   169|git commit -m \\\"chore: update llm wiki graph [run:{run_id}]\\\"\\n   170|git push origin main\\n   171|```\\n   172|\\n   173|---\\n   174|\\n   175|## 7. 命名规范\\n   176|\\n   177|- **raw 分析文件**：直接用中文语义标题，不加 video_id 前缀\\n   178|  - ✅ `零成本本地AI-Agent部署指南.md`\\n   179|  - ❌ `Kh8tGD5liwo-零成本本地AI-Agent部署指南.md`\\n   180|- **wiki 文件**：同上，语义化中文名\\n   181|- **内链**：`[[文件名（不含扩展名）]]` 或 `[[文件名|显示文字]]`\\n   182|- 所有内容使用**中文**，frontmatter 字段名用英文\\n   183|\\n   184|---\\n   185|\\n   186|## 8. Telegram 通知格式（Stage C 成功 push 后发送）\\n   187|\\n   188|```\\n   189|[YOUTUBE-WIKI-RUN]\\n   190|run_id: {run_id}\\n   191|新增 source: {n} 个 — {标题列表}\\n   192|新增 entity: {n} 个 — {名称列表}\\n   193|新增 concept: {n} 个 — {名称列表}\\n   194|新增 comparison: {n} 个（如有）\\n   195|新增 overview: {n} 个（如有）\\n   196|commit: {hash}\\n   197|log: logs/webhook-runs/{run_id}.md\\n   198|```\\n   199|\", \"total_lines\": 198, \"file_size\": 6981, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_asghduhkW5JBO0AZXuG32321"
+    },
+    {
+      "role": "assistant",
+      "content": "已读取 TheSchema.md。现在同步仓库、扫描分析文件、读取 index.md 和 log.md。",
+      "reasoning": "Good, I have TheSchema.md content. Now let me:\n1. Do the protective sync (git stash, fetch, pull)\n2. Scan for analysis files\n3. Read index.md and log.md\n\nLet me do these in parallel where possible.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, I have TheSchema.md content. Now let me:\n1. Do the protective sync (git stash, fetch, pull)\n2. Scan for analysis files\n3. Read index.md and log.md\n\nLet me do these in parallel where possible.",
+      "tool_calls": [
+        {
+          "id": "call_00_Pg6OBfwQzjzJIdkRTu4z5815",
+          "call_id": "call_00_Pg6OBfwQzjzJIdkRTu4z5815",
+          "response_item_id": "fc_00_Pg6OBfwQzjzJIdkRTu4z5815",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && git stash push -u -m \\\"sop-c-gh-25594744968-1\\\" 2>/dev/null || true && git fetch origin && git checkout main && git pull --ff-only origin main\", \"timeout\": 30}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"No local changes to save\\nAlready on 'main'\\nYour branch is up to date with 'origin/main'.\\nFrom https://github.com/divanoo65/youtube-video-research-wiki\\n * branch            main       -> FETCH_HEAD\\nAlready up to date.\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_Pg6OBfwQzjzJIdkRTu4z5815"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, sync done. Now scan for analysis files.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, sync done. Now scan for analysis files.",
+      "tool_calls": [
+        {
+          "id": "call_00_K6LwjZj3CO50irxIzi9r1773",
+          "call_id": "call_00_K6LwjZj3CO50irxIzi9r1773",
+          "response_item_id": "fc_00_K6LwjZj3CO50irxIzi9r1773",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"ls /home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/*.md 2>/dev/null | grep -v 'trigger'\", \"timeout\": 10}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/GPT-5-5-Instant-模型发布与性能分析简报.md\\n/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\n/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_K6LwjZj3CO50irxIzi9r1773"
+    },
+    {
+      "role": "assistant",
+      "content": "找到 3 个分析文件。接下来读取 index.md 和 log.md。",
+      "reasoning": "There are 3 analysis files:\n1. GPT-5-5-Instant-模型发布与性能分析简报.md\n2. Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\n3. 零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\n\nNow let me read index.md and log.md to understand existing content.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "There are 3 analysis files:\n1. GPT-5-5-Instant-模型发布与性能分析简报.md\n2. Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\n3. 零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\n\nNow let me read index.md and log.md to understand existing content.",
+      "tool_calls": [
+        {
+          "id": "call_00_LQ9mDntgKvsnvErlKbDU1171",
+          "call_id": "call_00_LQ9mDntgKvsnvErlKbDU1171",
+          "response_item_id": "fc_00_LQ9mDntgKvsnvErlKbDU1171",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/index.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Wiki Index\\n     2|\\n     3|> YouTube 视频研究知识图谱。\\n     4|> Last updated: 2026-05-09 | Total pages: 0\\n     5|\\n     6|## Sources\\n     7|## Entities\\n     8|## Concepts\\n     9|## Comparisons\\n    10|## Overview\\n    11|## Queries\\n    12|\", \"total_lines\": 11, \"file_size\": 170, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_LQ9mDntgKvsnvErlKbDU1171"
+    },
+    {
+      "role": "assistant",
+      "content": "这是一个**首次构建**（Total pages: 0），跳过重复检查，直接为所有分析文件创建新页面。",
+      "reasoning": "The index shows \"Total pages: 0\" which indicates this is a first build. According to the SOP:\n\n> 14c. 若为**首次构建**（index.md 显示 Total pages: 0 或仅模板内容），跳过\"检查现有页面避免重复\"的逻辑，直接为所有分析文件创建新页面。\n\nSo this is a first build. Let me read log.md and the analysis files.\n\nLet me also read log.md, and the reference files for slug generation.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The index shows \"Total pages: 0\" which indicates this is a first build. According to the SOP:\n\n> 14c. 若为**首次构建**（index.md 显示 Total pages: 0 或仅模板内容），跳过\"检查现有页面避免重复\"的逻辑，直接为所有分析文件创建新页面。\n\nSo this is a first build. Let me read log.md and the analysis files.\n\nLet me also read log.md, and the reference files for slug generation.",
+      "tool_calls": [
+        {
+          "id": "call_00_RpIzYTXXNfqB3KfOYkFd8094",
+          "call_id": "call_00_RpIzYTXXNfqB3KfOYkFd8094",
+          "response_item_id": "fc_00_RpIzYTXXNfqB3KfOYkFd8094",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/log.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Wiki Log\\n     2|\", \"total_lines\": 1, \"file_size\": 11, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_RpIzYTXXNfqB3KfOYkFd8094"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me now read the slug generation reference and also the 3 analysis files to understand their content.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me now read the slug generation reference and also the 3 analysis files to understand their content.",
+      "tool_calls": [
+        {
+          "id": "call_00_CrIHJyvp2FQNkP2RctZ13197",
+          "call_id": "call_00_CrIHJyvp2FQNkP2RctZ13197",
+          "response_item_id": "fc_00_CrIHJyvp2FQNkP2RctZ13197",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"devops/sop-wiki-build\", \"file_path\": \"references/slug-generation.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"devops/sop-wiki-build\", \"file\": \"references/slug-generation.md\", \"content\": \"# Slug 生成规范\\n\\n## Source 页\\n格式：`{中文标题}.md`\\n- 直接使用分析文件的语义化中文标题，不加 video_id 前缀。\\n- 示例：`Hermes + Qwen 3.6 本地最强 AI Agent 组合部署与应用简报.md`\\n\\n## Entity 页 → ⚠️ 遵循 TheSchema.md 的小写 slug 规范\\n格式：`{小写-slug}.md`\\n\\n**硬性规则**：entity 文件名使用**小写 slug 格式**，与 `[[wikilink]]` 中使用的名称完全一致（大小写敏感）。\\n\\n- TheSchema.md §2 定义 entity 命名规范为 `{实体名}.md（小写 slug）`\\n- 如果你在 source 页中写 `[[hermes-agent]]`，entity 文件必须命名为 `hermes-agent.md`\\n- 如果你在 source 页中写 `[[openai]]`，entity 文件必须命名为 `openai.md`\\n- **不要**使用带空格的 readable 名称（`Hermes Agent.md`、`OpenAI.md`），因为 TheSchema.md 要求小写 slug\\n- 对于中文实体名（如 `chatgpt`、`evomap`），直接使用英文 slug 或全小写拼音\\n\\n**一致性规则**：在所有页面中使用 `[[slug]]` 引用实体时，必须与 entity 文件名完全一致（Linux 文件系统大小写敏感）。\\n\\n**检查方法**：创建完所有页面后执行：\\n```bash\\ncd {wiki_local_path}/wiki\\ngrep -rho '\\\\[\\\\[[^]]*\\\\]\\\\]' sources/ entities/ concepts/ comparisons/ overview/ --include='*.md' | sort -u\\n```\\n然后遍历每个 wikilink 确认目标文件存在于对应的 entities/, concepts/ 等目录中。\\n\\n## Concept 页\\n格式：`{概念名}.md`\\n- 概念：中文概念名称，直接使用中文命名。\\n- 示例：`执行循环驱动架构.md`、`Token自由.md`\\n\\n## 注意\\n- slug 必须唯一，避免冲突。\\n- 建议先检查对应目录下是否已存在同名文件。\\n- 所有 wiki 文件使用 write_file 工具写入，禁止 shell heredoc/eval。\\n\", \"file_type\": \".md\"}",
+      "tool_call_id": "call_00_CrIHJyvp2FQNkP2RctZ13197"
+    },
+    {
+      "role": "assistant",
+      "content": "确保目录结构就绪：",
+      "reasoning": "Good, I have the slug generation reference. Now let me read the three analysis files to understand what reports exist.\n\nLet me also ensure the directory structure is ready first.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, I have the slug generation reference. Now let me read the three analysis files to understand what reports exist.\n\nLet me also ensure the directory structure is ready first.",
+      "tool_calls": [
+        {
+          "id": "call_00_quMccRy0sdxRV6RZ7k7i6796",
+          "call_id": "call_00_quMccRy0sdxRV6RZ7k7i6796",
+          "response_item_id": "fc_00_quMccRy0sdxRV6RZ7k7i6796",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"mkdir -p /home/zhouhuijuan1987/wiki/youtube-video-research-wiki/{wiki/sources,wiki/entities,wiki/concepts,wiki/comparisons,wiki/overview,wiki/queries,logs/webhook-runs}\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_quMccRy0sdxRV6RZ7k7i6796"
+    },
+    {
+      "role": "assistant",
+      "content": "现在读取所有 3 个分析文件：",
+      "reasoning": "Now let me read all three analysis files. Let me start reading them.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now let me read all three analysis files. Let me start reading them.",
+      "tool_calls": [
+        {
+          "id": "call_00_PWCfqdkmsgJFhCIzdCip4733",
+          "call_id": "call_00_PWCfqdkmsgJFhCIzdCip4733",
+          "response_item_id": "fc_00_PWCfqdkmsgJFhCIzdCip4733",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/GPT-5-5-Instant-模型发布与性能分析简报.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|video_id: krEDel3aGGw\\n     3|video_url: https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\\n     4|source_id: 377cecb5-dead-4519-accf-cd09b3a1fa23\\n     5|mindmap_file: krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json\\n     6|processed_at: 20260509T065628Z\\n     7|---\\n     8|\\n     9|# GPT-5.5 Instant 模型发布与性能分析简报\\n    10|\\n    11|## 执行摘要\\n    12|\\n    13|OpenAI 近期发布了其最新、性能最强的模型 **GPT-5.5 Instant**，并已将其作为 ChatGPT 的默认轮换模型。此次更新的核心意义在于“全面开放”，即该模型不再是付费（Plus 或 Team）用户的专属，普通免费用户只要拥有账号即可直接使用。\\n    14|\\n    15|GPT-5.5 Instant 的升级重心并非单纯追求模型参数的增加或跑分成绩，而是致力于解决大模型在实际应用中的核心痛点：降低幻觉率、提升回复的自然度、增强记忆能力以及优化多模态处理。实测结果显示，该模型在数学逻辑推理、内容创作框架构建、高风险问题处理及联网搜索判断方面均表现出显著的进化，使其更接近一个真实的“个人 AI 助手”。\\n    16|\\n    17|---\\n    18|\\n    19|## 核心主题深度分析\\n    20|\\n    21|### 1. 幻觉抑制与逻辑修复能力\\n    22|GPT-5.5 Instant 在处理复杂问题（如医疗、金融、数学）时的稳定性得到了重点优化。\\n    23|*   **纠错逻辑：** 模型不再盲目顺应用错误的逻辑。在数学题测试中，当用户计算过程出错时，GPT-5.5 Instant 能够识别代数错误并重新推导，而非像前代模型（如 GPT-5.3）那样过早停止计算并给出错误结论。\\n    24|*   **方向转变：** AI 的发展方向已从“更会说”转变为“更少说错”，优先保证高风险场景下的回答靠谱性。\\n    25|\\n    26|### 2. 交互体验的“去机械化”\\n    27|针对用户长期反馈的 AI 回复过于客套、啰嗦的问题，GPT-5.5 Instant 进行了交互风格的重大调整。\\n    28|*   **减少废话：** 大幅削减了如“这是一个非常好的问题”等过度礼貌的开场白。\\n    29|*   **直击重点：** 减少了机械式的条列说明和无谓的追问，输出内容更直接、更自然，旨在提供清楚准确的答案而非冗长的论文。\\n    30|\\n    31|### 3. 个人助手化的记忆与个性化\\n    32|通过新增类似 **Memory Sources** 的功能，模型在往“长期陪伴助手”方向进化。\\n    33|*   **上下文关联：** 响应时能更好地参考过去的聊天记录和相关关联数据。\\n    34|*   **精准建议：** 能够根据用户的地理位置、喜好提供更具个性化的建议，展现出更强的成长性。\\n    35|\\n    36|### 4. 多模态与硬核能力提升\\n    37|在多项基准测试（如 AM 数据库竞赛级科学测试、多模态基准测试升级版）中，GPT-5.5 Instant 的评分均高于上一代模型。\\n    38|*   **图表与文件理解：** 在图片分析、文件总结和理解方面表现更稳定。\\n    39|*   **联网决策：** 能够准确判断何时需要联网搜索实时信息，何时直接回答。\\n    40|*   **视觉实操：** 可通过截屏直接识别系统报错代码（如 Windows 更新错误），并给出按优先级排序的解决方案。\\n    41|\\n    42|### 5. 开发者生态的简化\\n    43|OpenAI 调整了 API 策略，引入了 **`ch-latest`** 别名。\\n    44|*   **低维护成本：** 开发人员只需调用此名称，即可自动对接最新的 Instant 模型架构。\\n    45|*   **自动升级：** 当模型后续更新时，开发者无需手动更改模型名称，降低了 AI 应用和自动化工具的维护门槛。\\n    46|\\n    47|---\\n    48|\\n    49|## 实测表现概览\\n    50|\\n    51|下表基于对 GPT-5.5 Instant 的多维度实测数据总结：\\n    52|\\n    53|| 测试维度 | 表现特征 | 实用价值 |\\n    54|| :--- | :--- | :--- |\\n    55|| **响应速度与结构** | 结论先行，无明显废话，支持中文字数限制。 | 提高信息获取效率，适合快速决策。 |\\n    56|| **内容创作** | 能构建视频框架（标题、核心观点、争议点、结论）。 | 减少自媒体创作前期的构思时间。 |\\n    57|| **逻辑比较** | 从多维度（用户体验、市场竞争等）进行结构化判断。 | 帮助用户理清复杂事物的层级关系。 |\\n    58|| **高风险处理** | 面对医疗求助（如幼儿呕吐）不轻易下诊断，给出处理建议并强调急诊指征。 | 在敏感场景下提供更谨慎、专业的辅助参考。 |\\n    59|| **联网核对** | 主动搜索官方最新说明，能区分实时价格与过时信息。 | 避免被陈旧资料误导。 |\\n    60|| **图片理解** | 识别截图中的错误代码并给出技术指导步骤。 | 简化故障排除流程，替代繁琐的关键词搜索。 |\\n    61|\\n    62|---\\n    63|\\n    64|## 重要语录与背景上下文\\n    65|\\n    66|> **“现在 AI 方向已经很明确，不是让他更会说，而是让他更少说错。”**\\n    67|*   **背景：** 在讨论 GPT-5.5 如何解决医疗、金融等高风险领域的“胡说八道”问题时，强调了模型逻辑稳定性的重要性。\\n    68|\\n    69|> **“以前的 AI 回答……会拍马屁，总会先奉承一句‘这是一个很好的问题’……这种话会让（用户）觉得很累。”**\\n    70|*   **背景：** 解释为什么新模型要减少过度的格式化套话，追求更自然、像真人的对话体验。\\n    71|\\n    72|> **“GPT-5.5 已经不只是一个问答，而是一个能够慢慢成长为长期陪伴的 AI 助理。”**\\n    73|*   **背景：** 针对新加入的记忆功能及其对个性化建议的提升所做的评价。\\n    74|\\n    75|---\\n    76|\\n    77|## 行动建议与见解\\n    78|\\n    79|1.  **免费用户立即启用：** 鉴于 GPT-5.5 Instant 已向所有账号开放，普通用户应切换至该模型以享受更低的幻觉率和更强的逻辑能力。\\n    80|2.  **利用“图片+指令”解决技术问题：** 在遇到软件报错或系统故障时，优先使用截图上传功能，让 AI 直接分析错误代码并提供步骤引导，这比传统搜索更高效。\\n    81|3.  **开发者迁移至 `ch-latest`：** 使用 API 的开发人员应更新其调用参数为 `ch-latest`，以确保应用始终运行在最新的模型版本上，无需频繁手动维护。\\n    82|4.  **注意使用配额：** 尽管免费开放，但仍存在限额。根据官方说明，免费用户每 5 小时内有一定的消息额度限制，高频用户需合理分配任务。\\n    83|5.  **内容创作流程优化：** 创作者可利用其更强的结构化输出能力，将模型定位为“架构师”，先由 AI 搭建视频或文章的底层逻辑框架，再由人工填充细节。\", \"total_lines\": 82, \"file_size\": 6311, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_PWCfqdkmsgJFhCIzdCip4733"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, now let me read the other two analysis files.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, now let me read the other two analysis files.",
+      "tool_calls": [
+        {
+          "id": "call_00_wZQsNFm7DYeVO6kfifGc6765",
+          "call_id": "call_00_wZQsNFm7DYeVO6kfifGc6765",
+          "response_item_id": "fc_00_wZQsNFm7DYeVO6kfifGc6765",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\", \"limit\": 200}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|video_id: NbldZVdusKo\\n     3|video_url: https://www.youtube.com/watch?v=NbldZVdusKo\\n     4|source_id: 3d57748d-727f-477e-96a1-9dbd0a3749cf\\n     5|mindmap_file: NbldZVdusKo_3d57748d-727f-477e-96a1-9dbd0a3749cf_20260509T065557Z_mindmap.json\\n     6|processed_at: 20260509T065557Z\\n     7|---\\n     8|\\n     9|# Hermes Agent 与 OpenClaw 深度对比简报：下一代自我进化智能体分析\\n    10|\\n    11|## 执行摘要\\n    12|\\n    13|本报告基于对自托管智能体赛道中两大核心产品——**OpenClaw** 与 **Hermes Agent** 的深度调研。OpenClaw 凭借其清晰的架构和完善的工作区机制，定义了个人自托管智能体的初步标准。然而，由 Nous Research 开发的 Hermes Agent 正在通过引入“自我进化”、“程序化知识生成”和“分层记忆体系”等理念，推动智能体从单纯的“工具助手”向“个人数字化基础设施”演进。\\n    14|\\n    15|Hermes Agent 的核心优势在于其去中心化的设计哲学和模型无关性，允许用户在多种计算环境下无缝部署。尽管目前该项目卷入了针对中国开源项目 EvoMap 的架构抄袭风波，但其展现的技术路线——即让智能体在执行任务中自动沉淀经验并转化为可复用技能——代表了本地智能体发展的重要趋势。\\n    16|\\n    17|---\\n    18|\\n    19|## 核心主题深度分析\\n    20|\\n    21|### 1. 架构逻辑：中心化管控 vs. 代理执行循环\\n    22|两种智能体在底层设计思路上存在本质差异：\\n    23|*   **OpenClaw (以 Gateway 为中心)：** 采用 Gateway 网关作为绝对的控制中枢。它是一个后台守护进程，负责调度工具、路由请求和维护状态。这种设计的优点是稳定性高、一切行为可审计。\\n    24|*   **Hermes Agent (以执行循环为中心)：** 彻底颠覆了网关核心论，将 AI Agent 自身的“执行循环”定义为同步编排引擎。网关、工具运行时、会话持久化等模块均围绕此循环集成。这种架构使系统天生支持“执行-学习-改进”的闭环，实现自我进化。\\n    25|\\n    26|### 2. 技能机制：手动模块化 vs. 自动化程序化知识\\n    27|*   **OpenClaw：** 技能主要由人类开发者编写，以插件扩展包的形式存在，更接近传统工具流。\\n    28|*   **Hermes Agent：** 引入了“程序化知识”概念。它能根据执行经验，自动将多步操作抽象为可复用的流程，并存储在 `~/.hermes/skills/` 目录下。这意味着智能体不再仅仅是“记住事实”，而是“学会方法”。\\n    29|\\n    30|### 3. 分层记忆体系\\n    31|Hermes Agent 构建了一套结构化的四层持久化存储系统，以优化 Token 效率和检索精度：\\n    32|\\n    33|| 记忆层级 | 存储载体 | 功能描述 | 限制与特点 |\\n    34|| :--- | :--- | :--- | :--- |\\n    35|| **第一层：核心持久记忆** | `MEMORY.md` / `USER.md` | 记录核心笔记与用户偏好 | 严格限制在 1300 Tokens 左右，最高优先级 |\\n    36|| **第二层：会话历史记忆** | SQLite (FTS5) | 存储所有对话记录 | 支持全文索引与摘要重构，按需检索 |\\n    37|| **第三层：扩展记忆层** | Honcho (可选) | 建立长期用户画像 | 跨会话理解用户长期习惯与模式 |\\n    38|| **第四层：程序性记忆** | 技能库 (Skills) | 存储学会的行动模式 | 将工作流视为记忆的一部分 |\\n    39|\\n    40|### 4. 身份锚定与自动化能力\\n    41|*   **身份定义：** OpenClaw 的身份（SOUL.md）绑定在特定工作区；而 Hermes 的身份是全局性的，不随工作目录或设备的切换而改变。\\n    42|*   **自动化：** Hermes 内置了基于自然语言定义的 **cron 计划任务系统**。系统每 60 秒检查一次条件，并在隔离会话中运行任务，适合处理定期报告、数据备份等场景。\\n    43|\\n    44|---\\n    45|\\n    46|## 关键引言及其背景\\n    47|\\n    48|> **\\\"智能体正在经历从设计哲学、架构逻辑到能力成长路径的一场新的变革。\\\"**\\n    49|*   **背景：** 描述了用户从习惯使用稳定的 OpenClaw 转向追求具备自我进化能力的 Hermes Agent 的趋势。\\n    50|\\n    51|> **\\\"它让智能体从传统的记住事实，升级为了记住方法。这也是智能体从被动执行到主动成长的关键跨越。\\\"**\\n    52|*   **背景：** 解释 Hermes Agent 自动生成技能（Skills）的本质意义，强调了程序化知识在长期运行中的重要性。\\n    53|\\n    54|> **\\\"Hermes Agent 并不是把网关作为核心，而是直接将 AI Agent 自身的执行循环，定义为整个系统的同步编排引擎。\\\"**\\n    55|*   **背景：** 阐述了 Hermes 在技术架构上的颠覆性创新，这是其能够实现自我修正和逻辑优化的根本原因。\\n    56|\\n    57|---\\n    58|\\n    59|## 部署与安全性分析\\n    60|\\n    61|### 部署灵活性\\n    62|Hermes Agent 表现出极强的环境适应性：\\n    63|*   **计算环境：** 支持本地、VPS、Docker、SSH 远程环境及无服务器架构。\\n    64|*   **交互界面：** 与计算核心解耦，支持 Telegram、Discord、Slack、WhatsApp 等主流应用及 TUI（文本用户界面）。\\n    65|*   **模型无关：** 支持 OpenAI、OpenRouter、国内主流大模型（Kimi, GLM等）及自定义端点，通过命令即可快速切换模型。\\n    66|\\n    67|### 安全防护模型\\n    68|针对自托管智能体的高权限风险，Hermes 提出了**五层纵深防御模型**：\\n    69|1.  用户授权与危险命令审批。\\n    70|2.  容器化环境隔离。\\n    71|3.  MCP 凭证过滤与上下文文件扫描。\\n    72|4.  SSRF（服务器端请求伪造）防护与网站黑名单。\\n    73|5.  消息用户配对与环境变量过滤。\\n    74|\\n    75|---\\n    76|\\n    77|## 行动建议与行业观察\\n    78|\\n    79|### 1. 适用场景建议\\n    80|*   **个人用户：** 建议利用 Hermes 的 cron 系统建立“每日简报机器人”，或通过其 TUI 界面作为高效的编程助手。\\n    81|*   **研发团队：** 利用 Hermes 的研究基础设施记录操作轨迹，收集高质量数据用于模型微调或自动化 GitHub Issue 分诊。\\n    82|*   **OpenClaw 存量用户：** Hermes 提供一键迁移工具，可自动转换 Markdown 记忆为 SQLite 存储，建议在需要更强自动化能力的场景下尝试迁移。\\n    83|\\n    84|### 2. 技术局限与风险提示\\n    85|*   **系统要求：** Windows 用户必须安装 WSL2 才能运行。\\n    86|*   **合规与声誉风险：** 需关注 Hermes 团队与 EvoMap 之间的抄袭争议。虽然目前代码无直接雷同，但架构层面的高度相似性可能影响项目的开源协作走向。\\n    87|*   **数据处理：** 虽然支持操作轨迹记录，但将轨迹转化为优质训练数据仍需额外的处理流程。\\n    88|\\n    89|### 3. 发展趋势\\n    90|下一代智能体将进一步融合 OpenClaw 的“透明可控”与 Hermes 的“自我进化”优势。开发者应关注 **agentskills.io** 等开放标准，以确保技能在不同智能体系统间的兼容性与可扩展性。\", \"total_lines\": 89, \"file_size\": 6564, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_wZQsNFm7DYeVO6kfifGc6765"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, now let me read the third analysis file.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, now let me read the third analysis file.",
+      "tool_calls": [
+        {
+          "id": "call_00_BVs0FaNarE1WGWevFzXv7280",
+          "call_id": "call_00_BVs0FaNarE1WGWevFzXv7280",
+          "response_item_id": "fc_00_BVs0FaNarE1WGWevFzXv7280",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|video_id: Kh8tGD5liwo\\n     3|video_url: https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\\n     4|source_id: 8686f0bf-4577-4db9-9a7a-20918ebd1b31\\n     5|mindmap_file: Kh8tGD5liwo_8686f0bf-4577-4db9-9a7a-20918ebd1b31_20260509T065526Z_mindmap.json\\n     6|processed_at: 20260509T065526Z\\n     7|---\\n     8|\\n     9|# 零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案\\n    10|\\n    11|本报告基于“零度解说”提供的技术方案，详细分析了如何利用开源模型 Qwen3.6 与 Hermes Agent 构建一个完全本地化、隐私安全且零成本的 24 小时在线 AI 助手系统。\\n    12|\\n    13|## 1. 执行摘要 (Executive Summary)\\n    14|\\n    15|当前 AI 领域正向本地化与自动化迈进。本方案通过组合 **Qwen3.6（通义千问最新开源版）** 与 **Hermes Agent**，实现了在个人电脑上运行高性能 AI 代理的能力。该组合的核心优势在于“TOKEN 自由”与“数据隐私”，用户无需支付月费，即可在本地处理自动化任务、编写代码及进行复杂的逻辑推理。通过 WSL2 (Ubuntu 24.04) 环境及 Llama-cpp 推理框架，该系统支持从 0.8B 到 27B 不同参数规模的模型，以适配各类显存配置，并能通过 Telegram 实现全球远程调控。\\n    16|\\n    17|---\\n    18|\\n    19|## 2. 核心主题深度分析\\n    20|\\n    21|### 2.1 技术栈选择与稳定性优化\\n    22|方案放弃了追求极致速度但显存门槛较高的 vLLM 或 DeepSpeed，转而选择 **Llama-cpp** 方案。\\n    23|*   **稳定性优先：** Llama-cpp 能有效防止显存溢出（爆显存），对于显存有限的用户更加友好。\\n    24|*   **硬件适配性：** 支持多种规格的 Qwen 模型（如 0.8B, 2B, 4B, 9B, 27B），确保从入门级笔记本到高端工作站均能部署。\\n    25|*   **环境依赖：** 核心依赖包括 Windows 系统的 Linux 子系统 (WSL2)、最新版 N 卡驱动及 CUDA 工具包。\\n    26|\\n    27|### 2.2 性能表现与实时反馈\\n    28|在 24G 显存环境下运行 Qwen3.6 27B 模型，未经深度优化的初始速度可达约 **40 Tokens/s**。\\n    29|*   **响应速度：** 能够实现“秒出”结果，满足编程、网页制作（如 PHP+数据库中转站）等重度任务需求。\\n    30|*   **模式切换：** 模型默认开启“深度思考模式”，但针对 Hermes Agent 场景，建议关闭该模式以获得更快的响应速度。\\n    31|\\n    32|### 2.3 远程交互与 Agent 自动化\\n    33|Hermes Agent 的引入将单一的大模型转变为具备执行能力的“助手”。\\n    34|*   **跨设备访问：** 通过对接 Telegram 机器人，用户可以在手机上随时随地发起任务。\\n    35|*   **自动化运行：** 系统配置了开机自启动脚本，使其成为 24 小时在线的本地服务端，支持创建定时任务。\\n    36|\\n    37|---\\n    38|\\n    39|## 3. 关键语录与背景上下文\\n    40|\\n    41|| 语录原文 | 背景与意义 |\\n    42|| :--- | :--- |\\n    43|| “真的可以做到 TOKEN 自由，零月费，数据隐私安全完全掌握在自己手里。” | 强调了本地部署的核心动机：摆脱 API 调用成本和数据泄露风险。 |\\n    44|| “为了防止爆显存的话，所以我推荐大家使用更加稳定的 Llama-cpp 方案。” | 针对家庭用户硬件多样性的技术选型建议，降低了部署门槛。 |\\n    45|| “普通人很多的任务，都不需要用收费模型，本地模型已经足够使用了。” | 对本地模型能力的信心，认为其足以处理日常编程和逻辑任务。 |\\n    46|| “它就是你 24 随时在线的 AI 助手，百分百本地部署，完全免费开源。” | 勾勒出该方案的终极形态：一个完全受控、全天候工作的智能代理。 |\\n    47|\\n    48|---\\n    49|\\n    50|## 4. 部署与配置流程指南\\n    51|\\n    52|### 4.1 环境准备\\n    53|1.  **启用 WSL2：** 在 Windows PowerShell 中以管理员身份运行一键安装命令，安装 Ubuntu 24.04。\\n    54|2.  **驱动更新：** 必须安装最新的 NVIDIA 显卡驱动并配置 CUDA 工具包（约 2G）。\\n    55|3.  **推理框架：** 安装 Python 和 pip 后，编译并安装 Llama-cpp。\\n    56|\\n    57|### 4.2 模型获取与运行\\n    58|*   **模型选择：** 根据显存大小选择 Qwen 模型版本（24G 显存推荐 27B 版本）。\\n    59|*   **下载途径：** 国内用户建议使用 **ModelScope (魔搭社区)** 镜像以提升下载速度。\\n    60|*   **运行命令：** 使用特定命令启动模型，并通过 `8080` 端口访问 Web 界面。\\n    61|\\n    62|### 4.3 Agent 集成 (Hermes)\\n    63|*   **API 配置：** 在 Hermes 设置中选择“自定义模式”，将 Base URL 指向本地地址 `http://localhost:8080/v1`。\\n    64|*   **身份验证：** 由于是本地运行，API KEY 可随意填写。\\n    65|*   **远程对接：** 通过 Telegram 的 **BotFather** 获取 Token，并绑定个人 Telegram ID 实现私密控制。\\n    66|\\n    67|---\\n    68|\\n    69|## 5. 行动建议与洞察 (Actionable Insights)\\n    70|\\n    71|*   **灵活调整模型规模：** 若在部署过程中遇到性能瓶颈，应优先尝试更换为较小参数的模型（如 7B 或 9B），因为 Qwen 系列的小参数模型在中文理解上依然表现优异。\\n    72|*   **优化响应效率：** 对于需要快速反馈的 Agent 任务，务必在启动命令中关闭“深度思考模式”，以缩短首个 Token 的生成时间。\\n    73|*   **确保高可用性：** 强烈建议创建 Linux 系统的自启动脚本。这样即使电脑重启，AI 服务也能自动恢复，无需手动干预。\\n    74|*   **利用远程控制：** 通过 Telegram 机器人功能，可以将家中的算力转化为随身携带的智能工具，执行诸如定时信息抓取、代码生成或复杂指令处理等任务。\", \"total_lines\": 73, \"file_size\": 5382, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_BVs0FaNarE1WGWevFzXv7280"
+    },
+    {
+      "role": "assistant",
+      "content": "已读取所有 3 个分析文件。现在检查脑图文件是否存在，然后进入 Phase 2 构建知识图谱。",
+      "reasoning": "Now I have all three analysis files. Let me also check the mindmap files exist.\n\nLet me parse the analysis files and prepare to build the wiki:\n\n**Report 1: GPT-5.5 Instant 模型发布与性能分析简报**\n- video_id: krEDel3aGGw\n- video_url: https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\n- source_id: 377cecb5-dead-4519-accf-cd09b3a1fa23\n- mindmap_file: krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json\n- Key entities: OpenAI (openai), GPT-5.5 Instant (gpt-5.5-instant)\n- Key concepts: 幻觉抑制, 个人AI助手, 多模态能力, 开发者生态简化, Token自由(to token free?)\n\n**Report 2: Hermes Agent 与 OpenClaw 深度对比简报**\n- video_id: NbldZVdusKo\n- video_url: https://www.youtube.com/watch?v=NbldZVdusKo\n- source_id: 3d57748d-727f-477e-96a1-9dbd0a3749cf\n- mindmap_file: NbldZVdusKo_3d57748d-727f-477e-96a1-9dbd0a3749cf_20260509T065557Z_mindmap.json\n- Key entities: Hermes Agent (hermes-agent), Nous Research (nous-research), OpenClaw (openclaw), EvoMap (evomap)\n- Key concepts: 自我进化智能体, 程序化知识, 分层记忆体系, 执行循环架构, 自动化技能\n\n**Report 3: 零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案**\n- video_id: Kh8tGD5liwo\n- video_url: https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\n- source_id: 8686f0bf-4577-4db9-9a7a-20918ebd1b31\n- mindmap_file: Kh8tGD5liwo_8686f0bf-4577-4db9-9a7a-20918ebd1b31_20260509T065526Z_mindmap.json\n- Key entities: Hermes Agent (hermes-agent), Qwen3.6 (qwen3.6)\n- Key concepts: Token自由, 本地部署, Llama-cpp, WSL2部署, 全天候AI助手\n\nLet me first check mindmap existence, then proceed to build all pages.\n\nLet me plan the pages I need to create:\n\n### Source pages (3):\n1. `GPT-5.5 Instant 模型发布与性能分析简报.md` - video about GPT-5.5 Instant\n2. `Hermes Agent 与 OpenClaw 深度对比简报：下一代自我进化智能体分析.md` - video about Hermes vs OpenClaw\n3. `零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案.md` - video about local AI agent deployment\n\n### Entity pages (need to identify from all 3 reports):\n1. `openai` - OpenAI - appears in report 1\n2. `gpt-5.5-instant` - GPT-5.5 Instant - appears in report 1\n3. `hermes-agent` - Hermes Agent - appears in report 2 & 3\n4. `nous-research` - Nous Research - appears in report 2\n5. `openclaw` - OpenClaw - appears in report 2\n6. `evomap` - EvoMap - appears in report 2\n7. `qwen3.6` - Qwen3.6 - appears in report 3\n\n### Concept pages:\n1. `自我进化智能体.md` - Self-evolving agent concept\n2. `程序化知识.md` - Programmatic knowledge\n3. `分层记忆体系.md` - Layered memory system\n4. `Token自由.md` - Token freedom\n5. `本地部署.md` - Local deployment\n6. `幻觉抑制.md` - Hallucination suppression\n7. `执行循环架构.md` - Execution loop architecture\n8. `Llama-cpp.md` - Llama-cpp framework\n9. `自动化技能.md` - Automated skills\n10. `多模态能力.md` - Multimodal capabilities\n\n### Comparison pages:\n- Report 2 directly compares Hermes Agent vs OpenClaw → `hermes-agent-vs-openclaw.md`\n\n### Overview pages:\n- Reports 2 and 3 both discuss Hermes Agent - they share the \"Hermes Agent\" theme → `hermes-agent.md` for overview? But wait, \"hermes-agent\" is already an entity. Overviews should be about topics/themes.\n- Reports 2 and 3 could be \"AI Agent部署与自托管\" - AI agent deployment and self-hosting → `AI-Agent部署与自托管.md`\n- Also could be \"本地AI部署\" - local AI deployment theme (report 1 is about OpenAI cloud model, reports 2 and 3 are about local/self-hosted agents)\n\nActually, let me think about this more carefully. Reports 2 and 3 are both about Hermes Agent, but report 1 is about GPT-5.5 Instant from OpenAI. \n\nFor overviews:\n- Reports 2+3 share \"AI Agent\" theme → overview about \"AI Agent 自托管与部署\"\n- Reports 1 is standalone about GPT-5.5, no other report shares its theme → no overview needed yet\n\nLet me write all the files now. I'll use execute_code to orchestrate this efficiently since there are many files to create.\n\nActually, let me first check if the mindmap files exist.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now I have all three analysis files. Let me also check the mindmap files exist.\n\nLet me parse the analysis files and prepare to build the wiki:\n\n**Report 1: GPT-5.5 Instant 模型发布与性能分析简报**\n- video_id: krEDel3aGGw\n- video_url: https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\n- source_id: 377cecb5-dead-4519-accf-cd09b3a1fa23\n- mindmap_file: krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json\n- Key entities: OpenAI (openai), GPT-5.5 Instant (gpt-5.5-instant)\n- Key concepts: 幻觉抑制, 个人AI助手, 多模态能力, 开发者生态简化, Token自由(to token free?)\n\n**Report 2: Hermes Agent 与 OpenClaw 深度对比简报**\n- video_id: NbldZVdusKo\n- video_url: https://www.youtube.com/watch?v=NbldZVdusKo\n- source_id: 3d57748d-727f-477e-96a1-9dbd0a3749cf\n- mindmap_file: NbldZVdusKo_3d57748d-727f-477e-96a1-9dbd0a3749cf_20260509T065557Z_mindmap.json\n- Key entities: Hermes Agent (hermes-agent), Nous Research (nous-research), OpenClaw (openclaw), EvoMap (evomap)\n- Key concepts: 自我进化智能体, 程序化知识, 分层记忆体系, 执行循环架构, 自动化技能\n\n**Report 3: 零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案**\n- video_id: Kh8tGD5liwo\n- video_url: https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\n- source_id: 8686f0bf-4577-4db9-9a7a-20918ebd1b31\n- mindmap_file: Kh8tGD5liwo_8686f0bf-4577-4db9-9a7a-20918ebd1b31_20260509T065526Z_mindmap.json\n- Key entities: Hermes Agent (hermes-agent), Qwen3.6 (qwen3.6)\n- Key concepts: Token自由, 本地部署, Llama-cpp, WSL2部署, 全天候AI助手\n\nLet me first check mindmap existence, then proceed to build all pages.\n\nLet me plan the pages I need to create:\n\n### Source pages (3):\n1. `GPT-5.5 Instant 模型发布与性能分析简报.md` - video about GPT-5.5 Instant\n2. `Hermes Agent 与 OpenClaw 深度对比简报：下一代自我进化智能体分析.md` - video about Hermes vs OpenClaw\n3. `零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案.md` - video about local AI agent deployment\n\n### Entity pages (need to identify from all 3 reports):\n1. `openai` - OpenAI - appears in report 1\n2. `gpt-5.5-instant` - GPT-5.5 Instant - appears in report 1\n3. `hermes-agent` - Hermes Agent - appears in report 2 & 3\n4. `nous-research` - Nous Research - appears in report 2\n5. `openclaw` - OpenClaw - appears in report 2\n6. `evomap` - EvoMap - appears in report 2\n7. `qwen3.6` - Qwen3.6 - appears in report 3\n\n### Concept pages:\n1. `自我进化智能体.md` - Self-evolving agent concept\n2. `程序化知识.md` - Programmatic knowledge\n3. `分层记忆体系.md` - Layered memory system\n4. `Token自由.md` - Token freedom\n5. `本地部署.md` - Local deployment\n6. `幻觉抑制.md` - Hallucination suppression\n7. `执行循环架构.md` - Execution loop architecture\n8. `Llama-cpp.md` - Llama-cpp framework\n9. `自动化技能.md` - Automated skills\n10. `多模态能力.md` - Multimodal capabilities\n\n### Comparison pages:\n- Report 2 directly compares Hermes Agent vs OpenClaw → `hermes-agent-vs-openclaw.md`\n\n### Overview pages:\n- Reports 2 and 3 both discuss Hermes Agent - they share the \"Hermes Agent\" theme → `hermes-agent.md` for overview? But wait, \"hermes-agent\" is already an entity. Overviews should be about topics/themes.\n- Reports 2 and 3 could be \"AI Agent部署与自托管\" - AI agent deployment and self-hosting → `AI-Agent部署与自托管.md`\n- Also could be \"本地AI部署\" - local AI deployment theme (report 1 is about OpenAI cloud model, reports 2 and 3 are about local/self-hosted agents)\n\nActually, let me think about this more carefully. Reports 2 and 3 are both about Hermes Agent, but report 1 is about GPT-5.5 Instant from OpenAI. \n\nFor overviews:\n- Reports 2+3 share \"AI Agent\" theme → overview about \"AI Agent 自托管与部署\"\n- Reports 1 is standalone about GPT-5.5, no other report shares its theme → no overview needed yet\n\nLet me write all the files now. I'll use execute_code to orchestrate this efficiently since there are many files to create.\n\nActually, let me first check if the mindmap files exist.",
+      "tool_calls": [
+        {
+          "id": "call_00_QUE0FwXiwEWy0IAxIRsA4338",
+          "call_id": "call_00_QUE0FwXiwEWy0IAxIRsA4338",
+          "response_item_id": "fc_00_QUE0FwXiwEWy0IAxIRsA4338",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"ls -la /home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-mindmaps/\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"total 20\\ndrwxr-xr-x 2 zhouhuijuan1987 zhouhuijuan1987 4096 May  9 06:58 .\\ndrwxr-xr-x 5 zhouhuijuan1987 zhouhuijuan1987 4096 May  9 03:58 ..\\n-rw-r--r-- 1 zhouhuijuan1987 zhouhuijuan1987 3364 May  9 06:58 GPT-5-5-Instant-模型发布与性能分析简报.json\\n-rw-r--r-- 1 zhouhuijuan1987 zhouhuijuan1987 3959 May  9 06:58 Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json\\n-rw-r--r-- 1 zhouhuijuan1987 zhouhuijuan1987 2197 May  9 06:58 零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_QUE0FwXiwEWy0IAxIRsA4338"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, the mindmaps exist but note that the mindmap file names don't match the `mindmap_file` field in the analysis files' frontmatter. The frontmatter says:\n- `krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json`\n- `NbldZVdusKo_3d57748d-727f-477e-96a1-9dbd0a3749cf_20260509T065557Z_mindmap.json`\n- `Kh8tGD5liwo_8686f0bf-4577-4db9-9a7a-20918ebd1b31_20260509T065526Z_mindmap.json`\n\nBut the actual files are named after the Chinese titles, like:\n- GPT-5-5-Instant-模型发布与性能分析简报.json\n- Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json\n- 零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json\n\nSo the mindmap_file from the frontmatter doesn't match the actual file names. I'll use the actual filenames as the mindmap entries in the source pages.\n\nNow let me proceed to Phase 2. I need to create all the wiki pages. Let me organize everything:\n\n### Source pages (3):\n1. `GPT-5.5 Instant 模型发布与性能分析简报.md` (from report 1)\n2. `Hermes Agent 与 OpenClaw 深度对比简报：下一代自我进化智能体分析.md` (from report 2)\n3. `零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案.md` (from report 3)\n\nWait, looking at TheSchema.md §7:\n> **wiki 文件**：同上，语义化中文名\n\nBut for source pages, the naming should use the title. Looking at existing analysis files in raw/notebooklm-analysis/:\n- `GPT-5-5-Instant-模型发布与性能分析简报.md` - has hyphens replacing spaces\n- `Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md` - truncated?\n- `零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md` - truncated?\n\nHmm, these raw files have truncated or modified names. But for wiki/sources/, I should use the actual semantic Chinese title as the filename.\n\nLet me think about what names to use:\n\nFor source 1 (GPT-5.5 Instant): \nThe analysis filename is `GPT-5-5-Instant-模型发布与性能分析简报.md`\nTitle in the document: \"GPT-5.5 Instant 模型发布与性能分析简报\"\n→ Source page: `GPT-5.5-Instant-模型发布与性能分析简报.md`\n\nWait, but the colon becomes problematic. Let me look at the source naming more carefully.\n\nTheSchema.md §7 says:\n> - **raw 分析文件**：直接用中文语义标题，不加 video_id 前缀\n>   - ✅ `零成本本地AI-Agent部署指南.md`\n>   - ❌ `Kh8tGD5liwo-零成本本地AI-Agent部署指南.md`\n> - **wiki 文件**：同上，语义化中文名\n\nAnd the existing analysis files use hyphens instead of spaces/colons. So I should use semantic Chinese filenames.\n\nFor source page names:\n1. `GPT-5.5-Instant-模型发布与性能分析简报.md` \n2. `Hermes-Agent-与-OpenClaw-深度对比简报.md`\n3. `零成本本地-AI-Agent-部署简报.md`\n\nActually, let me look at this pragmatically. The raw analysis filenames already exist and have specific names. For wiki source pages, I'll use shorter, cleaner semantic names that match well with wikilinks.\n\nLet me plan more carefully. Actually, I'll keep the source page names simple and match the analysis file titles reasonably.\n\nLet me think about entity names (slugs):\n\nFrom Report 1 (GPT-5.5):\n- `openai` - OpenAI appears as the company\n- `gpt-5.5-instant` - The model\n\nFrom Report 2 (Hermes vs OpenClaw):\n- `hermes-agent` - Hermes Agent\n- `openclaw` - OpenClaw\n- `nous-research` - Nous Research\n- `evomap` - EvoMap (mentioned)\n\nFrom Report 3 (Zero-cost local deployment):\n- `hermes-agent` - already listed\n- `qwen3.6` - Qwen3.6 model\n\nNow concept pages:\n\nFrom Report 1:\n- `幻觉抑制.md` - Hallucination suppression\n- `个人AI助手.md` - Personal AI assistant  \n- `多模态能力.md` - Multimodal capabilities\n- `开发者生态.md` - Developer ecosystem\n\nFrom Report 2:\n- `自我进化智能体.md` - Self-evolving agent\n- `程序化知识.md` - Programmatic knowledge\n- `分层记忆体系.md` - Layered memory system\n- `执行循环架构.md` - Execution loop architecture\n- `自动化技能.md` - Automated skills\n- `五层纵深防御.md` - Five-layer defense model\n\nFrom Report 3:\n- `Token自由.md` - Token freedom\n- `本地部署.md` - Local deployment\n- `Llama-cpp.md` - Llama-cpp framework\n- `WSL2部署.md` - WSL2 deployment\n- `全天候AI助手.md` - Always-on AI assistant\n\nComparison pages:\n- `hermes-agent-vs-openclaw.md` - Direct comparison from Report 2\n\nOverview pages:\n- Reports 2 and 3 both discuss Hermes Agent + local deployment → overview about \"AI Agent 自托管与部署\" or \"Hermes Agent 生态\"\n\nActually, wait. I need to check the overview trigger condition: \"同主题 source 页 ≥2 个\". Reports 2 and 3 are both about Hermes Agent deployment and self-hosted AI agents. So yes, we have ≥2 sources on that theme.\n\nLet me now use execute_code to create all these files efficiently. I'll create them one by one with write_file to maintain quality.\n\nActually, let me just start creating pages. Since this is a first build (Total pages: 0), I don't need to check existing pages for duplicates.\n\nLet me create the todo list and start.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, the mindmaps exist but note that the mindmap file names don't match the `mindmap_file` field in the analysis files' frontmatter. The frontmatter says:\n- `krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json`\n- `NbldZVdusKo_3d57748d-727f-477e-96a1-9dbd0a3749cf_20260509T065557Z_mindmap.json`\n- `Kh8tGD5liwo_8686f0bf-4577-4db9-9a7a-20918ebd1b31_20260509T065526Z_mindmap.json`\n\nBut the actual files are named after the Chinese titles, like:\n- GPT-5-5-Instant-模型发布与性能分析简报.json\n- Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json\n- 零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json\n\nSo the mindmap_file from the frontmatter doesn't match the actual file names. I'll use the actual filenames as the mindmap entries in the source pages.\n\nNow let me proceed to Phase 2. I need to create all the wiki pages. Let me organize everything:\n\n### Source pages (3):\n1. `GPT-5.5 Instant 模型发布与性能分析简报.md` (from report 1)\n2. `Hermes Agent 与 OpenClaw 深度对比简报：下一代自我进化智能体分析.md` (from report 2)\n3. `零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案.md` (from report 3)\n\nWait, looking at TheSchema.md §7:\n> **wiki 文件**：同上，语义化中文名\n\nBut for source pages, the naming should use the title. Looking at existing analysis files in raw/notebooklm-analysis/:\n- `GPT-5-5-Instant-模型发布与性能分析简报.md` - has hyphens replacing spaces\n- `Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md` - truncated?\n- `零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md` - truncated?\n\nHmm, these raw files have truncated or modified names. But for wiki/sources/, I should use the actual semantic Chinese title as the filename.\n\nLet me think about what names to use:\n\nFor source 1 (GPT-5.5 Instant): \nThe analysis filename is `GPT-5-5-Instant-模型发布与性能分析简报.md`\nTitle in the document: \"GPT-5.5 Instant 模型发布与性能分析简报\"\n→ Source page: `GPT-5.5-Instant-模型发布与性能分析简报.md`\n\nWait, but the colon becomes problematic. Let me look at the source naming more carefully.\n\nTheSchema.md §7 says:\n> - **raw 分析文件**：直接用中文语义标题，不加 video_id 前缀\n>   - ✅ `零成本本地AI-Agent部署指南.md`\n>   - ❌ `Kh8tGD5liwo-零成本本地AI-Agent部署指南.md`\n> - **wiki 文件**：同上，语义化中文名\n\nAnd the existing analysis files use hyphens instead of spaces/colons. So I should use semantic Chinese filenames.\n\nFor source page names:\n1. `GPT-5.5-Instant-模型发布与性能分析简报.md` \n2. `Hermes-Agent-与-OpenClaw-深度对比简报.md`\n3. `零成本本地-AI-Agent-部署简报.md`\n\nActually, let me look at this pragmatically. The raw analysis filenames already exist and have specific names. For wiki source pages, I'll use shorter, cleaner semantic names that match well with wikilinks.\n\nLet me plan more carefully. Actually, I'll keep the source page names simple and match the analysis file titles reasonably.\n\nLet me think about entity names (slugs):\n\nFrom Report 1 (GPT-5.5):\n- `openai` - OpenAI appears as the company\n- `gpt-5.5-instant` - The model\n\nFrom Report 2 (Hermes vs OpenClaw):\n- `hermes-agent` - Hermes Agent\n- `openclaw` - OpenClaw\n- `nous-research` - Nous Research\n- `evomap` - EvoMap (mentioned)\n\nFrom Report 3 (Zero-cost local deployment):\n- `hermes-agent` - already listed\n- `qwen3.6` - Qwen3.6 model\n\nNow concept pages:\n\nFrom Report 1:\n- `幻觉抑制.md` - Hallucination suppression\n- `个人AI助手.md` - Personal AI assistant  \n- `多模态能力.md` - Multimodal capabilities\n- `开发者生态.md` - Developer ecosystem\n\nFrom Report 2:\n- `自我进化智能体.md` - Self-evolving agent\n- `程序化知识.md` - Programmatic knowledge\n- `分层记忆体系.md` - Layered memory system\n- `执行循环架构.md` - Execution loop architecture\n- `自动化技能.md` - Automated skills\n- `五层纵深防御.md` - Five-layer defense model\n\nFrom Report 3:\n- `Token自由.md` - Token freedom\n- `本地部署.md` - Local deployment\n- `Llama-cpp.md` - Llama-cpp framework\n- `WSL2部署.md` - WSL2 deployment\n- `全天候AI助手.md` - Always-on AI assistant\n\nComparison pages:\n- `hermes-agent-vs-openclaw.md` - Direct comparison from Report 2\n\nOverview pages:\n- Reports 2 and 3 both discuss Hermes Agent + local deployment → overview about \"AI Agent 自托管与部署\" or \"Hermes Agent 生态\"\n\nActually, wait. I need to check the overview trigger condition: \"同主题 source 页 ≥2 个\". Reports 2 and 3 are both about Hermes Agent deployment and self-hosted AI agents. So yes, we have ≥2 sources on that theme.\n\nLet me now use execute_code to create all these files efficiently. I'll create them one by one with write_file to maintain quality.\n\nActually, let me just start creating pages. Since this is a first build (Total pages: 0), I don't need to check existing pages for duplicates.\n\nLet me create the todo list and start.",
+      "tool_calls": [
+        {
+          "id": "call_00_krT2kbeeSNyqcNIrHYQe1260",
+          "call_id": "call_00_krT2kbeeSNyqcNIrHYQe1260",
+          "response_item_id": "fc_00_krT2kbeeSNyqcNIrHYQe1260",
+          "type": "function",
+          "function": {
+            "name": "todo",
+            "arguments": "{\"todos\": [{\"id\": \"phase1\", \"content\": \"Phase 1: 准备阶段 — 已就绪\", \"status\": \"completed\"}, {\"id\": \"source1\", \"content\": \"创建 source: GPT-5.5 Instant 模型发布与性能分析简报\", \"status\": \"pending\"}, {\"id\": \"source2\", \"content\": \"创建 source: Hermes Agent 与 OpenClaw 深度对比简报\", \"status\": \"pending\"}, {\"id\": \"source3\", \"content\": \"创建 source: 零成本本地 AI Agent 部署简报\", \"status\": \"pending\"}, {\"id\": \"entities\", \"content\": \"创建 Entity 页面（openai, gpt-5.5-instant, hermes-agent, openclaw, nous-research, evomap, qwen3.6）\", \"status\": \"pending\"}, {\"id\": \"concepts\", \"content\": \"创建 Concept 页面\", \"status\": \"pending\"}, {\"id\": \"comparison\", \"content\": \"创建 Comparison 页面（hermes-agent vs openclaw）\", \"status\": \"pending\"}, {\"id\": \"overview\", \"content\": \"创建 Overview 页面（AI Agent 自托管与部署）\", \"status\": \"pending\"}, {\"id\": \"linkcheck\", \"content\": \"链接健康检查 + 质量核查\", \"status\": \"pending\"}, {\"id\": \"index-log\", \"content\": \"更新 index.md 和 log.md\", \"status\": \"pending\"}, {\"id\": \"phase3\", \"content\": \"Phase 3: 提交 + Telegram 通知\", \"status\": \"pending\"}]}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"todos\": [{\"id\": \"phase1\", \"content\": \"Phase 1: 准备阶段 — 已就绪\", \"status\": \"completed\"}, {\"id\": \"source1\", \"content\": \"创建 source: GPT-5.5 Instant 模型发布与性能分析简报\", \"status\": \"pending\"}, {\"id\": \"source2\", \"content\": \"创建 source: Hermes Agent 与 OpenClaw 深度对比简报\", \"status\": \"pending\"}, {\"id\": \"source3\", \"content\": \"创建 source: 零成本本地 AI Agent 部署简报\", \"status\": \"pending\"}, {\"id\": \"entities\", \"content\": \"创建 Entity 页面（openai, gpt-5.5-instant, hermes-agent, openclaw, nous-research, evomap, qwen3.6）\", \"status\": \"pending\"}, {\"id\": \"concepts\", \"content\": \"创建 Concept 页面\", \"status\": \"pending\"}, {\"id\": \"comparison\", \"content\": \"创建 Comparison 页面（hermes-agent vs openclaw）\", \"status\": \"pending\"}, {\"id\": \"overview\", \"content\": \"创建 Overview 页面（AI Agent 自托管与部署）\", \"status\": \"pending\"}, {\"id\": \"linkcheck\", \"content\": \"链接健康检查 + 质量核查\", \"status\": \"pending\"}, {\"id\": \"index-log\", \"content\": \"更新 index.md 和 log.md\", \"status\": \"pending\"}, {\"id\": \"phase3\", \"content\": \"Phase 3: 提交 + Telegram 通知\", \"status\": \"pending\"}], \"summary\": {\"total\": 11, \"pending\": 10, \"in_progress\": 0, \"completed\": 1, \"cancelled\": 0}}",
+      "tool_call_id": "call_00_krT2kbeeSNyqcNIrHYQe1260"
+    },
+    {
+      "role": "assistant",
+      "content": "Now entering **Phase 2: Action** — 开始创建 wiki 页面。\n\n先从 Source 页面开始：",
+      "reasoning": "Good. Now let me start creating the source pages one by one with write_file. Let me create all 3 source pages first.\n\nFor Source 1: GPT-5.5 Instant 模型发布与性能分析简报\nThe actual mindmap file on disk: GPT-5-5-Instant-模型发布与性能分析简报.json\nThe actual analysis file: GPT-5-5-Instant-模型发布与性能分析简报.md\n\nI'll use the actual filenames from the filesystem.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good. Now let me start creating the source pages one by one with write_file. Let me create all 3 source pages first.\n\nFor Source 1: GPT-5.5 Instant 模型发布与性能分析简报\nThe actual mindmap file on disk: GPT-5-5-Instant-模型发布与性能分析简报.json\nThe actual analysis file: GPT-5-5-Instant-模型发布与性能分析简报.md\n\nI'll use the actual filenames from the filesystem.",
+      "tool_calls": [
+        {
+          "id": "call_00_OiINhjZDPV8YilKT8Ht04897",
+          "call_id": "call_00_OiINhjZDPV8YilKT8Ht04897",
+          "response_item_id": "fc_00_OiINhjZDPV8YilKT8Ht04897",
+          "type": "function",
+          "function": {
+            "name": "todo",
+            "arguments": "{\"todos\": [{\"id\":\"phase1\",\"content\":\"Phase 1: 准备阶段 — 已就绪\",\"status\":\"completed\"},{\"id\":\"source1\",\"content\":\"创建 source: GPT-5.5 Instant 模型发布与性能分析简报\",\"status\":\"in_progress\"},{\"id\":\"source2\",\"content\":\"创建 source: Hermes Agent 与 OpenClaw 深度对比简报\",\"status\":\"pending\"},{\"id\":\"source3\",\"content\":\"创建 source: 零成本本地 AI Agent 部署简报\",\"status\":\"pending\"},{\"id\":\"entities\",\"content\":\"创建 Entity 页面（openai, gpt-5.5-instant, hermes-agent, openclaw, nous-research, evomap, qwen3.6）\",\"status\":\"pending\"},{\"id\":\"concepts\",\"content\":\"创建 Concept 页面\",\"status\":\"pending\"},{\"id\":\"comparison\",\"content\":\"创建 Comparison 页面（hermes-agent vs openclaw）\",\"status\":\"pending\"},{\"id\":\"overview\",\"content\":\"创建 Overview 页面（AI Agent 自托管与部署）\",\"status\":\"pending\"},{\"id\":\"linkcheck\",\"content\":\"链接健康检查 + 质量核查\",\"status\":\"pending\"},{\"id\":\"index-log\",\"content\":\"更新 index.md 和 log.md\",\"status\":\"pending\"},{\"id\":\"phase3\",\"content\":\"Phase 3: 提交 + Telegram 通知\",\"status\":\"pending\"}], \"merge\": true}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"todos\": [{\"id\": \"phase1\", \"content\": \"Phase 1: 准备阶段 — 已就绪\", \"status\": \"completed\"}, {\"id\": \"source1\", \"content\": \"创建 source: GPT-5.5 Instant 模型发布与性能分析简报\", \"status\": \"in_progress\"}, {\"id\": \"source2\", \"content\": \"创建 source: Hermes Agent 与 OpenClaw 深度对比简报\", \"status\": \"pending\"}, {\"id\": \"source3\", \"content\": \"创建 source: 零成本本地 AI Agent 部署简报\", \"status\": \"pending\"}, {\"id\": \"entities\", \"content\": \"创建 Entity 页面（openai, gpt-5.5-instant, hermes-agent, openclaw, nous-research, evomap, qwen3.6）\", \"status\": \"pending\"}, {\"id\": \"concepts\", \"content\": \"创建 Concept 页面\", \"status\": \"pending\"}, {\"id\": \"comparison\", \"content\": \"创建 Comparison 页面（hermes-agent vs openclaw）\", \"status\": \"pending\"}, {\"id\": \"overview\", \"content\": \"创建 Overview 页面（AI Agent 自托管与部署）\", \"status\": \"pending\"}, {\"id\": \"linkcheck\", \"content\": \"链接健康检查 + 质量核查\", \"status\": \"pending\"}, {\"id\": \"index-log\", \"content\": \"更新 index.md 和 log.md\", \"status\": \"pending\"}, {\"id\": \"phase3\", \"content\": \"Phase 3: 提交 + Telegram 通知\", \"status\": \"pending\"}], \"summary\": {\"total\": 11, \"pending\": 9, \"in_progress\": 1, \"completed\": 1, \"cancelled\": 0}}",
+      "tool_call_id": "call_00_OiINhjZDPV8YilKT8Ht04897"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me create Source Page 1: GPT-5.5 Instant 模型发布与性能分析简报\n\nThe analysis file is: raw/notebooklm-analysis/GPT-5-5-Instant-模型发布与性能分析简报.md\nThe mindmap file is: raw/notebooklm-mindmaps/GPT-5-5-Instant-模型发布与性能分析简报.json\nvideo_url: https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\n\nSource page content needs:\n- frontmatter: title/type/tags/summary/sources/created/updated/layer/confidence + video_url, mindmap\n- 视频引用\n- 执行摘要（3-5句）\n- 核心要点（5-10条）\n- 关联实体 [[openai]], [[gpt-5.5-instant]]\n- 关联概念 [[幻觉抑制]], [[个人AI助手]], [[多模态能力]], [[开发者生态]]\n\nLet me write this source page.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me create Source Page 1: GPT-5.5 Instant 模型发布与性能分析简报\n\nThe analysis file is: raw/notebooklm-analysis/GPT-5-5-Instant-模型发布与性能分析简报.md\nThe mindmap file is: raw/notebooklm-mindmaps/GPT-5-5-Instant-模型发布与性能分析简报.json\nvideo_url: https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\n\nSource page content needs:\n- frontmatter: title/type/tags/summary/sources/created/updated/layer/confidence + video_url, mindmap\n- 视频引用\n- 执行摘要（3-5句）\n- 核心要点（5-10条）\n- 关联实体 [[openai]], [[gpt-5.5-instant]]\n- 关联概念 [[幻觉抑制]], [[个人AI助手]], [[多模态能力]], [[开发者生态]]\n\nLet me write this source page.",
+      "tool_calls": [
+        {
+          "id": "call_00_mRUesBhaX1nTZtUAryTJ1006",
+          "call_id": "call_00_mRUesBhaX1nTZtUAryTJ1006",
+          "response_item_id": "fc_00_mRUesBhaX1nTZtUAryTJ1006",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/GPT-5.5-Instant-模型发布与性能分析简报.md\", \"content\": \"---\\ntitle: GPT-5.5 Instant 模型发布与性能分析简报\\ntype: source\\ntags: [openai, gpt-5.5-instant, 大模型, 多模态, AI助手]\\nsummary: OpenAI 发布 GPT-5.5 Instant 模型，面向所有用户免费开放，核心升级聚焦幻觉抑制、交互自然化、记忆增强和多模态能力提升。\\nsources:\\n  - raw/notebooklm-analysis/GPT-5-5-Instant-模型发布与性能分析简报.md\\n  - raw/notebooklm-mindmaps/GPT-5-5-Instant-模型发布与性能分析简报.json\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\nvideo_url: https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\\nmindmap: raw/notebooklm-mindmaps/GPT-5-5-Instant-模型发布与性能分析简报.json\\n---\\n\\n# GPT-5.5 Instant 模型发布与性能分析简报\\n\\n- 视频：https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\\n- 思维导图：[[GPT-5-5-Instant-模型发布与性能分析简报|查看脑图]]\\n\\n## 执行摘要\\n\\nOpenAI 发布了其最新、性能最强的模型 **GPT-5.5 Instant**，并已将其作为 ChatGPT 的默认轮换模型。此次更新的核心意义在于\\\"全面开放\\\"，即该模型不再是付费用户的专属，普通免费用户只要拥有账号即可直接使用。GPT-5.5 Instant 的升级重心并非追求参数增加或跑分成绩，而是致力于解决大模型在实际应用中的核心痛点：降低幻觉率、提升回复自然度、增强记忆能力以及优化多模态处理。\\n\\n## 核心要点\\n\\n1. **全面免费开放**：GPT-5.5 Instant 不再限于 Plus 或 Team 订阅用户，所有 ChatGPT 账号均可直接使用。\\n2. **幻觉抑制优先**：AI 发展方向已从\\\"更会说\\\"转变为\\\"更少说错\\\"，优先保证高风险场景的可靠性。\\n3. **纠错逻辑增强**：模型能识别用户计算过程中的代数错误并重新推导，而非盲目顺从错误逻辑。\\n4. **交互去机械化**：大幅削减过度礼貌的套话（如\\\"这是一个非常好的问题\\\"），输出更直接自然。\\n5. **记忆与个性化**：新增类似 Memory Sources 功能，能参考历史聊天记录提供个性化建议。\\n6. **多模态能力提升**：图片分析、文件总结、截图识别系统错误代码等能力表现稳定。\\n7. **API 生态简化**：引入 `ch-latest` 别名，开发者无需手动更新模型名称，降低维护成本。\\n8. **联网决策准确**：能准确判断何时需要联网搜索实时信息，何时直接回答。\\n9. **内容创作辅助**：可构建视频框架（标题、核心观点、争议点、结论），减少构思时间。\\n10. **高风险处理谨慎**：面对医疗求助不轻易下诊断，给出处理建议并强调急诊指征。\\n\\n## 关联实体\\n\\n- [[openai]] — 模型开发方\\n- [[gpt-5.5-instant]] — 本次发布的核心模型\\n\\n## 关联概念\\n\\n- [[幻觉抑制]] — 模型核心升级方向之一\\n- [[个人AI助手]] — 模型定位从问答工具转向长期陪伴助手\\n- [[多模态能力]] — 图片理解、文件分析等能力提升\\n- [[开发者生态]] — API 简化策略\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3017, \"dirs_created\": true}",
+      "tool_call_id": "call_00_mRUesBhaX1nTZtUAryTJ1006"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, source 1 done! Now source 2.\n\nSource 2: Hermes Agent 与 OpenClaw 深度对比简报\nAnalysis file: raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\nMindmap file: raw/notebooklm-mindmaps/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json\nvideo_url: https://www.youtube.com/watch?v=NbldZVdusKo\n\nEntities: hermes-agent, openclaw, nous-research, evomap\nConcepts: 自我进化智能体, 程序化知识, 分层记忆体系, 执行循环架构",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, source 1 done! Now source 2.\n\nSource 2: Hermes Agent 与 OpenClaw 深度对比简报\nAnalysis file: raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\nMindmap file: raw/notebooklm-mindmaps/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json\nvideo_url: https://www.youtube.com/watch?v=NbldZVdusKo\n\nEntities: hermes-agent, openclaw, nous-research, evomap\nConcepts: 自我进化智能体, 程序化知识, 分层记忆体系, 执行循环架构",
+      "tool_calls": [
+        {
+          "id": "call_00_mXJp6KABzXZvr0tq8rvS4256",
+          "call_id": "call_00_mXJp6KABzXZvr0tq8rvS4256",
+          "response_item_id": "fc_00_mXJp6KABzXZvr0tq8rvS4256",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: Hermes Agent 与 OpenClaw 深度对比简报：下一代自我进化智能体分析\\ntype: source\\ntags: [hermes-agent, openclaw, 智能体, 自我进化, 自托管]\\nsummary: 深度对比自托管智能体赛道两大产品 Hermes Agent 与 OpenClaw，分析执行循环架构、程序化知识机制和分层记忆体系等核心理念差异。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\n  - raw/notebooklm-mindmaps/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\nvideo_url: https://www.youtube.com/watch?v=NbldZVdusKo\\nmindmap: raw/notebooklm-mindmaps/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json\\n---\\n\\n# Hermes Agent 与 OpenClaw 深度对比简报：下一代自我进化智能体分析\\n\\n- 视频：https://www.youtube.com/watch?v=NbldZVdusKo\\n- 思维导图：[[Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能|查看脑图]]\\n\\n## 执行摘要\\n\\n本报告深度对比了自托管智能体赛道的两大核心产品——由 **Nous Research** 开发的 **Hermes Agent** 与 **OpenClaw**。OpenClaw 凭借清晰的架构和工作区机制定义了个人自托管智能体的初步标准。而 Hermes Agent 通过引入\\\"自我进化\\\"、\\\"程序化知识生成\\\"和\\\"分层记忆体系\\\"等理念，推动智能体从单纯的\\\"工具助手\\\"向\\\"个人数字化基础设施\\\"演进。Hermes Agent 的核心优势在于去中心化设计哲学和模型无关性，支持在多种计算环境下无缝部署。\\n\\n## 核心要点\\n\\n1. **架构差异**：OpenClaw 以 Gateway 网关为中心的控制中枢，Hermes Agent 以 AI Agent 自身执行循环为同步编排引擎。\\n2. **技能机制对比**：OpenClaw 技能由人类编写插件，Hermes 能自动将执行经验抽象为可复用技能存储在 `~/.hermes/skills/`。\\n3. **分层记忆体系**：Hermes 构建了四层持久化存储（核心记忆 → 会话历史 → 扩展记忆 → 程序性记忆）。\\n4. **身份锚定**：OpenClaw 的身份绑定在工作区，Hermes 身份全局性不受目录或设备切换影响。\\n5. **内置自动化**：Hermes 提供自然语言 cron 计划任务系统，每 60 秒检查一次条件。\\n6. **五层纵深防御**：危险命令审批 → 容器化隔离 → MCP 凭证过滤 → SSRF 防护 → 消息配对过滤。\\n7. **部署灵活性**：支持本地、VPS、Docker、SSH 远程环境及无服务器架构。\\n8. **模型无关**：支持 OpenAI、OpenRouter、国内大模型及自定义端点，可快速切换。\\n9. **开源争议**：涉及对中国开源项目 EvoMap 架构抄袭的争议，代码无直接雷同但架构高度相似。\\n10. **一键迁移**：为 OpenClaw 存量用户提供 Markdown 记忆到 SQLite 存储的自动转换工具。\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 智能体核心产品\\n- [[openclaw]] — 对比对象\\n- [[nous-research]] — Hermes Agent 开发方\\n- [[evomap]] — 争议相关的开源项目\\n\\n## 关联概念\\n\\n- [[自我进化智能体]] — Hermes 的核心设计理念\\n- [[程序化知识]] — 自动技能生成机制\\n- [[分层记忆体系]] — 四层持久化存储\\n- [[执行循环架构]] — 以 Agent 执行循环为中心的架构模式\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes-Agent-与-OpenClaw-深度对比简报.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3335, \"dirs_created\": true}",
+      "tool_call_id": "call_00_mXJp6KABzXZvr0tq8rvS4256"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Source 2 done. Now source 3.\n\nSource 3: 零成本本地 AI Agent 部署简报\nAnalysis file: raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\nMindmap file: raw/notebooklm-mindmaps/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json\nvideo_url: https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\n\nEntities: hermes-agent, qwen3.6\nConcepts: Token自由, 本地部署, Llama-cpp, WSL2部署, 全天候AI助手",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Source 2 done. Now source 3.\n\nSource 3: 零成本本地 AI Agent 部署简报\nAnalysis file: raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\nMindmap file: raw/notebooklm-mindmaps/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json\nvideo_url: https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\n\nEntities: hermes-agent, qwen3.6\nConcepts: Token自由, 本地部署, Llama-cpp, WSL2部署, 全天候AI助手",
+      "tool_calls": [
+        {
+          "id": "call_00_nX0vVYCHjn31Gja1HdQ62618",
+          "call_id": "call_00_nX0vVYCHjn31Gja1HdQ62618",
+          "response_item_id": "fc_00_nX0vVYCHjn31Gja1HdQ62618",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案\\ntype: source\\ntags: [hermes-agent, qwen3.6, 本地部署, 零成本, AI助手]\\nsummary: 基于 Qwen3.6 开源模型与 Hermes Agent 的完全本地化、隐私安全且零成本的 24 小时在线 AI 助手部署方案。\\nsources:\\n  - raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\\n  - raw/notebooklm-mindmaps/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\nvideo_url: https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\\nmindmap: raw/notebooklm-mindmaps/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json\\n---\\n\\n# 零成本本地 AI Agent 部署简报：Hermes 与 Qwen3.6 的深度整合方案\\n\\n- 视频：https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\\n- 思维导图：[[零成本本地-AI-Agent-部署简报|查看脑图]]\\n\\n## 执行摘要\\n\\n本视频基于\\\"零度解说\\\"的技术方案，详细分析了如何利用开源模型 Qwen3.6 与 Hermes Agent 构建一个完全本地化、隐私安全且零成本的 24 小时在线 AI 助手系统。该组合的核心优势在于\\\"TOKEN 自由\\\"与\\\"数据隐私\\\"，用户无需支付月费即可在本地处理自动化任务、编写代码及进行复杂逻辑推理。通过 WSL2 (Ubuntu 24.04) 环境及 Llama-cpp 推理框架，该系统支持从 0.8B 到 27B 不同参数规模的模型。\\n\\n## 核心要点\\n\\n1. **零成本 TOKEN 自由**：完全本地部署，无需 API 调用费用，数据隐私完全掌握在自己手中。\\n2. **Llama-cpp 方案首选**：放弃 vLLM 或 DeepSpeed，选择更稳定、防爆显存的 Llama-cpp 推理框架。\\n3. **硬件适配广泛**：支持 Qwen 模型从 0.8B 到 27B 不同参数规模，适应入门级笔记本到高端工作站。\\n4. **27B 模型性能**：在 24G 显存环境下可达约 40 Tokens/s，实现\\\"秒出\\\"结果。\\n5. **深度思考模式**：默认开启，但对 Agent 任务建议关闭以获得更快的响应速度。\\n6. **Telegram 远程控制**：通过对接 Telegram 机器人实现手机随时随地发起任务。\\n7. **WSL2 环境**：Windows 系统通过 WSL2 (Ubuntu 24.04) 搭建完整 Linux 运行环境。\\n8. **开机自启**：配置文件自启动脚本，使其成为 24 小时在线的本地服务端。\\n9. **Hermes 集成**：设置自定义 API 指向本地 `localhost:8080/v1`，Api Key 随意填写。\\n10. **国内下载优化**：推荐使用 ModelScope（魔搭社区）镜像加速模型下载。\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — Agent 框架\\n- [[qwen3.6]] — 核心推理模型\\n\\n## 关联概念\\n\\n- [[Token自由]] — 零成本运行的核心价值\\n- [[本地部署]] — 完全本地化的基础架构\\n- [[Llama-cpp]] — 推理框架选择\\n- [[WSL2部署]] — Windows 环境依赖\\n- [[全天候AI助手]] — 最终产品形态\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/零成本本地-AI-Agent-部署简报.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 2929, \"dirs_created\": true}",
+      "tool_call_id": "call_00_nX0vVYCHjn31Gja1HdQ62618"
+    },
+    {
+      "role": "assistant",
+      "content": "Source 页面全部创建完成。接下来创建 Entity 页面。",
+      "reasoning": "All 3 source pages created. Now let me create entity pages.\n\nEntities to create:\n1. `openai.md` - OpenAI\n2. `gpt-5.5-instant.md` - GPT-5.5 Instant model\n3. `hermes-agent.md` - Hermes Agent\n4. `openclaw.md` - OpenClaw\n5. `nous-research.md` - Nous Research\n6. `evomap.md` - EvoMap\n7. `qwen3.6.md` - Qwen3.6 model\n\nAll should use lowercase slugs and follow TheSchema.md format.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "All 3 source pages created. Now let me create entity pages.\n\nEntities to create:\n1. `openai.md` - OpenAI\n2. `gpt-5.5-instant.md` - GPT-5.5 Instant model\n3. `hermes-agent.md` - Hermes Agent\n4. `openclaw.md` - OpenClaw\n5. `nous-research.md` - Nous Research\n6. `evomap.md` - EvoMap\n7. `qwen3.6.md` - Qwen3.6 model\n\nAll should use lowercase slugs and follow TheSchema.md format.",
+      "tool_calls": [
+        {
+          "id": "call_00_uJMTcaXRL5jZPNaGm64c1151",
+          "call_id": "call_00_uJMTcaXRL5jZPNaGm64c1151",
+          "response_item_id": "fc_00_uJMTcaXRL5jZPNaGm64c1151",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: OpenAI\\ntype: entity\\ntags: [ai-company, llm-provider]\\nsummary: 全球领先的人工智能研究公司，发布了 GPT-5.5 Instant 模型并向所有用户免费开放。\\nsources:\\n  - raw/notebooklm-analysis/GPT-5-5-Instant-模型发布与性能分析简报.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# OpenAI\\n\\n## 基本定位\\n\\nOpenAI 是全球领先的人工智能研究公司，致力于开发安全、有益的通用人工智能。\\n\\n## 核心特征\\n\\n- 发布了 GPT 系列大语言模型，包括最新的 **GPT-5.5 Instant**\\n- 引入 `ch-latest` API 别名机制，简化开发者生态维护\\n- 推动模型产品从付费专享向全面免费开放转型\\n- 关注模型在实际应用中的可靠性，重点优化幻觉抑制\\n- 通过 Memory Sources 功能推进 AI 从工具向\\\"长期陪伴助手\\\"进化\\n\\n## 关系网络\\n\\n- 开发了 [[gpt-5.5-instant]] 模型\\n- 与 [[hermes-agent]] 同为 AI 工具生态核心玩家（[[hermes-agent]] 支持调用 OpenAI API）\\n\\n## 出现的视频\\n\\n- [[GPT-5.5-Instant-模型发布与性能分析简报]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/openai.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1091, \"dirs_created\": true}",
+      "tool_call_id": "call_00_uJMTcaXRL5jZPNaGm64c1151"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me create the remaining entity pages.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me create the remaining entity pages.",
+      "tool_calls": [
+        {
+          "id": "call_00_g0G9gdJxMtLxwjDfx5Gu5261",
+          "call_id": "call_00_g0G9gdJxMtLxwjDfx5Gu5261",
+          "response_item_id": "fc_00_g0G9gdJxMtLxwjDfx5Gu5261",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: GPT-5.5 Instant\\ntype: entity\\ntags: [llm, openai-model]\\nsummary: OpenAI 最新发布的大语言模型，面向所有 ChatGPT 用户免费开放，重点优化幻觉抑制、交互自然化和多模态能力。\\nsources:\\n  - raw/notebooklm-analysis/GPT-5-5-Instant-模型发布与性能分析简报.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# GPT-5.5 Instant\\n\\n## 基本定位\\n\\nGPT-5.5 Instant 是 OpenAI 最新发布的大语言模型，已作为 ChatGPT 的默认轮换模型，面向所有用户（包括免费用户）开放。\\n\\n## 核心特征\\n\\n- **免费开放**：不再限于付费订阅用户，普通账号即可使用\\n- **幻觉抑制优先**：方向从\\\"更会说\\\"转为\\\"更少说错\\\"\\n- **纠错逻辑**：能识别用户计算错误并重新推导\\n- **交互去机械化**：减少套话，输出更直接自然\\n- **记忆增强**：Memory Sources 功能支持个性化建议\\n- **多模态**：图片分析、文件总结、截图识别等能力提升\\n- **开发者 API**：支持 `ch-latest` 别名，自动适配最新架构\\n\\n## 关系网络\\n\\n- 由 [[openai]] 开发\\n- 与 [[qwen3.6]] 同为开源/闭源大模型代表\\n\\n## 出现的视频\\n\\n- [[GPT-5.5-Instant-模型发布与性能分析简报]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/gpt-5.5-instant.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1253, \"dirs_created\": true}",
+      "tool_call_id": "call_00_g0G9gdJxMtLxwjDfx5Gu5261"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_ET_j9pZvVeXAEE1Lh4ttYLx5374",
+          "call_id": "call_00_ET_j9pZvVeXAEE1Lh4ttYLx5374",
+          "response_item_id": "fc_00_ET_j9pZvVeXAEE1Lh4ttYLx5374",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: Hermes Agent\\ntype: entity\\ntags: [ai-agent, self-hosted, open-source]\\nsummary: Nous Research 开发的自我进化 AI 智能体框架，引入执行循环架构、程序化知识和分层记忆体系。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\n  - raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# Hermes Agent\\n\\n## 基本定位\\n\\nHermes Agent 是由 [[nous-research]] 开发的开源自托管 AI 智能体框架，以 AI Agent 的执行循环为系统核心，支持自我进化、自动技能生成和跨平台部署。\\n\\n## 核心特征\\n\\n- **执行循环架构**：将 AI Agent 自身的执行循环定义为系统同步编排引擎，而非传统的网关核心模式\\n- **程序化知识**：能根据执行经验自动将多步操作抽象为可复用技能，存储在 `~/.hermes/skills/`\\n- **分层记忆体系**：四层持久化存储（核心记忆 → 会话历史 → 扩展记忆 → 程序性记忆）\\n- **模型无关**：支持 OpenAI、OpenRouter、国内大模型及自定义端点，可快速切换\\n- **全局身份**：身份定义不绑定工作区或设备，全局一致\\n- **内置 cron**：自然语言定义的定时任务系统，每 60 秒检查一次\\n- **五层纵深防御**：从用户授权到容器化隔离再到 SSRF 防护\\n- **多平台交互**：支持 Telegram、Discord、Slack、WhatsApp 及 TUI\\n- **部署灵活**：本地、VPS、Docker、SSH 远程及无服务器架构均可\\n\\n## 关系网络\\n\\n- 由 [[nous-research]] 开发\\n- 与 [[openclaw]] 并列为自托管智能体赛道核心产品\\n- 支持集成 [[qwen3.6]] 实现完全本地化推理\\n- 可调用 [[openai]] API\\n- 曾被指控架构抄袭 [[evomap]]\\n- 核心设计哲学包括 [[自我进化智能体]]、[[程序化知识]]、[[分层记忆体系]]\\n\\n## 出现的视频\\n\\n- [[Hermes-Agent-与-OpenClaw-深度对比简报]]\\n- [[零成本本地-AI-Agent-部署简报]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/hermes-agent.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 2065, \"dirs_created\": true}",
+      "tool_call_id": "call_00_ET_j9pZvVeXAEE1Lh4ttYLx5374"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me continue creating the remaining entities.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me continue creating the remaining entities.",
+      "tool_calls": [
+        {
+          "id": "call_00_cAfWgQEpnv1jPZqCfUUl1995",
+          "call_id": "call_00_cAfWgQEpnv1jPZqCfUUl1995",
+          "response_item_id": "fc_00_cAfWgQEpnv1jPZqCfUUl1995",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: OpenClaw\\ntype: entity\\ntags: [ai-agent, self-hosted, open-source]\\nsummary: 以 Gateway 网关为中心的自托管智能体框架，强调透明可控的架构设计。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# OpenClaw\\n\\n## 基本定位\\n\\nOpenClaw 是一款自托管 AI 智能体框架，采用 Gateway 网关作为绝对的控制中枢，以稳定性高和一切行为可审计著称。\\n\\n## 核心特征\\n\\n- **Gateway 中心架构**：后台守护进程负责调度工具、路由请求和维护状态\\n- **工作区机制**：身份（SOUL.md）绑定在特定工作区，随工作区切换而改变\\n- **手动技能编写**：技能主要由人类开发者编写，以插件扩展包形式存在\\n- **透明可控**：一切行为可审计，稳定性高\\n- **有存量用户基础**：已定义个人自托管智能体的初步标准\\n\\n## 关系网络\\n\\n- 与 [[hermes-agent]] 并列为自托管智能体赛道两大核心产品\\n- [[hermes-agent]] 提供一键迁移工具，可自动转换 OpenClaw 的 Markdown 记忆为 SQLite 存储\\n\\n## 出现的视频\\n\\n- [[Hermes-Agent-与-OpenClaw-深度对比简报]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/openclaw.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1261, \"dirs_created\": true}",
+      "tool_call_id": "call_00_cAfWgQEpnv1jPZqCfUUl1995"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": " ",
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_EObNQDQQAANh3T8Vrn6f8040",
+          "call_id": "call_00_EObNQDQQAANh3T8Vrn6f8040",
+          "response_item_id": "fc_00_EObNQDQQAANh3T8Vrn6f8040",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: Nous Research\\ntype: entity\\ntags: [ai-company, research, open-source]\\nsummary: 开放研究组织，专注于去中心化 AI 研发，是 Hermes Agent 的开发方。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# Nous Research\\n\\n## 基本定位\\n\\nNous Research 是一家开放研究组织，致力于去中心化 AI 技术的研发和开源，是 [[hermes-agent]] 的核心开发方。\\n\\n## 核心特征\\n\\n- 开发了 [[hermes-agent]] 自我进化智能体框架\\n- 推动智能体从\\\"工具助手\\\"向\\\"个人数字化基础设施\\\"演进\\n- 强调去中心化设计哲学和模型无关性\\n- 提出\\\"程序化知识\\\"和\\\"分层记忆体系\\\"等创新理念\\n\\n## 关系网络\\n\\n- 开发了 [[hermes-agent]]\\n- 与 [[openclaw]] 开发方同为自托管智能体赛道的主要玩家\\n\\n## 出现的视频\\n\\n- [[Hermes-Agent-与-OpenClaw-深度对比简报]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/nous-research.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 991, \"dirs_created\": true}",
+      "tool_call_id": "call_00_EObNQDQQAANh3T8Vrn6f8040"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": " ",
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_RdKWoRe3fe00ZnBnF1837603",
+          "call_id": "call_00_RdKWoRe3fe00ZnBnF1837603",
+          "response_item_id": "fc_00_RdKWoRe3fe00ZnBnF1837603",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: EvoMap\\ntype: entity\\ntags: [open-source, china-project, ai-agent]\\nsummary: 中国开源 AI 智能体项目，与 Hermes Agent 存在架构抄袭争议。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# EvoMap\\n\\n## 基本定位\\n\\nEvoMap 是一款中国开源的 AI 智能体项目，与 [[hermes-agent]] 之间存在架构抄袭争议。\\n\\n## 核心特征\\n\\n- 中国开源社区的自托管智能体项目\\n- 与 [[hermes-agent]] 在架构层面高度相似\\n- 目前代码无直接雷同，但架构思路的相似性引发了开源社区的讨论和争议\\n- 该争议可能影响相关项目的开源协作走向\\n\\n## 关系网络\\n\\n- 与 [[hermes-agent]] 存在架构抄袭争议\\n- 与 [[nous-research]] 的项目设计思路高度相似\\n\\n## 出现的视频\\n\\n- [[Hermes-Agent-与-OpenClaw-深度对比简报]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/evomap.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 953, \"dirs_created\": true}",
+      "tool_call_id": "call_00_RdKWoRe3fe00ZnBnF1837603"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": " ",
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_5GEYhPjLIpfrjmt5wyCL2791",
+          "call_id": "call_00_5GEYhPjLIpfrjmt5wyCL2791",
+          "response_item_id": "fc_00_5GEYhPjLIpfrjmt5wyCL2791",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: Qwen3.6\\ntype: entity\\ntags: [llm, open-source, alibaba, chinese-model]\\nsummary: 阿里通义千问最新开源大模型，支持从 0.8B 到 27B 多参数规格，与 Hermes Agent 组合实现零成本本地 AI 部署。\\nsources:\\n  - raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# Qwen3.6\\n\\n## 基本定位\\n\\nQwen3.6 是阿里通义千问（Qwen）系列最新开源大模型，支持从 0.8B 到 27B 多种参数规格，可配合 [[hermes-agent]] 实现完全本地化的 AI 助手系统。\\n\\n## 核心特征\\n\\n- **多参数规格**：0.8B、2B、4B、9B、27B 等多种版本，适配不同显存配置\\n- **本地推理性能**：27B 版本在 24G 显存下可达约 40 Tokens/s\\n- **中文理解优秀**：即使小参数模型在中文理解上依然表现优异\\n- **深度思考模式**：默认开启，但对 Agent 任务建议关闭以提升速度\\n- **开源免费**：可下载本地部署，无需 API 调用费用\\n- **国内镜像加速**：可通过 ModelScope（魔搭社区）快速下载\\n\\n## 关系网络\\n\\n- 可搭配 [[hermes-agent]] 实现完整本地 AI Agent 方案\\n- 与 [[gpt-5.5-instant]] 同为 LLM 代表（开源 vs 闭源）\\n- 通过 Llama-cpp 推理框架运行\\n\\n## 出现的视频\\n\\n- [[零成本本地-AI-Agent-部署简报]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/qwen3.6.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1381, \"dirs_created\": true}",
+      "tool_call_id": "call_00_5GEYhPjLIpfrjmt5wyCL2791"
+    },
+    {
+      "role": "assistant",
+      "content": "所有 Entity 页面创建完成。现在创建 Concept 页面。",
+      "reasoning": "All 7 entity pages created. Now let me create concept pages.\n\nConcepts to create:\n1. `自我进化智能体.md` - Self-evolving agent (from report 2)\n2. `程序化知识.md` - Programmatic knowledge (from report 2)\n3. `分层记忆体系.md` - Layered memory system (from report 2)\n4. `Token自由.md` - Token freedom (from report 3)\n5. `本地部署.md` - Local deployment (from report 3)\n6. `幻觉抑制.md` - Hallucination suppression (from report 1)\n7. `执行循环架构.md` - Execution loop architecture (from report 2)\n8. `Llama-cpp.md` - Llama-cpp framework (from report 3)\n9. `WSL2部署.md` - WSL2 deployment (from report 3)\n10. `全天候AI助手.md` - Always-on AI assistant (from report 3)\n11. `个人AI助手.md` - Personal AI assistant (from report 1)\n12. `多模态能力.md` - Multimodal capabilities (from report 1)\n13. `开发者生态.md` - Developer ecosystem (from report 1)\n14. `自动化技能.md` - Automated skills (from report 2)",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "All 7 entity pages created. Now let me create concept pages.\n\nConcepts to create:\n1. `自我进化智能体.md` - Self-evolving agent (from report 2)\n2. `程序化知识.md` - Programmatic knowledge (from report 2)\n3. `分层记忆体系.md` - Layered memory system (from report 2)\n4. `Token自由.md` - Token freedom (from report 3)\n5. `本地部署.md` - Local deployment (from report 3)\n6. `幻觉抑制.md` - Hallucination suppression (from report 1)\n7. `执行循环架构.md` - Execution loop architecture (from report 2)\n8. `Llama-cpp.md` - Llama-cpp framework (from report 3)\n9. `WSL2部署.md` - WSL2 deployment (from report 3)\n10. `全天候AI助手.md` - Always-on AI assistant (from report 3)\n11. `个人AI助手.md` - Personal AI assistant (from report 1)\n12. `多模态能力.md` - Multimodal capabilities (from report 1)\n13. `开发者生态.md` - Developer ecosystem (from report 1)\n14. `自动化技能.md` - Automated skills (from report 2)",
+      "tool_calls": [
+        {
+          "id": "call_00_qH7i09kWLoZhL1ozybf60448",
+          "call_id": "call_00_qH7i09kWLoZhL1ozybf60448",
+          "response_item_id": "fc_00_qH7i09kWLoZhL1ozybf60448",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 自我进化智能体\\ntype: concept\\ntags: [ai-agent, self-evolution, autonomous]\\nsummary: 智能体在执行任务中自动沉淀经验并转化为可复用技能，实现从被动执行到主动成长的关键跨越。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L2\\nconfidence: high\\nreasoning: 该概念在报告中被明确作为 Hermes Agent 的核心设计理念进行阐述，属于跨视频知识主题。\\n---\\n\\n# 自我进化智能体\\n\\n## 定义\\n\\n自我进化智能体是指 AI 智能体在执行任务过程中自动沉淀经验，将成功的多步操作模式抽象为可复用的技能或工作流，从而不断自我改进和成长。它从传统的\\\"记住事实\\\"升级为\\\"记住方法\\\"。\\n\\n## 在本库的具体例子\\n\\n- **Hermes Agent** 的技能机制：每次执行任务后，Hermes Agent 自动将有效的多步操作模式保存为 skill 文件存储在 `~/.hermes/skills/` 目录下，下次遇到类似任务可直接调用。\\n- 与 OpenClaw 的\\\"手动编写插件包\\\"方式形成鲜明对比：OpenClaw 需要人类开发者手动编写技能插件，而 Hermes 能自动生成。\\n\\n## 关联概念\\n\\n- [[程序化知识]] — 自我进化智能体的核心实现机制\\n- [[执行循环架构]] — 支撑自我进化的底层架构设计\\n- [[自动化技能]] — 自我进化的最终产物\\n- [[分层记忆体系]] — 为自我进化提供持久化支持\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 该概念的核心实践者\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/自我进化智能体.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1576, \"dirs_created\": true}",
+      "tool_call_id": "call_00_qH7i09kWLoZhL1ozybf60448"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me create the remaining concept pages. I'll create them in batches to be efficient.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me create the remaining concept pages. I'll create them in batches to be efficient.",
+      "tool_calls": [
+        {
+          "id": "call_00_S5N7WZoBST5uWph4fGiQ5694",
+          "call_id": "call_00_S5N7WZoBST5uWph4fGiQ5694",
+          "response_item_id": "fc_00_S5N7WZoBST5uWph4fGiQ5694",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 程序化知识\\ntype: concept\\ntags: [ai-agent, skill-generation, knowledge-management]\\nsummary: 智能体不仅存储事实性信息，更能将执行过程中的行动模式提炼为可复用的方法和工作流。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L2\\nconfidence: high\\nreasoning: 报告中明确阐述了 Hermes Agent 的\\\"程序化知识\\\"概念，将其定义为使智能体\\\"记住方法\\\"的核心机制。\\n---\\n\\n# 程序化知识\\n\\n## 定义\\n\\n程序化知识（Programmatic Knowledge）是指智能体在执行任务中自动将有效的多步操作抽象为可复用的流程和方法，存储在技能库中，使智能体具备\\\"学会方法\\\"而非仅仅\\\"记住事实\\\"的能力。\\n\\n## 在本库的具体例子\\n\\n- **Hermes Agent** 的 Skill 系统：Agent 在执行任务后自动生成 skill 文件并保存到 `~/.hermes/skills/`，下次遇到同类任务时可以直接使用该 skill。\\n- 与 OpenClaw 的对比：OpenClaw 的技能需要人类开发者手动编写传统插件包，而 Hermes 能将执行经验自动转化为程序化知识。\\n\\n## 关联概念\\n\\n- [[自我进化智能体]] — 程序化知识是该理念的核心实现\\n- [[自动化技能]] — 程序化知识的外在表现形式\\n- [[分层记忆体系]] — 程序化知识是第四层\\\"程序性记忆\\\"的组成部分\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 程序化知识概念的核心实践者\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/程序化知识.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1516, \"dirs_created\": true}",
+      "tool_call_id": "call_00_S5N7WZoBST5uWph4fGiQ5694"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me continue creating the remaining concept pages. I'll batch several at once to save time.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me continue creating the remaining concept pages. I'll batch several at once to save time.",
+      "tool_calls": [
+        {
+          "id": "call_00_he0VQOxWbRM3XSeTk0oi0602",
+          "call_id": "call_00_he0VQOxWbRM3XSeTk0oi0602",
+          "response_item_id": "fc_00_he0VQOxWbRM3XSeTk0oi0602",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 分层记忆体系\\ntype: concept\\ntags: [memory, ai-agent, knowledge-management]\\nsummary: 四层结构的持久化存储系统，从核心记忆到程序性记忆逐层递进，优化 Token 效率和检索精度。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L2\\nconfidence: high\\nreasoning: 报告中以 Hermes Agent 的四层记忆体系为例详细阐述了该概念。\\n---\\n\\n# 分层记忆体系\\n\\n## 定义\\n\\n分层记忆体系是 AI 智能体构建的结构化多层级持久化存储系统，将记忆按照优先级、时效性和形态分为核心记忆、会话历史、扩展记忆和程序性记忆四层，以优化 Token 效率和检索精度。\\n\\n## 在本库的具体例子\\n\\n**Hermes Agent 的四层记忆体系：**\\n\\n| 层级 | 载体 | 功能 |\\n|:---|:---|:---|\\n| 第一层：核心持久记忆 | MEMORY.md / USER.md | 核心笔记与用户偏好，约 1300 Tokens |\\n| 第二层：会话历史记忆 | SQLite (FTS5) | 所有对话记录，支持全文索引 |\\n| 第三层：扩展记忆层 | Honcho（可选） | 跨会话长期用户画像 |\\n| 第四层：程序性记忆 | 技能库 (Skills) | 学会的行动模式和工作流 |\\n\\n## 关联概念\\n\\n- [[程序化知识]] — 第四层程序性记忆的核心内容\\n- [[自我进化智能体]] — 分层记忆体系为自我进化提供数据基础\\n- [[自动化技能]] — 程序性记忆的外在形态\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 分层记忆体系的实践者\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/分层记忆体系.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1567, \"dirs_created\": true}",
+      "tool_call_id": "call_00_he0VQOxWbRM3XSeTk0oi0602"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": " ",
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_DUTSxhde9TTNaLTnJLrb9012",
+          "call_id": "call_00_DUTSxhde9TTNaLTnJLrb9012",
+          "response_item_id": "fc_00_DUTSxhde9TTNaLTnJLrb9012",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: Token自由\\ntype: concept\\ntags: [zero-cost, local-ai, open-source]\\nsummary: 通过完全本地化部署摆脱 API Token 调用费用，实现零月费、数据隐私完全自控的 AI 使用模式。\\nsources:\\n  - raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L2\\nconfidence: high\\nreasoning: 报告以 Qwen3.6 + Hermes Agent 组合具体阐述 Token 自由的实现路径，属于跨视频可推广的概念。\\n---\\n\\n# Token自由\\n\\n## 定义\\n\\nToken 自由是指通过完全本地化的 AI 推理方案，摆脱对云端 API 的依赖，实现零月费使用大语言模型，同时确保数据隐私完全掌握在自己手中的使用模式。\\n\\n## 在本库的具体例子\\n\\n- **Qwen3.6 + Hermes Agent 组合**：通过 WSL2 + Llama-cpp 在本地运行 Qwen3.6 27B 模型，搭配 Hermes Agent 构建 AI 助手系统，无需支付任何 API 费用。\\n- **45 Tokens/s 本地性能**：在 24G 显存环境下，本地推理速度达到约 40 Tokens/s，\\\"秒出\\\"结果足以满足编程、自动化等重度任务需求。\\n- **Telegram 远程控制**：将本地算力通过 Telegram 机器人转化为随身智能工具。\\n\\n## 关联概念\\n\\n- [[本地部署]] — Token 自由的基础架构\\n- [[Llama-cpp]] — 本地推理的框架选择\\n- [[全天候AI助手]] — Token 自由的最终产品形态\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 本地 Agent 框架\\n- [[qwen3.6]] — 本地推理模型\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Token自由.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1503, \"dirs_created\": true}",
+      "tool_call_id": "call_00_DUTSxhde9TTNaLTnJLrb9012"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": " ",
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_smzcET09uSLMq4IUJ7Hc7777",
+          "call_id": "call_00_smzcET09uSLMq4IUJ7Hc7777",
+          "response_item_id": "fc_00_smzcET09uSLMq4IUJ7Hc7777",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 本地部署\\ntype: concept\\ntags: [deployment, self-hosted, privacy]\\nsummary: 在个人计算设备上运行 AI 模型和智能体系统，不依赖云端服务，保障数据隐私和运行自主权。\\nsources:\\n  - raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L2\\nconfidence: high\\nreasoning: 两个报告都涉及本地部署主题，跨视频综合可得该概念的核心要素。\\n---\\n\\n# 本地部署\\n\\n## 定义\\n\\n本地部署是指在个人计算设备（如 PC、工作站、服务器）上直接安装和运行 AI 模型及智能体系统，所有数据处理和推理在本地完成，无需依赖云服务或 API 调用。\\n\\n## 在本库的具体例子\\n\\n- **Qwen3.6 + Hermes Agent**：在 Windows WSL2 环境中通过 Llama-cpp 运行 Qwen3.6 模型（从 0.8B 到 27B），结合 Hermes Agent 构建完整 AI 助手系统。\\n- **Hermes Agent 多环境支持**：支持本地、VPS、Docker、SSH 远程环境及无服务器架构，部署灵活。\\n- **开机自启**：配置文件自启动脚本，成为 24 小时在线的本地服务端。\\n\\n## 关联概念\\n\\n- [[Token自由]] — 本地部署的核心价值之一\\n- [[Llama-cpp]] — 本地推理框架选择\\n- [[WSL2部署]] — Windows 平台的本地部署方案\\n- [[全天候AI助手]] — 本地部署的最终产品形态\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 本地部署的 Agent 框架\\n- [[qwen3.6]] — 本地部署的代表性模型\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/本地部署.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1616, \"dirs_created\": true}",
+      "tool_call_id": "call_00_smzcET09uSLMq4IUJ7Hc7777"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": null,
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_ET_gFvFdyMuM66yAakDGI4n1926",
+          "call_id": "call_00_ET_gFvFdyMuM66yAakDGI4n1926",
+          "response_item_id": "fc_00_ET_gFvFdyMuM66yAakDGI4n1926",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 幻觉抑制\\ntype: concept\\ntags: [llm, reliability, alignment]\\nsummary: 大语言模型发展的核心方向之一，从追求\\\"更会说\\\"转向追求\\\"更少说错\\\"，优先保证高风险场景的回答可靠性。\\nsources:\\n  - raw/notebooklm-analysis/GPT-5-5-Instant-模型发布与性能分析简报.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L2\\nconfidence: high\\nreasoning: 报告中明确阐述了 GPT-5.5 Instant 将\\\"更少说错\\\"作为核心设计目标，属于可推广的行业趋势概念。\\n---\\n\\n# 幻觉抑制\\n\\n## 定义\\n\\n幻觉抑制是指通过模型优化和技术手段减少大语言模型产生不准确、虚构或误导性信息的现象。当前行业共识认为，AI 的发展方向已从\\\"更会说\\\"转变为\\\"更少说错\\\"，优先保证在医疗、金融等高风险场景下的回答可靠性。\\n\\n## 在本库的具体例子\\n\\n- **GPT-5.5 Instant 的纠错逻辑**：当用户计算过程出错时，模型能识别代数错误并重新推导，而非像前代模型那样盲目顺应用户的错误逻辑。\\n- **医疗场景的谨慎处理**：面对幼儿呕吐等医疗求助时，GPT-5.5 Instant 不轻易下诊断，而是给出处理建议并强调急诊指征。\\n- **联网核对能力**：主动搜索官方最新信息，能区分实时价格与过时信息，避免陈旧资料误导。\\n\\n## 关联概念\\n\\n- [[个人AI助手]] — 幻觉抑制是该概念能够实现的前提条件\\n- [[多模态能力]] — 图片+文本联合推理有助于降低误导\\n\\n## 关联实体\\n\\n- [[openai]] — 将幻觉抑制作为 GPT-5.5 Instant 核心升级方向\\n- [[gpt-5.5-instant]] — 幻觉抑制优化的具体体现\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/幻觉抑制.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1658, \"dirs_created\": true}",
+      "tool_call_id": "call_00_ET_gFvFdyMuM66yAakDGI4n1926"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": " ",
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_po8eXa2Sm7Zu9kJnEXSv9927",
+          "call_id": "call_00_po8eXa2Sm7Zu9kJnEXSv9927",
+          "response_item_id": "fc_00_po8eXa2Sm7Zu9kJnEXSv9927",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 执行循环架构\\ntype: concept\\ntags: [ai-agent, architecture, execution-loop]\\nsummary: 以 AI Agent 自身的执行循环作为系统同步编排引擎，彻底颠覆传统网关核心的架构设计模式。\\nsources:\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L2\\nconfidence: high\\nreasoning: 报告中阐述了 Hermes Agent 以执行循环为中心的设计思路，作为其与 OpenClaw 架构差异的核心所在。\\n---\\n\\n# 执行循环架构\\n\\n## 定义\\n\\n执行循环架构是一种 AI 智能体系统设计模式，将智能体自身的执行循环（而非网关或中间件）定义为系统的核心编排引擎。网关、工具运行时、会话持久化等模块均围绕此循环集成，使系统天生支持\\\"执行-学习-改进\\\"的闭环。\\n\\n## 在本库的具体例子\\n\\n- **Hermes Agent** 与 OpenClaw 的架构对比：OpenClaw 以 Gateway 网关作为绝对的控制中枢，而 Hermes 直接以 Agent 的\\\"执行循环\\\"作为同步编排引擎。\\n- **自我进化能力来源**：由于执行循环是架构核心，Agent 在执行过程中可以自然地进行自我修正、逻辑优化和经验沉淀，这是 OpenClaw 的网关中心模式难以实现的。\\n\\n## 关联概念\\n\\n- [[自我进化智能体]] — 执行循环架构使自我进化成为可能\\n- [[程序化知识]] — 在执行循环中自动生成的行动模式\\n- [[自动化技能]] — 执行循环的输出产物\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 执行循环架构的代表性实践者\\n- [[openclaw]] — 网关中心架构的代表，与执行循环架构形成对比\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/执行循环架构.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1685, \"dirs_created\": true}",
+      "tool_call_id": "call_00_po8eXa2Sm7Zu9kJnEXSv9927"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me now create the remaining concept pages: Llama-cpp, WSL2部署, 全天候AI助手, 个人AI助手, 多模态能力, 开发者生态, 自动化技能",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me now create the remaining concept pages: Llama-cpp, WSL2部署, 全天候AI助手, 个人AI助手, 多模态能力, 开发者生态, 自动化技能",
+      "tool_calls": [
+        {
+          "id": "call_00_CgDFnfI8gaJPXR1rSZPh8867",
+          "call_id": "call_00_CgDFnfI8gaJPXR1rSZPh8867",
+          "response_item_id": "fc_00_CgDFnfI8gaJPXR1rSZPh8867",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: Llama-cpp\\ntype: concept\\ntags: [inference-framework, local-ai, llama-cpp]\\nsummary: 基于 C/C++ 的高性能大语言模型推理框架，专为本地推理优化，支持多种量化格式和硬件加速。\\nsources:\\n  - raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# Llama-cpp\\n\\n## 定义\\n\\nLlama-cpp 是一个基于 C/C++ 实现的高性能大语言模型推理框架，支持多种量化格式（GGUF），能够在消费级硬件上高效运行大语言模型，相比 vLLM 或 DeepSpeed 更注重稳定性和低显存占用。\\n\\n## 在本库的具体例子\\n\\n- **Qwen3.6 本地推理**：在 WSL2 环境下使用 Llama-cpp 运行 Qwen3.6 27B 模型，24G 显存下可达约 40 Tokens/s。\\n- **防爆显存方案**：视频推荐 Llama-cpp 而非 vLLM 或 DeepSpeed，核心原因是 Llama-cpp 能有效防止显存溢出，对家庭用户硬件更加友好。\\n- **多规格模型支持**：Qwen3.6 的 0.8B 到 27B 各版本均可在 Llama-cpp 上运行，适配不同显存配置的硬件。\\n\\n## 关联概念\\n\\n- [[本地部署]] — Llama-cpp 是本地推理的核心框架\\n- [[Token自由]] — 通过 Llama-cpp 本地推理实现零费用\\n- [[WSL2部署]] — Llama-cpp 在 Windows 环境下的运行基础\\n\\n## 关联实体\\n\\n- [[qwen3.6]] — 通过 Llama-cpp 运行的典型模型\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Llama-cpp.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1417, \"dirs_created\": true}",
+      "tool_call_id": "call_00_CgDFnfI8gaJPXR1rSZPh8867"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": " ",
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_9w3tSaob17iNqYjfxQ4q0141",
+          "call_id": "call_00_9w3tSaob17iNqYjfxQ4q0141",
+          "response_item_id": "fc_00_9w3tSaob17iNqYjfxQ4q0141",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: WSL2部署\\ntype: concept\\ntags: [windows, wsl2, ubuntu, deployment]\\nsummary: 在 Windows 系统中通过 WSL2（Windows Subsystem for Linux 2）搭建 Linux 开发环境，运行 AI 模型和智能体系统的方案。\\nsources:\\n  - raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\\n  - raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# WSL2部署\\n\\n## 定义\\n\\nWSL2 部署是指在 Windows 操作系统上利用 Windows Subsystem for Linux 2 创建完整的 Linux 环境（如 Ubuntu 24.04），从而在 Windows 机器上运行 AI 模型推理和智能体系统。\\n\\n## 在本库的具体例子\\n\\n- **Qwen3.6 + Hermes Agent 的 Windows 部署**：在 Windows 系统中安装 WSL2 + Ubuntu 24.04，配置最新 N 卡驱动和 CUDA 工具包，安装 Llama-cpp 后部署 Qwen3.6 27B 模型。\\n- **Hermes Agent 的系统要求**：Windows 用户必须安装 WSL2 才能运行 Hermes Agent。\\n- **开机自启**：通过 Linux 自启动脚本在 WSL2 环境内自动恢复 AI 服务。\\n\\n## 关联概念\\n\\n- [[本地部署]] — WSL2 是 Windows 本地部署的基础\\n- [[Llama-cpp]] — 在 WSL2 中运行的推理框架\\n- [[全天候AI助手]] — WSL2 部署的最终产品形态\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 依赖 WSL2 在 Windows 上运行\\n- [[qwen3.6]] — 在 WSL2 中推理的模型\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/WSL2部署.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1473, \"dirs_created\": true}",
+      "tool_call_id": "call_00_9w3tSaob17iNqYjfxQ4q0141"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": " ",
+      "finish_reason": "tool_calls",
+      "reasoning_content": " ",
+      "tool_calls": [
+        {
+          "id": "call_00_Fgc9ejHnLEmUh7IiPzrp9221",
+          "call_id": "call_00_Fgc9ejHnLEmUh7IiPzrp9221",
+          "response_item_id": "fc_00_Fgc9ejHnLEmUh7IiPzrp9221",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 全天候AI助手\\ntype: concept\\ntags: [ai-agent, always-on, automation]\\nsummary: 通过本地部署 + 开机自启 + 远程控制实现 24 小时在线的个人 AI 助手系统。\\nsources:\\n  - raw/notebooklm-analysis/零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L2\\nconfidence: high\\nreasoning: 报告中提出该方案定位为\\\"24 小时随时在线\\\"的 AI 助手，属于本地部署方案的终极目标概念。\\n---\\n\\n# 全天候AI助手\\n\\n## 定义\\n\\n全天候 AI 助手是指通过本地部署、开机自启动脚本和远程控制技术（如 Telegram 机器人），使 AI 智能体系统能够 7×24 小时持续在线运行，用户可随时随地通过手机等设备发起任务和控制。\\n\\n## 在本库的具体例子\\n\\n- **Qwen3.6 + Hermes Agent 系统**：配置 Linux 自启动脚本，电脑重启后 AI 服务自动恢复；通过 Telegram 机器人实现远程控制，手机端随时随地发起任务。\\n- **Hermes Agent 的 cron 系统**：内置自然语言定时任务系统，每 60 秒检查条件，在隔离会话中运行定期报告、数据备份等任务。\\n\\n## 关联概念\\n\\n- [[本地部署]] — 全天候运行的物理基础\\n- [[Token自由]] — 无需持续付费即可使用\\n- [[WSL2部署]] — Windows 环境下的全天候部署方案\\n\\n## 关联实体\\n\\n- [[hermes-agent]] — 实现全天候助手的 Agent 框架\\n- [[qwen3.6]] — 全天候运行的推理模型\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/全天候AI助手.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1485, \"dirs_created\": true}",
+      "tool_call_id": "call_00_Fgc9ejHnLEmUh7IiPzrp9221"
+    }
+  ]
+}
