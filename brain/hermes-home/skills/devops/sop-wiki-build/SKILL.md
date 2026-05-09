@@ -6,6 +6,8 @@ version: 1.0.0
 
 # SOP Stage C: Wiki Incremental Build
 
+See `references/run-log-format.md` for the standard webhook run log format.
+
 ## 触发条件
 webhook 收到 `stage=wiki-build`
 
@@ -24,12 +26,18 @@ webhook 收到 `stage=wiki-build`
    ```bash
    git diff --name-only {before}..{sha} -- 'raw/*.md' 'raw/**/*.md'
    ```
-5. 过滤 `raw/notebooklm-analysis/` 和 `raw/notebooklm-mindmaps/` 下的变更。
+5. 保留 `raw/notebooklm-analysis/` 和 `raw/notebooklm-mindmaps/` 下的变更（本阶段仅处理 NotebookLM 结果），过滤其他目录的变更。
 6. 若无变更：写日志 `skipped:no_raw_changes`，**禁止发送 Telegram**，停止。
+7. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts`
+
+### 文件写入约束（必须遵守）
+- **必须用 write_file 工具写入文件**，禁止用 `echo`、`cat <<EOF`、`heredoc` 等 shell 方式。
+- shell 方式会导致 `\n` 变成字面字符串而不是真实换行符，造成文件格式损坏。
 
 ### 构建（严格遵循 TheSchema.md）
 7. 读取 `index.md` 和 `log.md` 了解现有内容，避免重复创建。
-8. 对每个新分析报告：
+8. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts`
+9. 对每个新分析报告：
    a. **Source 页** (`wiki/sources/{video-id}-{slug}.md`)：
       - 视频信息（标题、URL、发布者）
       - 执行摘要（3-5句）

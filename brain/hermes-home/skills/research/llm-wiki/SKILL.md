@@ -581,3 +581,83 @@ vault in Obsidian on your laptop/phone — changes appear within seconds.
 
 See `references/youtube-wiki-processing.md` for the pattern used to process YouTube video links
 into a structured wiki using NotebookLM for analysis and llm-wiki for knowledge graph construction.
+
+### YouTube-Specific Processing Guidelines
+
+When processing YouTube video links in a webhook context:
+
+1. **Two-Stage Processing** (as defined in TheSchema.md):
+   - Stage B: NotebookLM processing (triggered by changes in `raw/youtube-links/`)
+   - Stage C: llm-wiki incremental build (triggered by changes in `raw/notebooklm-analysis/` or `raw/notebooklm-mindmaps/`)
+   - **Do not send Telegram notifications after Stage B** - only after Stage C with actual wiki updates
+
+2. **Source-Scoped Generation**:
+   - When generating reports/mindmaps from NotebookLM, use ONLY the newly added source(s)
+   - Do not use whole-notebook context for generation
+   - This ensures insights are traceable to specific videos
+
+3. **Language Enforcement**:
+   - All generated content must be in Chinese (zh_Hans)
+   - Set language explicitly: `notebooklm language set zh_Hans`
+   - Use `--language zh_Hans` flag on generate commands
+
+4. **File Organization**:
+   - YouTube links: `raw/youtube-links/<video-id>.md` (containing just the URL)
+   - NotebookLM outputs: 
+     - Reports: `raw/notebooklm-analysis/<video-id>_<source-id>_<timestamp>_report.md`
+     - Mindmaps: `raw/notebooklm-mindmaps/<video-id>_<source-id>_<timestamp>_mindmap.json`
+   - Wiki outputs follow standard llm-wiki structure
+
+5. **Telegram Notification Requirements** (only after Stage C):
+   - Must include quantitative metrics:
+     - New entity count + names (≤5 listed)
+     - Changed/new raw source count + file list
+     - Relation changes grouped by type (with ≥3 sample edges)
+     - Affected concept-page list (≤5 listed)
+   - Must include build commit hash and run-log file path
+   - Format: `[YOUTUBE-WIKI-RUN]` prefix with key=value pairs
+
+6. **Quality Controls**:
+   - Every wiki page must have minimum 2 outgoing `[[wikilinks]]`
+   - Source pages: ≥300字, entity/concept pages: ≥200字
+   - Frontmatter must be complete (type/tags/summary/sources/updated/layer, with confidence+reasoning for L2/L3)
+
+### YouTube-Specific Processing Guidelines
+
+When processing YouTube video links in a webhook context:
+
+1. **Two-Stage Processing** (as defined in TheSchema.md):
+   - Stage B: NotebookLM processing (triggered by changes in `raw/youtube-links/`)
+   - Stage C: llm-wiki incremental build (triggered by changes in `raw/notebooklm-analysis/` or `raw/notebooklm-mindmaps/`)
+   - **Do not send Telegram notifications after Stage B** - only after Stage C with actual wiki updates
+
+2. **Source-Scoped Generation**:
+   - When generating reports/mindmaps from NotebookLM, use ONLY the newly added source(s)
+   - Do not use whole-notebook context for generation
+   - This ensures insights are traceable to specific videos
+
+3. **Language Enforcement**:
+   - All generated content must be in Chinese (zh_Hans)
+   - Set language explicitly: `notebooklm language set zh_Hans`
+   - Use `--language zh_Hans` flag on generate commands
+
+4. **File Organization**:
+   - YouTube links: `raw/youtube-links/<video-id>.md` (containing just the URL)
+   - NotebookLM outputs: 
+     - Reports: `raw/notebooklm-analysis/<video-id>_<source-id>_<timestamp>_report.md`
+     - Mindmaps: `raw/notebooklm-mindmaps/<video-id>_<source-id>_<timestamp>_mindmap.json`
+   - Wiki outputs follow standard llm-wiki structure
+
+5. **Telegram Notification Requirements** (only after Stage C):
+   - Must include quantitative metrics:
+     - New entity count + names (≤5 listed)
+     - Changed/new raw source count + file list
+     - Relation changes grouped by type (with ≥3 sample edges)
+     - Affected concept-page list (≤5 listed)
+   - Must include build commit hash and run-log file path
+   - Format: `[YOUTUBE-WIKI-RUN]` prefix with key=value pairs
+
+6. **Quality Controls**:
+   - Every wiki page must have minimum 2 outgoing `[[wikilinks]]`
+   - Source pages: ≥300字, entity/concept pages: ≥200字
+   - Frontmatter must be complete (type/tags/summary/sources/updated/layer, with confidence+reasoning for L2/L3)

@@ -288,6 +288,48 @@ These capabilities are available via CLI but not in NotebookLM's web interface:
 | **Source fulltext** | `source fulltext <id>` | Retrieve the indexed text content of any source |
 | **Save chat to note** | `ask "..." --save-as-note` / `history --save` | Save Q&A answers or conversation history as notebook notes |
 | **Programmatic sharing** | `share` commands | Manage sharing permissions without the UI |
+
+### YouTube Wiki Processing Integration
+
+When integrating NotebookLM with llm-wiki for YouTube video processing (as seen in youtube-video-research-wiki):
+
+1. **Shared Notebook Usage**: Use a fixed notebook name for all YouTube links in a repository
+   ```bash
+   notebooklm create "youtube-video-research-wiki"  # Create if not exists
+   notebooklm list --json  # Find existing notebook by title
+   ```
+
+2. **Source-Scoped Processing**: For each new YouTube link, generate insights ONLY from that source
+   ```bash
+   # Add source and get ID
+   notebooklm source add "https://www.youtube.com/watch?v=VIDEO_ID" -n NOTEBOOK_ID --json
+   # Wait for processing
+   notebooklm source wait SOURCE_ID -n NOTEBOOK_ID
+   # Generate report and mindmap from JUST this source
+   notebooklm generate audio "Instructions" -n NOTEBOOK_ID -s SOURCE_ID --language zh_Hans --json
+   notebooklm generate mind-map -n NOTEBOOK_ID -s SOURCE_ID --language zh_Hans --json
+   ```
+
+3. **Language Enforcement**: Always set Chinese language for wiki integration
+   ```bash
+   notebooklm language set zh_Hans
+   # Or use --language zh_Hans on generate commands
+   ```
+
+4. **Artifact Handling**: Download generated artifacts to specific raw directories
+   ```bash
+   notebooklm download report ./raw/notebooklm-analysis/VIDEO_ID_report.md -a ARTIFACT_ID -n NOTEBOOK_ID
+   notebooklm download mind-map ./raw/notebooklm-mindmaps/VIDEO_ID_mindmap.json -a ARTIFACT_ID -n NOTEBOOK_ID
+   ```
+
+5. **Atomic Git Operations**: After generating outputs:
+   ```bash
+   git add -A
+   git commit -m "chore: add notebooklm analysis from {{count}} videos"
+   git push origin main
+   ```
+
+This pattern ensures traceability, language consistency, and proper integration with llm-wiki incremental builds.
 | **Knowledge/Wiki Integration** | Custom workflows | Integrate NotebookLM outputs with knowledge systems like llm-wiki (see examples below) |
 
 ## Knowledge/Wiki Integration Patterns
