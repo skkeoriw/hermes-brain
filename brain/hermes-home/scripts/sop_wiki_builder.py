@@ -104,7 +104,11 @@ def build_report_prompt(schema: str, report: dict, index_content: str) -> str:
 **Entity 页**：≥5条核心特征/能力（具体技术细节）+ 2-3个应用场景 + 关系网络(≥2) + 关键事件/里程碑
 **Concept 页**：精确定义+技术实现 + 本库具体例子（文件路径/工具名/具体数据）+ 边界区分 + 关联≥2概念+≥1实体 + ≥250字
 
-所有内容用中文，frontmatter字段名用英文，wikilink用[[slug]]格式。直接返回JSON，不要额外说明。
+所有内容用中文，frontmatter字段名用英文，wikilink用[[slug]]格式。
+⚠️ 文件路径slug必须使用中文语义名，禁止英文slug：
+  正确：wiki/entities/Codex-Chrome插件.md、wiki/concepts/多标签并行处理.md
+  错误：wiki/entities/codex-chrome-plugin.md、wiki/concepts/multi-tab-parallel.md
+直接返回JSON，不要额外说明。
 """
 
 

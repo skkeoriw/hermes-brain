@@ -6,11 +6,120 @@ description: Automated workflow for processing YouTube video research wiki updat
 
 Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.
 
-## Trigger Conditions
+## Pipeline Trigger Architecture
 
-- Webhook receives push event with changes to `raw/` directory
-- Skill activates when user provides `run_id`, `before`, and `sha` git references
-- Or when manually executing the flow for a given commit range
+管道是完全自动触发的。以下是从 push 到所有阶段完成的完整流程：
+
+```
+GitHub push (raw/youtube-links/ 变更)
+  │
+  ▼
+GitHub Actions (hermes-webhook-on-push.yml)
+  │
+  ├─ gate: git diff 检测 raw/ 是否有变更
+  │  ├─ no raw change  → 跳过 (skipped:no_raw_changes)
+  │  └─ raw changed    → 构建 payload 并调用 webhook
+  │
+  ▼
+Hermes Webhook Server (localhost:8644)
+  │
+  ├─ youtube-wiki-ops 路由（主编排器，可能 disabled）
+  │   └─ 如果 disabled → 不会处理，但 GitHub Actions 会失败
+  │
+  ├─ sop-notebooklm-research 路由（Stage B）
+  │   └─ NotebookLM 生成报告+脑图 → push → 自动触发下一阶段
+  │
+  ├─ sop-wiki-build 路由（Stage C）
+  │   └─ 增量知识图谱编译 → push → 自动触发下一阶段
+  │
+  └─ sop-tg-notify 路由（Stage D）
+      └─ 发送 Telegram 通知
+```
+
+**关键要点**：
+- 每个 push 都会触发 GitHub Actions workflow
+- workflow 检测 `raw/` 目录变更后调用 webhook
+- 每个 stage 完成后 push 自己的产物，**再次触发** workflow
+- 所以 pipeline 是：push → Stage B → push → Stage C → push → Stage D
+
+**如何验证管道在自动运行**：查看 git log 的提交链：
+```bash
+cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki
+git log --oneline -20
+# 寻找连续提交：Dify push → stage_b → stage_c → stage_d
+```
+
+### 关于 webhook disabled 的陷阱
+
+`youtube-wiki-ops` 路由可能在 webhook_subscriptions.json 中被标记为 `"disabled": true`，但这**不代表 pipeline 不工作**。SOP 路由（`sop-notebooklm-research`、`sop-wiki-build`、`sop-tg-notify`）可能独立工作。
+
+如果遇到 pipeline 不自动触发的问题，按以下顺序排查：
+1. `hermes webhook list` — 检查各路由状态
+2. 查看 GitHub Actions 日志 — 确认 workflow 是否正常执行
+3. 手动触发 SOP webhook — 绕过编排器直接触发各阶段
+
+### 从当前 session 手动触发 pipeline
+
+当需要手动触发（例如编排器 disabled 或测试）：
+1. push YouTube link → `git add raw/youtube-links/` → `git commit` → `git push`
+2. **手动调用 SOP webhooks**：参见下方"按阶段手动触发"章节
+
+## Pipeline Execution Tracking
+
+### 从 git 历史追溯 pipeline 执行
+
+```bash
+cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki
+
+# 查找最近 pipeline 的完整链（Dify push 的 commit）
+git log --oneline -30
+
+# 查找特定视频的 pipeline 链
+git log --oneline -- 'raw/youtube-links/{video_id}.md'
+git log --oneline --all --grep='{video_id}'
+
+# 关联分析：找 Stage B → Stage C → Stage D 的连续提交
+git log --oneline --grep='notebooklm analysis'
+git log --oneline --grep='wiki graph'
+git log --oneline --grep='tg notify'
+```
+
+### 通过 webhook run logs 查看执行细节
+
+```bash
+ls -lt /home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/
+```
+
+每个 run log 文件包含：start_time、end_time、duration_s、处理的 URL、生成的文件列表。
+
+### 通过 pipeline-context.json 追踪跨阶段数据
+
+`raw/pipeline-context.json` 由各阶段追加自己的节点：
+- Stage B 写入: `stage_b.run_id`, `stage_b.start_time`, `stage_b.end_time`, `stage_b.duration_s`, `stage_b.api_calls`, `stage_b.videos_processed`
+- Stage C 写入: `stage_c.run_id`, `stage_c.start_time`, `stage_c.end_time`, `stage_c.duration_s`, `stage_c.api_calls`, `stage_c.pages_created`
+- Stage D 归档后删除
+
+归档路径：`logs/pipeline-runs/pipe-{run_id}.json`
+
+### Token 用量追踪
+
+每个 webhook 触发的 Hermes session 会记录 token 消耗。完成后可用：
+
+```bash
+# 查看最近 1 天的所有 session（包括 webhook 触发的）
+hermes insights --days 1
+
+# 输出中会按平台分类：
+# webhook: N sessions, X messages, Y tokens
+# 各模型分类也可以查看
+```
+
+Token 追踪的限制：
+- `hermes insights` 只给汇总（按平台/按模型），不给单个 session 的 token 明细
+- pipeline-context.json 的 `api_calls` 字段在 stage_b 中通常记录为 `unknown`
+- 精确追踪每个 session 的 token 需在 webhook session 内主动记录
+
+参见 `references/pipeline-monitoring.md` 获取更详细的监控指南。
 
 ## Workflow Overview
 

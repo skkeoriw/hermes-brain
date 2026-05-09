@@ -2,7 +2,40 @@
 
 ## 概述
 
-youtube-video-research-wiki pipeline 由三个阶段组成（Stage B → Stage C → Stage D），每个阶段以独立的 webhook-triggered Hermes session 运行。本参考文档说明如何追踪每个阶段的耗时和 token 消耗。
+youtube-video-research-wiki pipeline 由三个阶段组成（Stage B → Stage C → Stage D），每个阶段以独立的 webhook-triggered Hermes session 运行。管道通过 GitHub Actions + webhook 全自动触发：push → Stage B → push → Stage C → push → Stage D。本参考文档说明如何追踪每个阶段的耗时和 token 消耗。
+
+## 从 git 历史追溯 pipeline 执行
+
+查看最近的 pipeline 执行链：
+
+```
+84ae9d8 Dify push → raw/youtube-links/9MCjT-eUrTs.md          # ← 入口
+f447c17 Stage B: add notebooklm analysis [gh-25604718773-1]   # ← 自动触发
+20803ff Stage C: update llm wiki graph [gh-25604776884-1]     # ← 自动触发
+a46ee2c Stage D: tg notify done [gh-25604847649-1]            # ← 自动触发 ✅ 完成
+```
+
+查找特定视频的完整 pipeline：
+```bash
+git log --oneline -- 'raw/youtube-links/{video_id}.md'
+git log --oneline --all --grep='{video_id}'
+```
+
+### 典型三阶段自动触发链
+
+```bash
+# Stage B
+git log --oneline --grep='chore: add notebooklm analysis'
+# Stage C  
+git log --oneline --grep='chore: update llm wiki graph'
+# Stage D
+git log --oneline --grep='chore: tg notify done'
+```
+
+如果只有 Stage B 没有后续 stages → pipeline 中断。常见原因：
+- youtube-wiki-ops webhook 路由 disabled
+- GitHub Actions 执行失败
+- pipeline-context.json 被清除
 
 ## 耗时追踪
 

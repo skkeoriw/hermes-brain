@@ -124,7 +124,7 @@ archived: logs/pipeline-runs/pipe-{args.run_id}.json
 """, encoding="utf-8")
 
     # git commit + push
-    git_run(["add", "logs/"], wiki_path)
+    git_run(["add", "-A"], wiki_path)
     result = git_run(["status", "--porcelain"], wiki_path)
     if result.stdout.strip():
         git_run(["commit", "-m", f"chore: tg notify done [run:{args.run_id}]"], wiki_path)

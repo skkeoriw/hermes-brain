@@ -94,6 +94,78 @@ def validate_json(filepath: str) -> bool:
         return False
 
 
+def sanitize_mermaid(text: str) -> str:
+    """替换 Mermaid mindmap 语法中的特殊字符"""
+    if not text:
+        return '节点'
+    text = str(text)
+    for old, new in [('(', '（'), (')', '）'), ('[', '【'), (']', '】'),
+                     ('{', '｛'), ('}', '｝'), ('"', '\\"'), ("'", "'"), ('#', '＃')]:
+        text = text.replace(old, new)
+    return text.strip() or '节点'
+
+
+def canvas_to_mermaid_lines(canvas: dict, max_depth: int = 4) -> list:
+    """将 Canvas 格式（nodes+edges）重建树结构并转为 Mermaid mindmap 行"""
+    nodes = {n['id']: sanitize_mermaid(n.get('text') or '') for n in canvas.get('nodes', [])}
+    edges = canvas.get('edges', [])
+
+    children_map: dict = {}
+    child_set: set = set()
+    for e in edges:
+        fid, tid = e.get('fromNode'), e.get('toNode')
+        if fid and tid:
+            children_map.setdefault(fid, []).append(tid)
+            child_set.add(tid)
+
+    roots = [nid for nid in nodes if nid not in child_set]
+    if not roots:
+        return []
+
+    def render(node_id: str, depth: int) -> list:
+        text = (nodes.get(node_id) or '节点')[:60]
+        prefix = '  ' * depth
+        line = f'{prefix}root(({text}))' if depth == 0 else f'{prefix}{text}'
+        result = [line]
+        if depth < max_depth:
+            for cid in children_map.get(node_id, [])[:8]:
+                result.extend(render(cid, depth + 1))
+        return result
+
+    lines = []
+    for root_id in roots[:1]:
+        lines.extend(render(root_id, 0))
+    return lines
+
+
+def generate_mermaid_md(slug: str, canvas_json_path: str, dest_dir: str, title: str = '') -> Optional[str]:
+    """从 Canvas JSON 生成 Mermaid mindmap .md 文件，供 Obsidian 原生渲染"""
+    try:
+        with open(canvas_json_path, 'r', encoding='utf-8') as f:
+            canvas = json.load(f)
+    except Exception:
+        return None
+
+    lines = canvas_to_mermaid_lines(canvas)
+    if not lines:
+        return None
+
+    content = f"""---
+title: "{title or slug} 脑图"
+type: mindmap
+source: raw/notebooklm-mindmaps/{slug}.json
+---
+
+```mindmap
+{chr(10).join(lines)}
+```
+"""
+    dest_path = os.path.join(dest_dir, f'{slug}.md')
+    with open(dest_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+    return dest_path
+
+
 def process_processor_output(processor_json: dict, wiki_path: str) -> dict:
     """处理 processor 输出，生成并复制文件"""
     generated = processor_json.get("generated_files", [])
@@ -171,6 +243,17 @@ def process_processor_output(processor_json: dict, wiki_path: str) -> dict:
         shutil.copy2(actual_path, dest_path)
 
         json_valid = validate_json(dest_path)
+
+        # 同时生成 Mermaid .md（Obsidian 原生渲染，无需插件）
+        mermaid_dest = None
+        if json_valid:
+            title = report_by_video.get(video_id, {}).get("title", "")
+            mermaid_dest = generate_mermaid_md(
+                slug, dest_path,
+                os.path.join(wiki_path, "raw", "notebooklm-mindmaps"),
+                title=title
+            )
+
         results.append({
             "video_id": video_id,
             "type": "mindmap",
@@ -178,6 +261,7 @@ def process_processor_output(processor_json: dict, wiki_path: str) -> dict:
             "slug": slug,
             "src": actual_path,
             "dest": dest_path,
+            "mermaid_md": mermaid_dest,
             "size_bytes": os.path.getsize(dest_path),
             "json_valid": json_valid
         })

@@ -32,7 +32,24 @@ webhook 收到 `stage=wiki-build`
    ```
 6. **若无分析文件**：写跳过日志，git add + commit + push 日志，停止执行（禁止发 Telegram）。
 
-6b. 读取 `raw/pipeline-context.json`（若存在），记录 stage_b 数据备用。
+6b. **检查重复分析文件（同 video_id 防撞）**：扫描分析文件后，用以下方式检测重复内容：
+    ```bash
+    cd {wiki_local_path}
+    for f in raw/notebooklm-analysis/*.md; do
+      vid=$(grep -m1 '^video_id:' "$f" | sed 's/video_id: *//')
+      if [ -n "$vid" ]; then
+        echo "  $(basename "$f") → video_id=$vid"
+      fi
+    done
+    ```
+    若多个文件有相同 `video_id`，说明它们是同一视频的不同版本/重复输出。此时：
+    - 对比文件内容（`diff` 或 `md5sum`）
+    - **内容完全一致**（等同重复）：只处理第一个，跳过其余，写日志说明
+    - **内容不同但 video_id 相同**：以最新/最完整版本为准，写日志说明版本选择
+
+6c. **检查已有 source 页覆盖情况**：若所有扫描文件的 video_id 都已有对应 source 页（通过 `index.md` 或直接检查 `wiki/sources/`），且没有新的 concepts/entities 可提取，视为"无新内容"，走 Step 6 跳过流程。
+
+6d. 读取 `raw/pipeline-context.json`（若存在），记录 stage_b 数据备用。
 
 7. 读取 `index.md` 和 `log.md`（最近 10 条）了解现有内容，避免重复创建。
 8. 确保目录存在：`mkdir -p wiki/sources wiki/entities wiki/concepts wiki/comparisons wiki/overview wiki/queries logs/webhook-runs`
@@ -53,14 +70,16 @@ webhook 收到 `stage=wiki-build`
 
 10. **策略选择**
 
-    根据报告数量选择脚本：
+    根据报告数量选择脚本（注意：两个脚本都按报告逐份调用 API，但实现不同）：
 
-    | 报告数 | 脚本 | 策略 |
-    |--------|------|------|
-    | 1-2 份 | `sop_wiki_builder.py`（单次调用） | 一次 API 生成所有页面，简单快速 |
-    | 3+ 份 | `sop_wiki_builder_v2.py`（分批调用） | 每份报告单独 API 调用，避免输出截断 |
+    | 报告数 | 脚本 | 策略 | 模型 | max_tokens |
+    |--------|------|------|------|------------|
+    | 1-2 份 | `sop_wiki_builder.py`（并行调用） | ThreadPoolExecutor 并发处理，git diff 查找新增文件 | deepseek-v4-flash | 16,000 |
+    | 3+ 份 | `sop-wiki-builder-v2.py`（串行调用） | 逐份处理，glob 扫描磁盘文件（无 git diff 依赖） | deepseek-chat | 12,000 |
 
-    **路径 10a — 单次调用（≤2 份报告）：**
+    **⚠️ 模型质量差异**：`sop_wiki_builder.py` 使用 `deepseek-v4-flash`（输出容量约 128K），`sop-wiki-builder-v2.py` 使用 `deepseek-chat`（仅 8K max_tokens 上限、12K 脚本设定）——对大输出任务反而不利。报告数≥3 时优先考虑改用 `sop_wiki_builder.py` 的并行模式，或切换其模型配置。
+
+    **路径 10a — 并行调用（推荐，1-2 份报告首选）：**
     ```bash
     python3 /home/zhouhuijuan1987/.hermes/scripts/sop_wiki_builder.py \
       --wiki-path {wiki_local_path} \
@@ -69,7 +88,7 @@ webhook 收到 `stage=wiki-build`
       --sha {sha}
     ```
 
-    **路径 10b — 分批调用（3+ 份报告，推荐）：**
+    **路径 10b — 串行调用（仅当 10a 因 git diff 找不到文件时使用）：**
     ```bash
     python3 /home/zhouhuijuan1987/.hermes/scripts/sop-wiki-builder-v2.py \
       --wiki-path {wiki_local_path} \
@@ -232,10 +251,52 @@ LLM 有时输出截断的文件名（如 `openclou` 缺末尾 'd'）。脚本不
 
 **修复**：`mv` 重命名 + `sed` 更新所有 wikilink + 重新提交。
 
-### 6. 单次调用 3+ 报告 → 输出过大 → 截断/超时
-`sop_wiki_builder.py` 用一次 LLM 调用处理所有报告。实测：
-- **3 份报告**：期望输出 15+ 页面（~30KB JSON），易截断
-- **解决方案**：报告数 ≥ 3 时使用 `sop_wiki_builder_v2.py`（分批调用）
+### 6. `sop_wiki_builder.py` 的 git diff 可能找不到文件 — 而非单次调用截断
+
+注意：`sop_wiki_builder.py` 实际上**已经是按报告逐份调用 API**（ThreadPoolExecutor 并行处理），并非单次调用。不存在"一次调用处理所有报告导致输出截断"的问题。
+
+真正的问题是 `get_new_report_files()` 使用 `git diff --name-only --diff-filter=AM` 查找新增文件。当另一个 Webhook 并发提交了同视频但不同文件名的分析报告时，git diff 找不到它（文件不在 `before_sha..sha` 范围内），脚本判断"no new reports"直接跳过。
+
+**症状**：脚本输出 `No new analysis reports in this commit, skipping.` 但磁盘上确实有分析文件。
+
+**检查方法**：
+```bash
+cd {wiki_local_path}
+echo "=== git diff 显示 ==="
+git diff --name-only --diff-filter=AM {before_sha} {sha} | grep 'analysis/'
+echo "=== 磁盘实际文件 ==="
+ls raw/notebooklm-analysis/
+```
+
+**解决方案 A — 强制指定 before-sha 为空**（让脚本 fallback 到 glob 扫描）：
+```bash
+python3 /home/zhouhuijuan1987/.hermes/scripts/sop_wiki_builder.py \
+  --wiki-path {wiki_local_path} \
+  --run-id {run_id} \
+  --before-sha "" \
+  --sha HEAD
+```
+
+**解决方案 B — 使用 v2 脚本**（始终 glob 扫描，无 git diff 依赖）：
+```bash
+python3 /home/zhouhuijuan1987/.hermes/scripts/sop-wiki-builder-v2.py \
+  --wiki-path {wiki_local_path} \
+  --run-id {run_id}
+```
+
+### 7. Run-log 命名约定不一致
+
+`sop_wiki_builder.py` 用 `task_id`（格式 `T-{video_id}`）命名运行日志，写为 `logs/webhook-runs/T-9MCjT-eUrTs.md`。但 Phase 3 Step 13 验证的路径是 `logs/webhook-runs/{run_id}.md`（格式 `gh-25605869621-1`）。
+
+**症状**：Phase 3 验证失败（`ls` 找不到文件）。
+
+**处理方式**：
+- `sop_wiki_builder.py` 运行后必须用 `run_id` 复制一份 run-log：
+  ```bash
+  cp logs/webhook-runs/T-{video_id}.md logs/webhook-runs/{run_id}.md
+  git add logs/webhook-runs/{run_id}.md
+  ```
+- `sop-wiki-builder-v2.py` 正常写入 `{run_id}.md`，无需额外处理。
 
 ### 7. 失败恢复策略
 - 脚本失败后不会自动 git commit。若已写入部分文件但提交失败：
@@ -247,17 +308,62 @@ LLM 有时输出截断的文件名（如 `openclou` 缺末尾 'd'）。脚本不
 - 脚本超时后，删掉 `raw/pipeline-context.json` 中的 `stage_c` 字段后再重试。
 - git commit 后发现死链 → 直接修复后新建 commit，无需 revert。
 
-### 8. 并发覆盖 — 两个 webhook 同时运行
+### 8. 并发覆盖 — 多个 webhook 同时运行
 
 另一 webhook 可能在 Phase 1 同步之后推送了新 commit。重置到 origin/main 后分析文件内容可能与原始 run_id 参数不匹配。**始终以 on-disk 扫描结果为准**，不依赖 git diff 或传入 SHA 参数。
 
-**实测案例（2026-05-09）**：
-Stage C 脚本 `sop_wiki_builder.py` 提交了含文件名截断（`openclou.md`）的文件到 `6495426`。修复时在本地 `mv` 重命名后使用 `git reset HEAD .` 清空了暂存区。此时另一并发的 Stage B 任务拉取了 `6495426`，添加了 raw 分析文件，随后执行 `git add -A` 并 commit → **自动捕获了本地重命名的修正文件**，将 `openclou.md` 和 `api-enable.md` 的修正一并 push。
+#### 8a. 文件重命名/重建 — git diff 找不到文件
 
-**启发**：
-- 并发 Stage B 的 `git add -A` 会捕获工作目录的所有变更，包含你的本地修复 → 自动传播到远端
-- 相当于"顺便帮你提交了修复"，省去一次单独 commit
-- 这不是 bug，而是 git 的预期行为，但前提是工作目录的乱状态是"干净的修复"而非"半成品"
+**问题（2026-05-09 实测）**：并发 Stage B 运行生成了**改进版分析报告**（同视频、同 video_id）但文件名不同。例如：
+- git 历史记录的：`Codex-Chrome-插件技术简报-AI-浏览器自动化的深度评测与分析.md`
+- 磁盘上实际有的：`Codex-Chrome-插件功能实测与深度解析简报.md`
+
+`sop_wiki_builder.py` 的 `get_new_report_files()` 通过 `git diff --name-only --diff-filter=AM` 查找文件，但只查 `before_sha` → `sha` 范围内的变更。并发生成的文件名不在该范围内，脚本判断"no new reports"直接跳过。
+
+**诊断方法**：检查 git diff 目标文件名与磁盘实际文件名的差异：
+```bash
+cd {wiki_local_path}
+echo "=== git diff 显示 ==="
+git diff --name-only --diff-filter=AM {before_sha} {sha} | grep 'analysis/'
+echo "=== 磁盘实际文件 ==="
+ls raw/notebooklm-analysis/
+```
+
+**解决方案 A — 符号链接（仅用于让脚本通过 exists() 检查）**：
+```bash
+cd {wiki_local_path}
+# 从 git diff 找到旧名，从 ls 找到新名
+ln -s "实际文件名.md" "git-diff期望的文件名.md"
+# 脚本运行完毕后删除符号链接
+rm "git-diff期望的文件名.md"
+```
+
+**解决方案 B — 直接使用 v2 脚本**：`sop-wiki-builder-v2.py` 用 `glob("*.md")` 扫描磁盘而非 git diff，天生抗此类问题。但 v2 有坑（见 Pitfall #10）。
+
+#### 8b. 并发 Stage C 写入中文名 wiki 页 — 未跟踪文件堆积
+
+**问题（2026-05-09 实测）**：另一并发 Stage C 运行在本地创建了中文文件名 wiki 页（如 `多代理协作.md`、`端到端自动化.md`、`Chrome调试协议.md`），但未提交也未推送。这些文件作为 `git status` 中的"untracked files"堆积，导致 `git add -A` 时一并提交，可能覆盖/混入你的修复。
+
+**检查方法**：
+```bash
+cd {wiki_local_path}
+git ls-files --others --exclude-standard -- wiki/
+```
+
+**处理**：提交前确认这些 untracked 文件是否为本运行期望的内容。若属于并发运行但不冲突，可保留；若冲突（同概念不同文件名），需协调或删除。
+
+#### 8c. 合并冲突时的提交策略
+
+当并发提交导致本地 HEAD 落后远端时，不要丢失你的修复：
+```bash
+# 先拉取
+git pull --ff-only origin main
+# 若有冲突，优先保留你的修复版本
+# 将你的修复合并后提交
+git add -A
+git commit -m "fix: merge concurrent runs, keep quality fixes [run:{run_id}]"
+git push origin main
+```
 
 ### 9. verify-quality.sh 假阳性 — 带路径前缀的 wikilink
 
@@ -270,4 +376,113 @@ Stage C 脚本 `sop_wiki_builder.py` 提交了含文件名截断（`openclou.md`
 python3 -c "import re,glob; e={f.replace('wiki/','').rsplit('.md',1)[0].lower() for f in glob.glob('wiki/**/*.md',recursive=True)}; d=0; [print(f'DEAD: {f}: [[{l.strip()}]]') or (d:=d+1) for f in glob.glob('wiki/**/*.md',recursive=True) for l in re.findall(r'\[\[([^\]]+?)(?:\|[^\]]+)?\]\]',open(f).read()) if not any(l.strip().lower()==s or l.strip().lower()==s.split('/')[-1] for s in e)]; print('OK' if d==0 else f'{d} DEAD')"
 ```
 
+**⚠️ 注意**：上述 Python 方法比 `verify-quality.sh` 的 Check 5 更**严格**。它会捕获以下 `verify-quality.sh` 可能漏掉的死链类型：
+
+| 类型 | 示例 | 原因 |
+|------|------|------|
+| **大小写不匹配** | `[[Computer Use]]` → `computer-use.md` | wikilink 区分大小写，Python 用 `.lower()` 比较 |
+| **空格 vs 连字符** | `[[Codex Chrome 插件]]` → `Codex-Chrome-插件.md` | LLM 随机生成空格或连字符 |
+| **缩写 vs 全名** | `[[CDP]]` → `chrome-devtools-protocol.md` | LLM 可能用缩写，但文件名用全名 |
+| **词序变化** | `[[Chrome调试协议]]` → `chrome-devtools-protocol.md` | LLM 用中文名，但文件名用英文 slug |
+
+**建议**：在 Phase 3 质量验证时，**同时运行** `verify-quality.sh` 和 Python 死链检测，以覆盖所有类型的死链。
+
 **已修复**：version 2.9.0 已将 `find -name` 改为 `find -path`，消除了此假阳性。
+
+### 10. 重复分析文件 — 同视频多版本/identical 输出
+
+**问题**：Stage B 可能为同一视频生成多个分析文件（不同文件名但同一 `video_id` 或完全相同的内容）。此时：
+- `sop_wiki_builder.py` 的 `get_new_report_files()` 通过 `git diff --diff-filter=AM` 检测"新"文件，可能把 duplicate 文件也视为新报告
+- 处理 duplicate 文件会创建第二个 source 页（违反 TheSchema "每视频一个 source 页" 规则）
+
+**实测案例（2026-05-09）**：
+- 磁盘上有两个文件：`Codex-Chrome-插件功能实测与深度解析简报.md`（已有 source 页）和 `Codex-Chrome-插件技术简报-AI-浏览器自动化的深度评测与分析.md`（新文件，但内容完全 identical）
+- git HEAD 中第二个文件仅 55 字节（引用文件），但本地工作树恢复后有 6932 字节完整内容
+- 脚本若处理第二个文件，会创建重复 source 页
+
+**检测方法**：
+
+```bash
+# 方法 1：对比 video_id（推荐）
+cd {wiki_local_path}
+for f in raw/notebooklm-analysis/*.md; do
+  vid=$(grep -m1 '^video_id:' "$f" | sed 's/video_id: *//')
+  echo "$(basename "$f") → video_id=$vid"
+done | sort -k2
+
+# 方法 2：对比文件内容
+cd {wiki_local_path}
+for f in raw/notebooklm-analysis/*.md; do
+  md5sum "$f"
+done | sort
+
+# 方法 3：检查 git diff 与磁盘实际文件的差异
+echo "=== git diff 显示 ==="
+git diff --name-only --diff-filter=AM {before_sha} {sha} | grep 'analysis/'
+echo "=== 磁盘实际文件 ==="
+ls raw/notebooklm-analysis/
+```
+
+**处理**：
+- **内容完全一致**：只处理第一个文件（按字母序或按 git diff 顺序），其余跳过
+- **内容不同但同 video_id**：保留最完整的版本，日志中记录选择依据
+- **若所有文件都已处理过**：走 Step 6 跳过流程，写日志，不发 Telegram
+
+**❗ 不要强行运行脚本处理 duplicate**：脚本不会检测 duplicate，会直接调用 LLM 并生成第二个重复的 source 页。手动跳过并在日志中记录重复原因。
+
+### 11. git 存储的分析文件与工作树不一致
+
+**问题**：`git stash` + `git stash pop` 的保护性同步流程可能恢复出与 git HEAD 不一致的文件版本。典型场景：
+- git HEAD 中某分析文件仅 55 字节（引用/占位文件）
+- stash 恢复后该文件有 6932 字节（完整分析内容，来自并发 Stage B 的未跟踪文件）
+
+**后果**：`get_new_report_files()` 检查 `p.exists()` 会看到完整文件，但脚本的 prompt 输入可能与预期不同。
+
+**处理**：
+```bash
+# 恢复后先检查文件大小，对比 git HEAD
+cd {wiki_local_path}
+for f in raw/notebooklm-analysis/*.md; do
+  head_size=$(git show HEAD:"$f" 2>/dev/null | wc -c)
+  disk_size=$(wc -c < "$f")
+  if [ "$head_size" != "$disk_size" ]; then
+    echo "⚠️ $f: git_HEAD=${head_size}B vs disk=${disk_size}B"
+  fi
+done
+
+# 若文件大小不一致，以 git HEAD 版本为准
+git checkout HEAD -- "raw/notebooklm-analysis/不一致的文件.md"
+```
+
+### 10. v2 脚本（`sop-wiki-builder-v2.py`）的已知限制
+
+`sop-wiki-builder-v2.py`（分批调用版本）有以下几个已知问题：
+
+| 问题 | 详情 | 严重度 |
+|------|------|--------|
+| **模型选择固化** | 硬编码使用 `deepseek-chat`（max_tokens=8192），不使用 `deepseek-v4-flash`。这在生成长 JSON 时容量不足。 | ⚠️ 高 |
+| **内容截断** | 报告内容截断到 5000 字符（`content[:5000]`），脑图截断到 1500 字符。可能导致 LLM 缺失关键上下文。 | ⚠️ 中 |
+| **max_tokens 低** | 只设 12000 tokens，比 v1 脚本的 16000 少 | ⚠️ 中 |
+| **无重试机制** | 单次 API 调用失败后直接 `continue`，不保存 raw response 供恢复 | ⚠️ 中 |
+| **覆盖 index.md** | 全量重写 index.md，不合并已有条目（v1 脚本有合并逻辑） | ✅ 低（仅在首次运行时） |
+
+**何时用 v2**：仅当报告数 ≤2 且 v1 脚本因内容过大截断时（3+ 报告首选 v2，但须注意上述限制）。
+
+### 11. index.md 中的死链 — 质量验证的盲区
+
+`verify-quality.sh` 只检查 `wiki/` 目录下的文件，**不检查 `index.md`** 和 `log.md`。但脚本更新的 index.md 可能包含带空格/大小写不正确的 wikilink 条目。
+
+**症状**：`index.md` 中的条目如 `- [[Codex Chrome 插件功能实测与深度解析简报]]`（空格）指向上不存在的文件（实际文件为全连字符 slug）。
+
+**检查方法**（Phase 3 新增步骤）：
+```bash
+cd {wiki_local_path}
+# 检查 index.md 和 log.md 中的 wikilink
+grep -n '\[\[.*\]\]' index.md log.md 2>/dev/null | sed 's/\[\[/,/' | while IFS=, read -r line slug; do
+  slug=$(echo "$slug" | sed 's/\[\[//;s/\]\]//;s/|.*//')
+  found=$(find wiki/ -path "*/${slug}.md" 2>/dev/null | head -1)
+  if [ -z "$found" ] && [ -n "$slug" ]; then
+    echo "  ❌ DEAD LINK in $line → [[${slug}]]"
+  fi
+done
+```

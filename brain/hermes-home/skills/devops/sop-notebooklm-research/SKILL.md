@@ -47,13 +47,11 @@ webhook 收到 `stage=notebooklm-research`
 
 **目标：调用 NotebookLM 生成分析文件，重命名为中文语义文件名**
 
-7. 确保目录存在，**清理旧文件**（防止前序失败运行遗留的旧文件被误提交）：
+7. 确保目录存在：
    ```bash
    mkdir -p {wiki_local_path}/raw/notebooklm-analysis {wiki_local_path}/raw/notebooklm-mindmaps logs/webhook-runs
-   # 清理本次运行之前的旧文件，只保留本次新生成的文件
-   # ⚠️ 脑图文件可能同时以 .json 或 .canvas 格式存在，必须清理两种后缀
-   rm -f {wiki_local_path}/raw/notebooklm-analysis/*.md {wiki_local_path}/raw/notebooklm-mindmaps/*.json {wiki_local_path}/raw/notebooklm-mindmaps/*.canvas 2>/dev/null || true
    ```
+   ⚠️ **不要删除现有分析文件**：Stage C 通过 `before-sha/sha` diff 过滤本次新增文件，旧文件不会被重复处理。并发场景下删除会导致另一个 Stage B 的输出被误删（竞态条件）。
 8. 调用 processor（**固定路径，不可更改**）：
    ```bash
    python3 /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py <url1> <url2> ...
@@ -78,6 +76,8 @@ webhook 收到 `stage=notebooklm-research`
    脚本返回 JSON 摘要到 stdout，包含每个文件的状态、slug、路径和大小。若全部成功返回码 0，部分失败返回码 1。
 
    ⚠️ **脚本自动处理**：标题提取（跳过 frontmatter）、slug 生成、文件复制、.canvas/.json 后缀检查、JSON 合法性验证、frontmatter 中 mindmap_file 字段更新。
+
+   ⚠️ **额外生成**：脚本会在 `raw/notebooklm-mindmaps/` 目录下自动生成一个**额外的 Mermaid 格式脑图 `.md` 文件**（供 Obsidian 原生渲染，无需插件）。此文件与 `.json` 脑图使用相同的 slug，内容为 ````mindmap` 代码块。`git add raw/notebooklm-mindmaps/` 会一并提交，Stage C 不会读取此 `.md` 文件（只读 `mindmap_file` 字段指向的 `.json`），所以无冲突。
 
    ### 📝 手动方式（当脚本不适用时）
 
