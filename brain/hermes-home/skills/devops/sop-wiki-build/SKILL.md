@@ -16,26 +16,64 @@ webhook 收到 `stage=wiki-build`
 ### 准备
 1. **记录开始时间**：`START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
 2. `cd {wiki_local_path}`
-2. **首先读取 `TheSchema.md`**（最高优先级，知识图谱构建的核心规范）。
-3. 保护性同步：
+3. **首先读取 `TheSchema.md`**（最高优先级，知识图谱构建的核心规范）。
+4. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts`
+5. 保护性同步：
    ```bash
    git stash push -u -m "sop-stage-c-{run_id}" 2>/dev/null || true
    git fetch origin && git checkout main && git pull --ff-only origin main
    git stash pop 2>/dev/null || true
    ```
-4. 计算 raw 变更：
+6. 检测需要处理的分析文件 — **使用目录扫描而非 git diff**（git diff 对中文文件名的引号处理会导致匹配失败）：
    ```bash
-   git diff --name-only {before}..{sha} -- 'raw/*.md' 'raw/**/*.md'
+   # 扫描 raw/notebooklm-analysis/ 下所有 .md 文件
+   ls raw/notebooklm-analysis/*.md 2>/dev/null | grep -v 'trigger'
    ```
-5. 保留 `raw/notebooklm-analysis/` 和 `raw/notebooklm-mindmaps/` 下的变更（本阶段仅处理 NotebookLM 结果），过滤其他目录的变更。
-6. 若无变更：写日志 `skipped:no_raw_changes`，**禁止发送 Telegram**，停止。
-7. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts`
+   找出其中在 `wiki/sources/` 目录下**还没有对应 source 页**的文件，这些就是需要处理的新分析文件。
+   
+   判断逻辑：如果 `raw/notebooklm-analysis/*.md`（排除 trigger 文件）的数量 > 0，则继续执行；否则跳过。
+
+7. 若 `raw/notebooklm-analysis/` 下没有任何 .md 分析文件：
+   - 写 skip 日志到 `logs/webhook-runs/{run_id}.md`（标题标明 skipped: no_raw_changes）
+   - **使用 `write_file` 工具写入**，禁止使用终端 heredoc
+   - 提交并 push skip 日志：
+     ```bash
+     git add logs/webhook-runs/{run_id}.md
+     git commit -m "chore: skip wiki build - no new notebooklm content [run:{run_id}]"
+     git push origin main
+     ```
+   - **禁止发送 Telegram**
+   - 停止执行（wiki 目录为空且无分析文件则停止）
 
 ### 文件写入约束（必须遵守）
 - **必须用 write_file 工具写入文件**，禁止用 `echo`、`cat <<EOF`、`heredoc` 等 shell 方式。
 - shell 方式会导致 `\n` 变成字面字符串而不是真实换行符，造成文件格式损坏。
 
-### 构建（严格遵循 TheSchema.md）\n7. 读取 `index.md` 和 `log.md` 了解现有内容，避免重复创建。\n8. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts`\n9. 对每个新分析报告：\n   a. **Source 页** (`wiki/sources/{video-id}-{slug}.md`)：\n      - 必须创建（每个分析报告对应一个 source 页）\n      - 视频信息（标题、URL、发布者）\n      - 执行摘要（3-5句）\n      - 核心要点（5-10条）\n      - 关联实体/概念的 `[[wikilinks]]`\n      - frontmatter: type/tags/summary/sources/layer=L1/confidence=high\n   b. **Entity 页** (`wiki/entities/{slug}.md`)：\n      - 仅当实体页面尚不存在时创建\n      - 人物、产品、组织、AI模型\n      - 每页 ≥ 2 个出链 wikilinks\n      - layer=L1 或 L2（跨视频推断时标注 reasoning）\n   c. **Concept 页** (`wiki/concepts/{slug}.md`)：\n      - 仅当概念页面尚不存在时创建\n      - 技术方法、框架、趋势\n      - 每页 ≥ 2 个出链 wikilinks\n      - 包含本库中具体例子
+### 构建（严格遵循 TheSchema.md）
+
+9. 读取 `index.md` 和 `log.md` 了解现有内容，避免重复创建。
+10. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts wiki/comparisons wiki/overview wiki/queries`
+11. 对每个新分析报告：
+    a. **Source 页** (`wiki/sources/{中文标题}.md`)：
+      - 必须创建（每个分析报告对应一个 source 页）
+      - 使用 NotebookLM 分析文件的中文标题作为文件名（不含 `{video-id}-` 前缀，除非已有约定）
+      - 视频信息（标题、URL、发布者）
+      - 执行摘要（3-5句）
+      - 核心要点（5-10条）
+      - 关联实体/概念的 `[[wikilinks]]`
+      - frontmatter: type/tags/summary/sources/layer=L1/confidence=high
+    b. **Entity 页** (`wiki/entities/{实体名-slug}.md`)：
+      - 仅当实体页面尚不存在时创建
+      - 人物、产品、组织、AI模型
+      - 每页 ≥ 2 个出链 wikilinks
+      - layer=L1 或 L2（跨视频推断时标注 reasoning）
+      - 英文实体名小写连字符 slug，中文实体名直接中文文件名
+    c. **Concept 页** (`wiki/concepts/{概念名}.md`)：
+      - 仅当概念页面尚不存在时创建
+      - 技术方法、框架、趋势
+      - 每页 ≥ 2 个出链 wikilinks
+      - 包含本库中具体例子
+      - 中文概念名直接使用中文文件名，不翻译
 
 ### 质量检查（必须通过）
 9. 每个新页面：
@@ -55,27 +93,29 @@ webhook 收到 `stage=wiki-build`
     git commit -m "chore: update llm wiki graph from notebooklm analysis [run:{run_id}]"
     git push origin main
     ```
+14. **记录结束时间**：`END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
+15. **计算耗时**：`DURATION_SECONDS=$(($(date -u -d "$END_TIME" +%s) - $(date -u -d "$START_TIME" +%s)))`
 
 ### Telegram 通知（push 成功后发送）
-14. ```bash
+16. ```bash
     TOKEN=$(printenv {tg_token_env})
-    curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
-      -d "chat_id={tg_chat_id}" \
-      -d "disable_web_page_preview=true" \
+    curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \\
+      -d "chat_id={tg_chat_id}" \\
+      -d "disable_web_page_preview=true" \\
       --data-urlencode "text=[YOUTUBE-WIKI-RUN]
 run_id={run_id}
 新增 source: <n>个 - <名称列表>
 新增 entity: <n>个 - <名称列表(≤5)>
 新增 concept: <n>个 - <名称列表(≤5)>
 commit: <hash>
-duration_stage_c: <duration_seconds>s
+duration_stage_c: ${DURATION_SECONDS}s
 log: logs/webhook-runs/{run_id}.md"
     ```
 
     run-log 中必须包含：
     - `start_time`: START_TIME 的值
     - `end_time`: END_TIME 的值（在 push 成功后记录）
-    - `duration_seconds`: 总耗时秒数
+    - `duration_seconds`: DURATION_SECONDS
 
 ## 注意
 - push 失败时重试一次，仍失败则记录错误，**禁止发送 Telegram**。

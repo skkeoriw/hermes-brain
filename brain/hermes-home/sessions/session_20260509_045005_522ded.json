@@ -1,0 +1,518 @@
+{
+  "session_id": "20260509_045005_522ded",
+  "model": "deepseek-v4-flash",
+  "base_url": "https://api.deepseek.com/v1",
+  "platform": "webhook",
+  "session_start": "2026-05-09T04:50:05.582269",
+  "last_updated": "2026-05-09T04:50:30.332518",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nConversation started: Saturday, May 09, 2026 04:50 AM\nModel: deepseek-v4-flash\nProvider: deepseek",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "patch",
+        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "replace",
+                "patch"
+              ],
+              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
+              "default": "replace"
+            },
+            "path": {
+              "type": "string",
+              "description": "File path to edit (required for 'replace' mode)"
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
+              "default": false
+            },
+            "patch": {
+              "type": "string",
+              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Complete content to write to the file"
+            }
+          },
+          "required": [
+            "path",
+            "content"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 18,
+  "messages": [
+    {
+      "role": "user",
+      "content": "质量检查：验证 youtube-video-research-wiki 知识图谱构建质量\n\n检查以下内容（使用终端和文件工具）：\n1. 列出 wiki/sources/ 下的文件数（应有3个）\n2. 列出 wiki/entities/ 下的文件数（应有7个）\n3. 列出 wiki/concepts/ 下的文件数（应有8个）\n4. 列出 wiki/comparisons/ 下的文件数（应有1个）\n5. 验证每个新页面的 frontmatter 包含 type/tags/summary/sources/layer 字段\n6. 验证每个新文件包含至少 2 个 wikilinks ([[...]])\n7. 验证 source 文件 >= 300 中文字符, entity/concept >= 200 中文字符\n8. 验证所有 sources: 字段引用的 raw/ 文件确实存在\n9. 验证所有 wikilinks ([[...]]) 指向的页面存在（检查 wiki/sources/, wiki/entities/, wiki/concepts/, wiki/comparisons/ 下的文件名）\n\n工作目录：/home/zhouhuijuan1987/wiki/youtube-video-research-wiki\n\n输出一个完整的质量检查报告，包含每项检查的通过/失败状态和具体数据。如果有任何检查不通过，具体说明哪些页面有问题。"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me perform all the quality checks systematically. I'll start by exploring the directory structure and file counts.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me perform all the quality checks systematically. I'll start by exploring the directory structure and file counts.",
+      "tool_calls": [
+        {
+          "id": "call_00_LsWfhvgbYqOVQJJhpTsR2035",
+          "call_id": "call_00_LsWfhvgbYqOVQJJhpTsR2035",
+          "response_item_id": "fc_00_LsWfhvgbYqOVQJJhpTsR2035",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*\", \"target\": \"files\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources\"}"
+          }
+        },
+        {
+          "id": "call_01_fN1hyuBFtXsMdyctSvzC4342",
+          "call_id": "call_01_fN1hyuBFtXsMdyctSvzC4342",
+          "response_item_id": "fc_01_fN1hyuBFtXsMdyctSvzC4342",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*\", \"target\": \"files\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities\"}"
+          }
+        },
+        {
+          "id": "call_02_049U8FX9cHvPdv9faoLb4327",
+          "call_id": "call_02_049U8FX9cHvPdv9faoLb4327",
+          "response_item_id": "fc_02_049U8FX9cHvPdv9faoLb4327",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*\", \"target\": \"files\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts\"}"
+          }
+        },
+        {
+          "id": "call_03_sH6gnWmlAUZpVYyAddWQ5106",
+          "call_id": "call_03_sH6gnWmlAUZpVYyAddWQ5106",
+          "response_item_id": "fc_03_sH6gnWmlAUZpVYyAddWQ5106",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"*\", \"target\": \"files\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/comparisons\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 3, \"files\": [\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/GPT-5.5 Instant 深度分析.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes Agent 与 OpenClaw 智能体架构深度对比.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes + Qwen3.6 本地最强 Agent 组合部署.md\"]}",
+      "tool_call_id": "call_00_LsWfhvgbYqOVQJJhpTsR2035"
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 7, \"files\": [\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenAI.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Nous Research.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/EvoMap.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/GPT-5.5 Instant.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenClaw.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Qwen 3.6.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Hermes Agent.md\"]}",
+      "tool_call_id": "call_01_fN1hyuBFtXsMdyctSvzC4342"
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 11, \"files\": [\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Agent 执行循环.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/WSL 部署.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/本地 AI Agent 部署.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Llama-cpp 推理框架.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/多模态 AI.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/五层纵深防御模型.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/chat-latest API 策略.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Memory Sources.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/幻觉率控制.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/分层记忆体系.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/程序化知识.md\"]}",
+      "tool_call_id": "call_02_049U8FX9cHvPdv9faoLb4327"
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 1, \"files\": [\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/comparisons/Hermes Agent vs OpenClaw.md\"]}",
+      "tool_call_id": "call_03_sH6gnWmlAUZpVYyAddWQ5106"
+    },
+    {
+      "role": "assistant",
+      "content": "Now let me read all files to check frontmatter, wikilinks, character counts, and references.",
+      "reasoning": "Let me check the counts:\n1. wiki/sources/ - 3 files ✓ (expected 3)\n2. wiki/entities/ - 7 files ✓ (expected 7)\n3. wiki/concepts/ - 11 files ✗ (expected 8, got 11)\n4. wiki/comparisons/ - 1 file ✓ (expected 1)\n\nSo concepts has 11 files instead of the expected 8. Let me continue with the other checks.\n\nNow I need to read each file to check:\n- Frontmatter fields (type/tags/summary/sources/layer)\n- Wikilinks (at least 2 [[...]])\n- Character count for Chinese characters\n- Sources field references to raw/ files\n- Wikilink validity\n\nLet me read all files to check these.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me check the counts:\n1. wiki/sources/ - 3 files ✓ (expected 3)\n2. wiki/entities/ - 7 files ✓ (expected 7)\n3. wiki/concepts/ - 11 files ✗ (expected 8, got 11)\n4. wiki/comparisons/ - 1 file ✓ (expected 1)\n\nSo concepts has 11 files instead of the expected 8. Let me continue with the other checks.\n\nNow I need to read each file to check:\n- Frontmatter fields (type/tags/summary/sources/layer)\n- Wikilinks (at least 2 [[...]])\n- Character count for Chinese characters\n- Sources field references to raw/ files\n- Wikilink validity\n\nLet me read all files to check these.",
+      "tool_calls": [
+        {
+          "id": "call_00_4gvokfveXcvXZPbXXkR43464",
+          "call_id": "call_00_4gvokfveXcvXZPbXXkR43464",
+          "response_item_id": "fc_00_4gvokfveXcvXZPbXXkR43464",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/GPT-5.5 Instant 深度分析.md\"}"
+          }
+        },
+        {
+          "id": "call_01_n8VN8LxP7MhU1E9dfzqU3400",
+          "call_id": "call_01_n8VN8LxP7MhU1E9dfzqU3400",
+          "response_item_id": "fc_01_n8VN8LxP7MhU1E9dfzqU3400",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes Agent 与 OpenClaw 智能体架构深度对比.md\"}"
+          }
+        },
+        {
+          "id": "call_02_9cMRHNlbL9NPCEIzlbc41653",
+          "call_id": "call_02_9cMRHNlbL9NPCEIzlbc41653",
+          "response_item_id": "fc_02_9cMRHNlbL9NPCEIzlbc41653",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes + Qwen3.6 本地最强 Agent 组合部署.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"GPT-5.5 Instant 深度分析\\\"\\n     3|type: source\\n     4|tags: [openai, gpt-5.5, llm, multimodal, hallucination]\\n     5|summary: \\\"OpenAI 最新 GPT-5.5 Instant 模型的深度剖析，涵盖幻觉率控制、对话自然化、记忆功能、多模态提升及开发者策略。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/krEDel3aGGw-GPT-5-5-Instant-深度分析简报-核心特性-实测表现与应用洞察.md\\n     8|  - raw/notebooklm-analysis/krEDel3aGGw-GPT-5-5-Instant-深度分析简报-核心特性与实测性能评估.md\\n     9|created: 2026-05-09\\n    10|updated: 2026-05-09\\n    11|layer: L1\\n    12|confidence: high\\n    13|---\\n    14|\\n    15|## 视频信息\\n    16|\\n    17|- **标题**：GPT-5.5 Instant 深度分析简报：核心特性、实测表现与应用洞察\\n    18|- **视频 ID**：krEDel3aGGw\\n    19|- **主题**：OpenAI 最新 GPT-5.5 Instant 模型的全面评测\\n    20|\\n    21|## 执行摘要\\n    22|\\n    23|OpenAI 发布了其最新一代模型 GPT-5.5 Instant，作为 ChatGPT 的默认模型向全体用户开放（包括免费用户）。该模型的核心转向不是参数规模的提升，而是解决 AI 助手的「自然感」与「准确性」痛点。在幻觉率控制上实现了显著突破，模型能主动识别用户输入中的逻辑错误并自我修正。同时大幅削减了机械化的礼貌用语和废话，提供更加直接、结论先行的回答。新增的 Memory Sources 功能让模型能够参考过去聊天记录，逐步演变为长期陪伴的个性化 AI 助理。对于开发者，引入 `chat-latest` API 策略极大降低了版本升级的维护成本。\\n    24|\\n    25|## 核心要点\\n    26|\\n    27|1. **幻觉率显著下降**：在处理医疗、金融、法律等高风险领域时，能在发现推导错误后自主重新计算并修正结果。\\n    28|2. **对话去机械化**：大幅减少「这是一个很好的问题」等套话，回答结论先行，结构清晰。\\n    29|3. **Memory Sources（长效记忆）**：模型能参考过去聊天记录和关联数据，提供基于用户地理位置、偏好的个性化建议。\\n    30|4. **全员免费开放**：GPT-5.5 Instant 不再局限于 Plus/Team 付费用户，拥有 GPT 账号的免费用户即可使用（有额度限制）。\\n    31|5. **多模态能力增强**：在数学推理、科学测试、图表分析及图像理解方面表现全面超越前代 GPT-5.3。\\n    32|6. **智能联网判断**：能准确识别何时需要实时搜索（如查询最新价格），避免使用过期信息误导用户。\\n    33|7. **chat-latest API 策略**：开发者只需调用统一端点名称，模型升级时无需手动更新代码。\\n    34|8. **内容创作框架生成**：可从底层框架开始构建可执行的视频/文章框架（含标题、争议点、结论）。\\n    35|9. **医疗等高风险场景审慎**：不越界诊断，但能提供紧急处理方案及预警体征。\\n    36|10. **图像分析实用化**：可解读系统报错截图、复杂图表，并给出分步解决方案。\\n    37|\\n    38|## 实测表现\\n    39|\\n    40|| 测试维度 | 表现特征 |\\n    41||:---|:---|\\n    42|| 响应速度 | 极速输出，结论先行，逻辑条理清晰 |\\n    43|| 逻辑处理 | 能识别用户输入中的代数或逻辑错误，重新推导 |\\n    44|| 内容创作 | 可执行视频框架（标题、前 30 秒观点、争议点、结论） |\\n    45|| 高风险决策 | 极其谨慎，不越界诊断，提供紧急指引 |\\n    46|| 联网核对 | 主动搜索官方最新公告，提供来源链接 |\\n    47|| 图像理解 | 抓取关键信息，识别报错代码，给出处理步骤 |\\n    48|\\n    49|## 关联实体\\n    50|\\n    51|- [[OpenAI]]：GPT-5.5 Instant 的开发者\\n    52|- [[GPT-5.5 Instant]]：OpenAI 最新一代模型\\n    53|\\n    54|## 关联概念\\n    55|\\n    56|- [[幻觉率控制]]：模型准确性和自我修正能力\\n    57|- [[Memory Sources]]：GPT-5.5 的长效记忆功能\\n    58|- [[chat-latest API 策略]]：OpenAI 新版 API 端点策略\\n    59|- [[多模态 AI]]：图像理解与联网搜索等能力\\n    60|\", \"total_lines\": 59, \"file_size\": 3732, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_4gvokfveXcvXZPbXXkR43464"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"Hermes Agent 与 OpenClaw 智能体架构深度对比\\\"\\n     3|type: source\\n     4|tags: [hermes-agent, openclaw, agent-architecture, self-evolving, nous-research]\\n     5|summary: \\\"深度对比 Hermes Agent 与 OpenClaw 两款自托管智能体的架构设计、记忆体系、自动化和安全机制，揭示智能体从被动执行到自我进化的范式转移。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/NbldZVdusKo-Hermes-Agent-与-OpenClaw-下一代自我进化智能体深度剖析简报.md\\n     8|  - raw/notebooklm-analysis/NbldZVdusKo-智能体架构变革-Hermes-Agent-与-OpenClaw-深度对比及技术解析简报.md\\n     9|created: 2026-05-09\\n    10|updated: 2026-05-09\\n    11|layer: L1\\n    12|confidence: high\\n    13|---\\n    14|\\n    15|## 视频信息\\n    16|\\n    17|- **标题**：Hermes Agent 与 OpenClaw：下一代自我进化智能体深度剖析 / 智能体架构变革\\n    18|- **视频 ID**：NbldZVdusKo\\n    19|- **主题**：自托管智能体领域的架构设计对比，分析 Hermes Agent 如何通过执行循环、程序化知识和分层记忆实现自我进化\\n    20|\\n    21|## 执行摘要\\n    22|\\n    23|在个人自托管智能体赛道中，OpenClaw 长期以其清晰的中心化网关架构和强大的本地执行能力占据主导地位。然而，由 Nous Research 开发的 Hermes Agent 的崛起，标志着智能体设计哲学从工具属性向自我进化基础设施的重大范式转移。Hermes Agent 不再是一个被动执行指令的工具，而是一个通过执行循环不断自我评估、修正并生成程序化知识的进化系统。本视频从核心架构、记忆体系、自动化能力、安全防御等多维度深度对比两款智能体的本质差异，并探讨了 Hermes Agent 在推动本地智能体向个人数字化基础设施演进中的关键作用。\\n    24|\\n    25|## 核心要点\\n    26|\\n    27|1. **架构核心差异**：OpenClaw 采用 Gateway 中心化控制器，Hermes Agent 采用 Agent 执行循环（执行→学习→改进闭环）作为编排引擎。\\n    28|2. **程序化知识生成**：Hermes 能根据执行经验自动生成新技能（Skills），无需人工编写，实现「记住方法」而非「记住事实」。\\n    29|3. **四层结构化记忆体系**：核心持久记忆（MEMORY.md/USER.md，~1300 tokens）、会话历史（SQLite + FTS5）、扩展记忆（Honcho 长期画像）、程序性记忆（自动生成技能）。\\n    30|4. **模型无关性与可移植性**：Hermes 支持本地终端、VPS、Docker、SSH、无服务器架构，支持 OpenAI、OpenRouter、国内大模型（Kimi、MiniMax、GLM）及自定义端点。\\n    31|5. **内置 Cron 计划任务**：自然语言设定定时任务，每 60 秒检查条件，隔离会话运行，结果实时推送到指定平台。\\n    32|6. **五层纵深防御模型**：用户授权、危险命令审批、容器隔离、MCP 凭证过滤、上下文文件扫描 + SSRF 防护 + 网站黑名单。\\n    33|7. **抄袭争议**：Hermes Agent 被指涉嫌抄袭中国开源项目 EvoMap 的架构设计，Nous Research 否认后拉黑对方账号。\\n    34|8. **科研数据基础设施**：完整记录操作轨迹、提示词序列及动作决策，可用于模型训练与微调。\\n    35|9. **一键迁移工具**：Hermes 提供针对 OpenClaw 用户的迁移工具，自动检测配置目录并转换记忆格式。\\n    36|10. **典型应用场景**：个人/企业助手（定时简报、GitHub 分诊）、开发运维（Shell 执行、代码审查）、科研工具（轨迹数据收集）。\\n    37|\\n    38|## 架构对比\\n    39|\\n    40|| 维度 | OpenClaw | Hermes Agent |\\n    41||:---|:---|:---|\\n    42|| 控制中心 | Gateway 网关（中心化） | Agent 执行循环（同步编排） |\\n    43|| 运行逻辑 | 统一分发与管控消息、工具调用 | 各模块围绕执行循环集成 |\\n    44|| 技能机制 | 人类编写的模块化插件 | 自动生成程序化知识 |\\n    45|| 记忆系统 | Markdown 文件 | 四层结构化 SQLite + FTS5 检索 |\\n    46|| 设计目标 | 实用、可控、透明的助手工具 | 能力复利、长期成长的基础设施 |\\n    47|\\n    48|## 关联实体\\n    49|\\n    50|- [[Hermes Agent]]：由 Nous Research 开发的自我进化型 AI Agent\\n    51|- [[OpenClaw]]：传统自托管智能体平台，采用中心化网关架构\\n    52|- [[Nous Research]]：Hermes Agent 的研发团队\\n    53|- [[EvoMap]]：中国开源项目，Hermes Agent 涉嫌抄袭的对象\\n    54|\\n    55|## 关联概念\\n    56|\\n    57|- [[Agent 执行循环]]：Hermes Agent 的核心编排机制和设计哲学\\n    58|- [[程序化知识]]：自动生成可复用技能的知识形态\\n    59|- [[分层记忆体系]]：Hermes 的四层结构化记忆系统\\n    60|- [[五层纵深防御模型]]：Hermes Agent 的安全防护体系\\n    61|\", \"total_lines\": 60, \"file_size\": 4466, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_01_n8VN8LxP7MhU1E9dfzqU3400"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"Hermes + Qwen3.6 本地最强 Agent 组合部署\\\"\\n     3|type: source\\n     4|tags: [hermes-agent, qwen, local-deployment, agent-framework, opensource]\\n     5|summary: \\\"介绍基于 Hermes Agent 与 Qwen 3.6 模型的本地化 AI 智能体部署方案，实现零成本、高隐私的 24 小时在线 AI 助手。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/Kh8tGD5liwo-Hermes-Qwen3-6-本地最强-Agent-组合部署简报.md\\n     8|  - raw/notebooklm-analysis/Kh8tGD5liwo-本地-AI-Agent-部署简报-Hermes-与-Qwen-3-6-组合方案.md\\n     9|created: 2026-05-09\\n    10|updated: 2026-05-09\\n    11|layer: L1\\n    12|confidence: high\\n    13|---\\n    14|\\n    15|## 视频信息\\n    16|\\n    17|- **标题**：Hermes + Qwen3.6 本地最强 Agent 组合部署\\n    18|- **视频 ID**：Kh8tGD5liwo\\n    19|- **主题**：在本地 Windows 环境下通过 WSL + Llama-cpp + Hermes Agent 部署 Qwen 3.6 模型\\n    20|\\n    21|## 执行摘要\\n    22|\\n    23|本方案介绍了一种基于开源模型 Qwen 3.6 与 Hermes Agent 的本地化 AI 解决方案，旨在解决商业 AI 模型月费高昂、数据隐私受限等痛点。通过在 Windows 系统下利用 WSL（Ubuntu 24.04）部署 Llama-cpp 推理框架，配合 Qwen 3.6 模型，用户可在消费级显卡上获得完全自主可控的 AI 服务。测试显示在 24GB 显存环境下，27B 模型推理速度可达约 40 Tokens/s，足以应对代码编写、逻辑推理和自动化任务。通过对接 Telegram Bot，用户可实现手机端远程调用和定时任务自动化，将本地模型转化为「私有云端 AI」。\\n    24|\\n    25|## 核心要点\\n    26|\\n    27|1. **零成本 Token 自由**：本地部署完全免费，不受商业 API 按量付费限制，可大规模执行自动化任务。\\n    28|2. **Windows WSL 兼容**：利用 Windows 11 + Ubuntu 24.04 WSL 环境运行，无需专用 Linux 机器。\\n    29|3. **Llama-cpp 推理引擎**：相比 VLLM 和 DeepSpeed，Llama-cpp 在显存管理上更稳定，能有效防止爆显存。\\n    30|4. **模型版本灵活适配**：Qwen 3.6 提供 27B（24G 显存建议）、9B、4B、2B、0.8B 等版本，覆盖高配到入门级硬件。\\n    31|5. **Hermes Agent 中控**：作为 Agent 层对接多个消息平台（Telegram、Discord、微信、QQ），支持远程调度。\\n    32|6. **深度思考模式开关**：Agent 场景建议关闭深度思考模式以提升首字速度和响应实时性。\\n    33|7. **国产镜像加速**：国内用户通过 ModelScope 镜像下载模型权重，避免 Hugging Face 连接失败。\\n    34|8. **NVIDIA CUDA 加速**：需安装最新驱动和 CUDA 工具包，对 Llama-cpp 重新编译启用 GPU 推理。\\n    35|9. **开机自启 24h 在线**：创建启动脚本加入系统自启，确保 AI 服务持续可用。\\n    36|10. **替代收费模型**：27B 模型在非极端规模编程和日常推理任务中，已能覆盖 90% 以上需求。\\n    37|\\n    38|## 关键技术架构\\n    39|\\n    40|- **底层环境**：Windows 11 → PowerShell 安装 WSL → Ubuntu 24.04\\n    41|- **推理引擎**：Llama-cpp（CUDA 编译）\\n    42|- **模型**：Qwen 3.6（27B 主力，小显存可选 9B/4B/2B/0.8B）\\n    43|- **Agent 层**：Hermes Agent（API 指向 http://localhost:8080/v1）\\n    44|- **远程控制**：Telegram Bot（BotFather 创建 + TG ID 绑定）\\n    45|- **性能指标**：27B 基础 40 Tokens/s，优化后 50-60 Tokens/s\\n    46|\\n    47|## 关联实体\\n    48|\\n    49|- [[Hermes Agent]]：作为 Agent 调度层，负责多端接入和任务编排\\n    50|- [[Qwen 3.6]]：通义千问 3.6 系列模型，核心推理引擎\\n    51|- [[Nous Research]]：Hermes Agent 的开发者团队\\n    52|\\n    53|## 关联概念\\n    54|\\n    55|- [[本地 AI Agent 部署]]：零成本本地化部署方法论\\n    56|- [[Llama-cpp 推理框架]]：高性能本地推理引擎\\n    57|- [[WSL 部署]]：Windows Subsystem for Linux 部署方案\\n    58|- [[Agent 执行循环]]：Hermes Agent 的核心编排机制\\n    59|\", \"total_lines\": 58, \"file_size\": 3625, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_02_9cMRHNlbL9NPCEIzlbc41653"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, the 3 source files look good. Now let me read all entity, concept, and comparison files.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, the 3 source files look good. Now let me read all entity, concept, and comparison files.",
+      "tool_calls": [
+        {
+          "id": "call_00_PUT4NMxg6UoHTZwd0gi75123",
+          "call_id": "call_00_PUT4NMxg6UoHTZwd0gi75123",
+          "response_item_id": "fc_00_PUT4NMxg6UoHTZwd0gi75123",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenAI.md\"}"
+          }
+        },
+        {
+          "id": "call_01_y4U4y7q6fH2sdIZ3wjUi8140",
+          "call_id": "call_01_y4U4y7q6fH2sdIZ3wjUi8140",
+          "response_item_id": "fc_01_y4U4y7q6fH2sdIZ3wjUi8140",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Nous Research.md\"}"
+          }
+        },
+        {
+          "id": "call_02_R8GcCqAdYISVcmsmWuKT6819",
+          "call_id": "call_02_R8GcCqAdYISVcmsmWuKT6819",
+          "response_item_id": "fc_02_R8GcCqAdYISVcmsmWuKT6819",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/EvoMap.md\"}"
+          }
+        },
+        {
+          "id": "call_03_6mBCQTMgir5Bu3K8Nuqk3957",
+          "call_id": "call_03_6mBCQTMgir5Bu3K8Nuqk3957",
+          "response_item_id": "fc_03_6mBCQTMgir5Bu3K8Nuqk3957",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/GPT-5.5 Instant.md\"}"
+          }
+        },
+        {
+          "id": "call_04_rKNnUceXMlHwbCAdONVG5062",
+          "call_id": "call_04_rKNnUceXMlHwbCAdONVG5062",
+          "response_item_id": "fc_04_rKNnUceXMlHwbCAdONVG5062",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenClaw.md\"}"
+          }
+        },
+        {
+          "id": "call_05_BKXxILjykBLaJ5SRC05O1074",
+          "call_id": "call_05_BKXxILjykBLaJ5SRC05O1074",
+          "response_item_id": "fc_05_BKXxILjykBLaJ5SRC05O1074",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Qwen 3.6.md\"}"
+          }
+        },
+        {
+          "id": "call_06_NQNSan8dY9ibuOIKE9dt5570",
+          "call_id": "call_06_NQNSan8dY9ibuOIKE9dt5570",
+          "response_item_id": "fc_06_NQNSan8dY9ibuOIKE9dt5570",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Hermes Agent.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"OpenAI\\\"\\n     3|type: entity\\n     4|tags: [ai-company, llm, research-lab, chatgpt]\\n     5|summary: \\\"全球领先的人工智能研究机构，GPT-5.5 Instant、ChatGPT 等产品的开发者，在 LLM 领域保持技术前沿地位。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/krEDel3aGGw-GPT-5-5-Instant-深度分析简报-核心特性-实测表现与应用洞察.md\\n     8|  - raw/notebooklm-analysis/krEDel3aGGw-GPT-5-5-Instant-深度分析简报-核心特性与实测性能评估.md\\n     9|created: 2026-05-09\\n    10|updated: 2026-05-09\\n    11|layer: L1\\n    12|confidence: high\\n    13|---\\n    14|\\n    15|## 基本定位\\n    16|\\n    17|**OpenAI** 是总部位于美国旧金山的全球领先人工智能研究机构，以开发 GPT 系列大语言模型和 ChatGPT 产品闻名。其最新发布的 GPT-5.5 Instant 模型代表了 LLM 技术在幻觉率控制、对话自然化和多模态能力方面的最新突破。\\n    18|\\n    19|## 核心产品与贡献\\n    20|\\n    21|- **GPT-5.5 Instant**：最新一代默认模型，面向全体免费用户开放，在幻觉率控制上实现显著突破\\n    22|- **ChatGPT**：全球用户量最大的 AI 对话产品，GPT-5.5 Instant 作为默认模型运行\\n    23|- **chat-latest API 策略**：引入统一端点名称，降低开发者版本升级维护成本\\n    24|- **Memory Sources**：长效记忆功能，使模型成为长期陪伴的个性化 AI 助理\\n    25|\\n    26|## 关系网络\\n    27|\\n    28|- [[GPT-5.5 Instant]]：OpenAI 最新一代模型，核心产品\\n    29|- [[chat-latest API 策略]]：OpenAI 为开发者推出的 API 端点策略\\n    30|- [[Memory Sources]]：OpenAI 在 GPT-5.5 中引入的记忆功能\\n    31|- [[幻觉率控制]]：OpenAI 在 GPT-5.5 中重点优化的方向\\n    32|\\n    33|## 出现视频来源\\n    34|\\n    35|- [[GPT-5.5 Instant 深度分析]]\\n    36|\", \"total_lines\": 35, \"file_size\": 1636, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_PUT4NMxg6UoHTZwd0gi75123"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"Nous Research\\\"\\n     3|type: entity\\n     4|tags: [ai-company, open-source, research, agent-framework]\\n     5|summary: \\\"Hermes Agent 的研发团队，专注于开源 AI Agent 框架和分布式训练技术的前沿研究机构。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/NbldZVdusKo-Hermes-Agent-与-OpenClaw-下一代自我进化智能体深度剖析简报.md\\n     8|  - raw/notebooklm-analysis/NbldZVdusKo-智能体架构变革-Hermes-Agent-与-OpenClaw-深度对比及技术解析简报.md\\n     9|  - raw/notebooklm-analysis/Kh8tGD5liwo-Hermes-Qwen3-6-本地最强-Agent-组合部署简报.md\\n    10|  - raw/notebooklm-analysis/Kh8tGD5liwo-本地-AI-Agent-部署简报-Hermes-与-Qwen-3-6-组合方案.md\\n    11|created: 2026-05-09\\n    12|updated: 2026-05-09\\n    13|layer: L2\\n    14|confidence: high\\n    15|reasoning: 综合 NbldZVdusKo 和 Kh8tGD5liwo 两个视频的分析，Nous Research 既是 Hermes Agent 的开发者，也是其背后推动 Agent 自我进化范式的研究机构\\n    16|---\\n    17|\\n    18|## 基本定位\\n    19|\\n    20|**Nous Research** 是一家专注于开源 AI 技术研发的前沿研究机构，是 **Hermes Agent** 框架的创始开发团队。他们推动了智能体设计从「被动执行工具」向「自我进化基础设施」的重大范式转变。\\n    21|\\n    22|## 核心贡献\\n    23|\\n    24|- **Hermes Agent 框架**：研发了具有执行循环架构和自我进化能力的开源 AI Agent 框架\\n    25|- **程序化知识生成**：推动技能自动生成和管理，遵循 agentskills.io 开放标准\\n    26|- **四层记忆体系**：设计了包含核心持久记忆、会话历史、扩展画像和程序性记忆的结构化系统\\n    27|- **分布式训练研究**：参与 DisTrO 等分布式互联网训练框架的研究\\n    28|\\n    29|## 关系网络\\n    30|\\n    31|- [[Hermes Agent]]：Nous Research 的核心开源项目\\n    32|- [[EvoMap]]：被指涉嫌抄袭的中国开源项目，卷入抄袭风波\\n    33|- [[Agent 执行循环]]：Nous Research 设计的核心编排机制\\n    34|- [[程序化知识]]：Nous Research 推动的 Agent 自我进化能力\\n    35|\\n    36|## 出现视频来源\\n    37|\\n    38|- [[Hermes Agent 与 OpenClaw 智能体架构深度对比]]\\n    39|- [[Hermes + Qwen3.6 本地最强 Agent 组合部署]]\\n    40|\", \"total_lines\": 39, \"file_size\": 2065, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_01_y4U4y7q6fH2sdIZ3wjUi8140"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"EvoMap\\\"\\n     3|type: entity\\n     4|tags: [open-source, agent-framework, china, controversy]\\n     5|summary: \\\"中国开源 AI 项目，Hermes Agent 被指涉嫌抄袭其架构设计，引发了智能体社区关于开源伦理的广泛讨论。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/NbldZVdusKo-Hermes-Agent-与-OpenClaw-下一代自我进化智能体深度剖析简报.md\\n     8|  - raw/notebooklm-analysis/NbldZVdusKo-智能体架构变革-Hermes-Agent-与-OpenClaw-深度对比及技术解析简报.md\\n     9|created: 2026-05-09\\n    10|updated: 2026-05-09\\n    11|layer: L1\\n    12|confidence: high\\n    13|---\\n    14|\\n    15|## 基本定位\\n    16|\\n    17|**EvoMap** 是一个中国的开源 AI 项目，在智能体（Agent）架构设计方面具有原创性贡献。Hermes Agent 被指高度「借鉴」了 EvoMap 的架构设计和实现方案，存在「洗代码」嫌疑，引发了开源社区关于技术借鉴与抄袭边界的广泛争议。\\n    18|\\n    19|## 争议事件\\n    20|\\n    21|- **指控内容**：Hermes Agent 被指抄袭 EvoMap 的架构设计和实现方案\\n    22|- **回应**：Nous Research 团队两度否认抄袭指控，并拉黑了 EvoMap 方账号\\n    23|- **影响**：该事件虽造成了负面影响，但 Hermes Agent 代表的「Agent 知识自我沉淀」方向仍被视为技术突破\\n    24|\\n    25|## 关系网络\\n    26|\\n    27|- [[Hermes Agent]]：被指涉嫌抄袭 EvoMap 架构的开源 Agent 框架\\n    28|- [[Nous Research]]：Hermes Agent 的开发团队，否认了抄袭指控\\n    29|\\n    30|## 出现视频来源\\n    31|\\n    32|- [[Hermes Agent 与 OpenClaw 智能体架构深度对比]]\\n    33|\", \"total_lines\": 32, \"file_size\": 1460, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_02_R8GcCqAdYISVcmsmWuKT6819"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"GPT-5.5 Instant\\\"\\n     3|type: entity\\n     4|tags: [llm, openai, multimodal, gpt-series]\\n     5|summary: \\\"OpenAI 最新发布的 GPT 系列模型，作为 ChatGPT 默认模型向全体用户开放，在幻觉率控制、对话自然化和多模态理解方面实现显著跨越。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/krEDel3aGGw-GPT-5-5-Instant-深度分析简报-核心特性-实测表现与应用洞察.md\\n     8|  - raw/notebooklm-analysis/krEDel3aGGw-GPT-5-5-Instant-深度分析简报-核心特性与实测性能评估.md\\n     9|created: 2026-05-09\\n    10|updated: 2026-05-09\\n    11|layer: L1\\n    12|confidence: high\\n    13|---\\n    14|\\n    15|## 基本定位\\n    16|\\n    17|**GPT-5.5 Instant** 是 OpenAI 于 2026 年发布的最新一代 GPT 系列大语言模型，作为 ChatGPT 的默认模型向全体用户开放（包括免费用户）。该模型的核心转向不是参数规模的提升，而是解决 AI 助手的「自然感」与「准确性」痛点。\\n    18|\\n    19|## 核心能力\\n    20|\\n    21|- **幻觉率显著下降**：能主动识别用户输入中的逻辑错误，在发现推导错误后自主重新计算并修正结果\\n    22|- **对话去机械化**：大幅削减机械化的礼貌用语，提供结论先行、直接高效的回答\\n    23|- **Memory Sources（长效记忆）**：能参考过去聊天记录和关联数据，提供个性化建议\\n    24|- **全员免费开放**：面向免费用户开放使用（有额度限制）\\n    25|- **多模态能力增强**：在数学推理、科学测试、图表分析及图像理解方面全面超越前代 GPT-5.3\\n    26|- **智能联网判断**：准确识别何时需要实时搜索，避免使用过期信息\\n    27|\\n    28|## 关系网络\\n    29|\\n    30|- [[OpenAI]]：GPT-5.5 Instant 的开发者\\n    31|- [[chat-latest API 策略]]：通过统一端点 API 降低开发者迁移成本\\n    32|- [[Memory Sources]]：GPT-5.5 Instant 的长效记忆功能\\n    33|- [[多模态 AI]]：GPT-5.5 Instant 的图像理解与联网搜索能力\\n    34|- [[幻觉率控制]]：GPT-5.5 Instant 的核心改进方向\\n    35|\\n    36|## 出现视频来源\\n    37|\\n    38|- [[GPT-5.5 Instant 深度分析]]\\n    39|\", \"total_lines\": 38, \"file_size\": 1958, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_03_6mBCQTMgir5Bu3K8Nuqk3957"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"OpenClaw\\\"\\n     3|type: entity\\n     4|tags: [ai-agent, self-hosted, framework, opensource]\\n     5|summary: \\\"自托管 AI Agent 平台，采用中心化 Gateway 网关架构，以高稳定性、可审计性和透明性著称。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/NbldZVdusKo-Hermes-Agent-与-OpenClaw-下一代自我进化智能体深度剖析简报.md\\n     8|  - raw/notebooklm-analysis/NbldZVdusKo-智能体架构变革-Hermes-Agent-与-OpenClaw-深度对比及技术解析简报.md\\n     9|created: 2026-05-09\\n    10|updated: 2026-05-09\\n    11|layer: L1\\n    12|confidence: high\\n    13|---\\n    14|\\n    15|## 基本定位\\n    16|\\n    17|**OpenClaw** 是一款个人自托管智能体平台，长期以来凭借其清晰的中心化 Gateway 网关架构、强大的本地执行能力和完善的工作区机制，在自托管 Agent 赛道中占据主导地位。\\n    18|\\n    19|## 核心特征\\n    20|\\n    21|- **Gateway 中心化架构**：采用网关后台守护进程，统一负责会话管理、请求路由和工具调度。\\n    22|- **高稳定性与可审计性**：所有操作记录可追踪，行为透明。\\n    23|- **模块化技能机制**：技能本质上是人类开发者编写的模块化工具或工作流，类似传统软件的插件包。\\n    24|- **Markdown 记忆系统**：以 Markdown 文件为核心存储记忆，动态性相对较弱。\\n    25|- **设计目标**：实用、可控、透明的助手工具。\\n    26|\\n    27|## 与 Hermes Agent 的对比\\n    28|\\n    29|OpenClaw 在架构设计与设计哲学上与 [[Hermes Agent]] 存在根本差异。OpenClaw 追求稳定性和可控性，而 Hermes Agent 追求自我进化和能力复利。Hermes 提供了针对 OpenClaw 用户的一键迁移工具，可自动检测配置目录并转换 Markdown 记忆为 SQLite 格式。\\n    30|\\n    31|## 关系网络\\n    32|\\n    33|- [[Hermes Agent]]：同赛道的竞争对手，代表了不同的设计哲学\\n    34|- [[Agent 执行循环]]：Hermes Agent 取代 Gateway 中心化架构的核心机制\\n    35|\\n    36|## 出现视频来源\\n    37|\\n    38|- [[Hermes Agent 与 OpenClaw 智能体架构深度对比]]\\n    39|\", \"total_lines\": 38, \"file_size\": 1915, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_04_rKNnUceXMlHwbCAdONVG5062"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"Qwen 3.6\\\"\\n     3|type: entity\\n     4|tags: [ai-model, llm, opensource, alibaba, qwen]\\n     5|summary: \\\"阿里通义千问 3.6 系列开源大模型，在中文理解、逻辑推理和代码编写方面表现卓越，是本地 Agent 部署的首选模型之一。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/Kh8tGD5liwo-Hermes-Qwen3-6-本地最强-Agent-组合部署简报.md\\n     8|  - raw/notebooklm-analysis/Kh8tGD5liwo-本地-AI-Agent-部署简报-Hermes-与-Qwen-3-6-组合方案.md\\n     9|created: 2026-05-09\\n    10|updated: 2026-05-09\\n    11|layer: L1\\n    12|confidence: high\\n    13|---\\n    14|\\n    15|## 基本定位\\n    16|\\n    17|**Qwen 3.6**（通义千问 3.6）是阿里巴巴通义千问系列的最新开源大语言模型，在中文理解、逻辑推理、代码编写及自动化任务方面表现卓越。作为本地 AI Agent 部署方案的核心推理引擎，它提供了从 0.8B 到 27B 多种参数规模的版本，覆盖从入门级到高性能硬件的各种场景。\\n    18|\\n    19|## 版本规格\\n    20|\\n    21|| 模型版本 | 建议显存 | 核心优势 |\\n    22||:---|:---|:---|\\n    23|| Qwen 3.6 27B | ~24G | 逻辑最强，适合复杂代码和 Agent 任务 |\\n    24|| Qwen 3.6 9B/4B | 中等显存 | 平衡性能与速度 |\\n    25|| Qwen 3.6 2B/0.8B | 低显存 | 极速响应，适合简单对话 |\\n    26|\\n    27|## 核心特点\\n    28|\\n    29|- **深度思考模式**：支持深度推理链，但在 Agent 对接场景下建议关闭以提升实时性\\n    30|- **本地推理性能**：27B 版本在 24GB 显存 + Llama-cpp 环境下可达约 40 Tokens/s\\n    31|- **最优部署方案**：通过 [[Llama-cpp 推理框架]] + CUDA 加速运行\\n    32|- **国内下载**：建议通过 ModelScope 镜像获取权重，速度可达 100MB/s\\n    33|\\n    34|## 关系网络\\n    35|\\n    36|- [[Hermes Agent]]：与 Qwen 3.6 组合部署，构成完整的本地 AI Agent 方案\\n    37|- [[Llama-cpp 推理框架]]：Qwen 3.6 推荐使用的本地推理引擎\\n    38|- [[本地 AI Agent 部署]]：以 Qwen 3.6 为核心的本地化部署方法论\\n    39|\\n    40|## 出现视频来源\\n    41|\\n    42|- [[Hermes + Qwen3.6 本地最强 Agent 组合部署]]\\n    43|\", \"total_lines\": 42, \"file_size\": 1926, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_05_BKXxILjykBLaJ5SRC05O1074"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: \\\"Hermes Agent\\\"\\n     3|type: entity\\n     4|tags: [ai-agent, framework, open-source, nous-research, agent-orchestration]\\n     5|summary: \\\"由 Nous Research 开发的开源 AI Agent 框架，采用执行循环架构，支持自我进化、程序化知识生成和四层记忆体系。\\\"\\n     6|sources:\\n     7|  - raw/notebooklm-analysis/NbldZVdusKo-Hermes-Agent-与-OpenClaw-下一代自我进化智能体深度剖析简报.md\\n     8|  - raw/notebooklm-analysis/NbldZVdusKo-智能体架构变革-Hermes-Agent-与-OpenClaw-深度对比及技术解析简报.md\\n     9|  - raw/notebooklm-analysis/Kh8tGD5liwo-Hermes-Qwen3-6-本地最强-Agent-组合部署简报.md\\n    10|  - raw/notebooklm-analysis/Kh8tGD5liwo-本地-AI-Agent-部署简报-Hermes-与-Qwen-3-6-组合方案.md\\n    11|created: 2026-05-09\\n    12|updated: 2026-05-09\\n    13|layer: L2\\n    14|confidence: high\\n    15|reasoning: 综合 Kh8tGD5liwo 和 NbldZVdusKo 两个视频的分析得出 Hermes Agent 的完整特征描述\\n    16|---\\n    17|\\n    18|## 基本定位\\n    19|\\n    20|**Hermes Agent** 是一个由 **Nous Research** 开发的开源 AI Agent 框架，其核心设计哲学是从「被动执行工具」转向「自我进化基础设施」。不同于传统的 Agent 框架，Hermes 通过 Agent 执行循环（Execution Loop）实现能力复利增长，每次执行都能反向优化决策逻辑。\\n    21|\\n    22|## 核心特征\\n    23|\\n    24|- **执行循环架构**：以 AI Agent 自身的执行循环作为系统同步编排引擎，取代传统的中心化网关模式。\\n    25|- **程序化知识生成**：能根据执行经验自动创建、优化技能（Skills），遵循 agentskills.io 开放标准。\\n    26|- **四层结构化记忆**：核心持久记忆（~1300 tokens）+ SQLite 会话历史（FTS5 全文索引）+ Honcho 长期画像 + 程序性技能记忆。\\n    27|- **模型无关性**：支持 OpenAI、OpenRouter、Kimi、MiniMax、GLM 及自定义本地模型端点，通过 `hermes model` 命令快速切换。\\n    28|- **多平台接入**：支持 Telegram、Discord、Slack、WhatsApp、Signal 及 CLI。\\n    29|- **内置 Cron 系统**：自然语言设定定时任务，60 秒检查条件，隔离会话运行。\\n    30|- **五层纵深防御**：用户授权、危险命令审批、容器隔离、MCP 凭证过滤、上下文扫描。\\n    31|- **运行轨迹记录**：完整记录操作轨迹、提示词序列和动作决策，支持模型训练数据收集。\\n    32|\\n    33|## 技术细节\\n    34|\\n    35|- 部署依赖：Git + Python，Windows 需 WSL2\\n    36|- 配置方式：通过 config.yaml 管理模型提供商、工具集、插件\\n    37|- 技能管理：`skill_manage` 工具自主完成创建、优化与管理\\n    38|- 记忆检索：session_search 基于 FTS5 实现跨会话精准检索\\n    39|- 生态扩展：支持 Skills Hub 安装扩展\\n    40|\\n    41|## 关系网络\\n    42|\\n    43|- [[Nous Research]]：Hermes Agent 的创始研发团队\\n    44|- [[OpenClaw]]：同赛道的传统自托管智能体，与 Hermes 形成架构对比\\n    45|- [[EvoMap]]：中国开源项目，Hermes Agent 被指涉嫌借鉴其架构设计\\n    46|- [[Qwen 3.6]]：与 Hermes Agent 组合部署的推荐模型\\n    47|- [[Agent 执行循环]]：Hermes Agent 的核心架构机制\\n    48|- [[程序化知识]]：Hermes Agent 的核心能力——自动生成可复用技能\\n    49|- [[分层记忆体系]]：Hermes Agent 的四层记忆架构\\n    50|- [[五层纵深防御模型]]：Hermes Agent 的安全防护体系\\n    51|\\n    52|## 出现视频来源\\n    53|\\n    54|- [[Hermes Agent 与 OpenClaw 智能体架构深度对比]]\\n    55|- [[Hermes + Qwen3.6 本地最强 Agent 组合部署]]\\n    56|\", \"total_lines\": 55, \"file_size\": 3341, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_06_NQNSan8dY9ibuOIKE9dt5570"
+    }
+  ]
+}
