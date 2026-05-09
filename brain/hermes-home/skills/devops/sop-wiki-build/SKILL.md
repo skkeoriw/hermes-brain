@@ -14,7 +14,8 @@ webhook 收到 `stage=wiki-build`
 ## 执行流程
 
 ### 准备
-1. `cd {wiki_local_path}`
+1. **记录开始时间**：`START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
+2. `cd {wiki_local_path}`
 2. **首先读取 `TheSchema.md`**（最高优先级，知识图谱构建的核心规范）。
 3. 保护性同步：
    ```bash
@@ -67,8 +68,14 @@ run_id={run_id}
 新增 entity: <n>个 - <名称列表(≤5)>
 新增 concept: <n>个 - <名称列表(≤5)>
 commit: <hash>
+duration_stage_c: <duration_seconds>s
 log: logs/webhook-runs/{run_id}.md"
     ```
+
+    run-log 中必须包含：
+    - `start_time`: START_TIME 的值
+    - `end_time`: END_TIME 的值（在 push 成功后记录）
+    - `duration_seconds`: 总耗时秒数
 
 ## 注意
 - push 失败时重试一次，仍失败则记录错误，**禁止发送 Telegram**。

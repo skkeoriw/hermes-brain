@@ -55,27 +55,59 @@ git diff --name-only <before>..<sha> -- 'raw/*.md' 'raw/**/*.md' > /tmp/changed_
 7. Log completion: `第一步成功，等待第二步自动触发`
 8. Await automatic trigger for Branch C (via subsequent webhook or manual run)
 
-### Branch C: Incremental Wiki Compilation
-1. Execute standard llm-wiki incremental compilation process
-2. Scan changes in:
-   - `raw/notebooklm-analysis/`
-   - `raw/notebooklm-mindmaps/`
-3. Generate/update wiki pages:
-   - `wiki/sources/`
-   - `wiki/concepts/`
-   - `wiki/entities/`
-4. Update relationship links
-5. Git commit and push:
+### Branch C: Incremental Wiki Compilation (Triggered by changes in raw/notebooklm-analysis/ or raw/notebooklm-mindmaps/)
+1. **Execute protective stash/sync workflow**:
    ```bash
-   git add -A
-   git commit -m "chore: update llm wiki graph"
+   git stash push -u -m "youtube-wiki-stage-c-{run_id}" 2>/dev/null || true
+   git fetch origin && git checkout main && git pull --ff-only origin main
+   git stash pop 2>/dev/null || true
+   ```
+2. **Verify no conflicting YouTube link changes**: Run `git diff --name-only {before}..{sha} -- 'raw/youtube-links/' 'raw/youtube-links/**/*.md'`. If any YouTube links changed, this indicates the webhook should have triggered Branch B instead - log this discrepancy but continue with Branch C processing.
+3. **Process NotebookLM analysis reports**:
+   - For each new/changed report in `raw/notebooklm-analysis/`:
+     * Update the corresponding source page in `wiki/sources/` to point to this report
+     * Update the corresponding entity page in `wiki/entities/` to point to this report
+4. **Process NotebookLM mindmaps**:
+   - For each new/changed mindmap in `raw/notebooklm-mindmaps/`:
+     * Parse the JSON mindmap to extract concept names
+     * For each concept, create/update a concept page in `wiki/concepts/` with:
+       - Proper frontmatter (type: concept, tags, summary, sources pointing to the mindmap, created/updated dates, layer: L1, confidence: high, reasoning: "直接从NotebookLM思维导图中提取的概念。")
+       - Content including the concept description and links to related source/entity pages
+       - Ensure minimum 2 outgoing [[wikilinks]]
+       - Ensure content density (≥200 Chinese characters for concept pages)
+5. **Language enforcement**: Ensure all generated content is in Chinese (zh_Hans). Set language explicitly before any NotebookLM operations if needed.
+6. **Update navigation files**:
+   - Update `index.md` (group by type, alphabetical order, with summaries, update "Last updated" and "Total pages")
+   - Append to `log.md` with run_id, date, and list of new/updated files
+7. **Quality checks** (must pass before commit):
+   - Every wiki page must have complete frontmatter (type/tags/summary/sources/updated/layer)
+   - L2/L3 pages must have confidence+reasoning fields
+   - Every page must have minimum 2 outgoing [[wikilinks]]
+   - Source pages: ≥300 Chinese characters
+   - Entity/concept pages: ≥200 Chinese characters
+   - All sources in frontmatter must point to existing raw/ files
+8. **Git commit and push**:
+   ```bash
+   git add wiki/ index.md log.md logs/
+   git commit -m "chore: update llm wiki graph from notebooklm analysis [run:{run_id}]"
    git push origin main
    ```
-6. Send Telegram notification:
+9. **Send Telegram notification** (only after successful push):
    ```
-   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>
+   [YOUTUBE-WIKI-RUN]
+   action=wiki-build
+   run_id={run_id}
+   notebook=youtube-video-research-wiki
+   language=zh_Hans
+   raw_changed_count=<n>
+   wiki_updates=<yes|no>
+   commit=<hash>
+   push=<success|failed>
+   compile_check=<pass|fail>
+   tg_send=<success|failed>
+   run_log=<absolute_path>
    ```
-7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`
+10. **Log run** to: `logs/webhook-runs/{run_id}.md` with detailed execution record
 
 ## Logging
 - Append all operations to `logs/webhook-runs/<run_id>.md`

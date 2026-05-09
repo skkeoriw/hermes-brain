@@ -1,456 +1,12 @@
 {
-  "session_id": "20260509_020243_a778382f",
+  "session_id": "20260509_031819_12a39a",
   "model": "nvidia/nemotron-3-super-120b-a12b:free",
   "base_url": "https://openrouter.ai/api/v1",
   "platform": "webhook",
-  "session_start": "2026-05-09T02:02:44.751435",
-  "last_updated": "2026-05-09T03:18:17.839716",
-  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. When the user references something from a past conversation or you suspect relevant cross-session context exists, use session_search to recall it before asking them to repeat themselves. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [94% — 2,077/2,200 chars]\n══════════════════════════════════════════════\nBrain sync: Hermes cron job runs hourly using gpt-5-nano (Gptsapi) to execute ~/hermes-brain/scripts/auto_sync.sh, syncing ~/.hermes→brain repo→GitHub and sending Telegram report. Systemd timer replaced with cron (2026-05-06).\n§\ngptsapi.net: 19 custom providers configured (key: sk-Cbec6ad9324a0ae51b564b5bfd17a8405d083173fefmDd0t). Critical: https://api.gptsapi.net/v1 (subdomain mandatory). OpenAI format (7 GPT + 3 Codex), Claude format (3 models), Gemini format at /v1beta/models (5 variants). Wiki-ops webhook → gpt-5-mini; brain-sync cron → gpt-5-nano (avoids OpenAI quota).\n§\nprompt-qa-unified-wiki: https://github.com/divanoo65/prompt-qa-unified-wiki, local /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki, PAT: 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 (divanoo65). Wiki uses TheSchema.md layout (raw/ + wiki/sources|entities|concepts|comparisons|overview|queries). llm-wiki webhook run IDs use gh-<run_id>-<attempt> prefix format.\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to handle stash pop conflicts by resetting to origin/main and dropping stash changes when conflicts occur during protected sync step.\n§\nUpdated sop-notebooklm-research skill to reflect actual notebooklm_processor.py output structure: JSON includes generated_files list with type and path; copy files preserving original filenames.\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [98% — 1,358/1,375 chars]\n══════════════════════════════════════════════\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - brain-sync-reporting: Standardized workflow for generating Telegram reports fro...\n    - brain-sync-workflow: Class-level skill for Hermes Brain synchronization workfl...\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - llm-wiki-multiwiki-e2e-gate: Bootstrap and validate multi-wiki factory flow: push->Git...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - sop-notebooklm-research: SOP Stage B: 处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图，pu...\n    - sop-wiki-build: SOP Stage C: 基于 NotebookLM 分析结果进行 llm-wiki 增量知识图谱构建，push ...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n    - youtube-wiki-processing: Automated workflow for processing YouTube video research ...\n  devops/video-summarizer-local/vendor/summarize/.agent/skills:\n    - summarize: Transcribe and summarize videos from YouTube, local files...\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube transcripts to summaries, threads, blogs.\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Saturday, May 09, 2026 02:02 AM\nModel: nvidia/nemotron-3-super-120b-a12b:free\nProvider: openrouter",
+  "session_start": "2026-05-09T03:18:19.508845",
+  "last_updated": "2026-05-09T03:26:34.120955",
+  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [94% — 2,077/2,200 chars]\n══════════════════════════════════════════════\nBrain sync: Hermes cron job runs hourly using gpt-5-nano (Gptsapi) to execute ~/hermes-brain/scripts/auto_sync.sh, syncing ~/.hermes→brain repo→GitHub and sending Telegram report. Systemd timer replaced with cron (2026-05-06).\n§\ngptsapi.net: 19 custom providers configured (key: sk-Cbec6ad9324a0ae51b564b5bfd17a8405d083173fefmDd0t). Critical: https://api.gptsapi.net/v1 (subdomain mandatory). OpenAI format (7 GPT + 3 Codex), Claude format (3 models), Gemini format at /v1beta/models (5 variants). Wiki-ops webhook → gpt-5-mini; brain-sync cron → gpt-5-nano (avoids OpenAI quota).\n§\nprompt-qa-unified-wiki: https://github.com/divanoo65/prompt-qa-unified-wiki, local /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki, PAT: 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 (divanoo65). Wiki uses TheSchema.md layout (raw/ + wiki/sources|entities|concepts|comparisons|overview|queries). llm-wiki webhook run IDs use gh-<run_id>-<attempt> prefix format.\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to handle stash pop conflicts by resetting to origin/main and dropping stash changes when conflicts occur during protected sync step.\n§\nUpdated sop-notebooklm-research skill to reflect actual notebooklm_processor.py output structure: JSON includes generated_files list with type and path; copy files preserving original filenames.\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [98% — 1,358/1,375 chars]\n══════════════════════════════════════════════\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - brain-sync-reporting: Standardized workflow for generating Telegram reports fro...\n    - brain-sync-workflow: Class-level skill for Hermes Brain synchronization workfl...\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - llm-wiki-multiwiki-e2e-gate: Bootstrap and validate multi-wiki factory flow: push->Git...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - sop-notebooklm-research: SOP Stage B: 处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图，pu...\n    - sop-wiki-build: SOP Stage C: 基于 NotebookLM 分析结果进行 llm-wiki 增量知识图谱构建，push ...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n    - youtube-wiki-processing: Automated workflow for processing YouTube video research ...\n  devops/video-summarizer-local/vendor/summarize/.agent/skills:\n    - summarize: Transcribe and summarize videos from YouTube, local files...\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube transcripts to summaries, threads, blogs.\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Saturday, May 09, 2026 03:18 AM\nModel: nvidia/nemotron-3-super-120b-a12b:free\nProvider: openrouter",
   "tools": [
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_back",
-        "description": "Navigate back to the previous page in browser history. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_click",
-        "description": "Click on an element identified by its ref ID from the snapshot (e.g., '@e5'). The ref IDs are shown in square brackets in the snapshot output. Requires browser_navigate and browser_snapshot to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "ref": {
-              "type": "string",
-              "description": "The element reference from the snapshot (e.g., '@e5', '@e12')"
-            }
-          },
-          "required": [
-            "ref"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_console",
-        "description": "Get browser console output and JavaScript errors from the current page. Returns console.log/warn/error/info messages and uncaught JS exceptions. Use this to detect silent JavaScript errors, failed API calls, and application warnings. Requires browser_navigate to be called first. When 'expression' is provided, evaluates JavaScript in the page context and returns the result — use this for DOM inspection, reading page state, or extracting data programmatically.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "clear": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, clear the message buffers after reading"
-            },
-            "expression": {
-              "type": "string",
-              "description": "JavaScript expression to evaluate in the page context. Runs in the browser like DevTools console — full access to DOM, window, document. Return values are serialized to JSON. Example: 'document.title' or 'document.querySelectorAll(\"a\").length'"
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_get_images",
-        "description": "Get a list of all images on the current page with their URLs and alt text. Useful for finding images to analyze with the vision tool. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_navigate",
-        "description": "Navigate to a URL in the browser. Initializes the session and loads the page. Must be called before other browser tools. For plain-text endpoints — URLs ending in .md, .txt, .json, .yaml, .yml, .csv, .xml, raw.githubusercontent.com, or any documented API endpoint — prefer curl via the terminal tool or web_extract; the browser stack is overkill and much slower for these. Use browser tools when you need to interact with a page (click, fill forms, dynamic content). Returns a compact page snapshot with interactive elements and ref IDs — no need to call browser_snapshot separately after navigating.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string",
-              "description": "The URL to navigate to (e.g., 'https://example.com')"
-            }
-          },
-          "required": [
-            "url"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_press",
-        "description": "Press a keyboard key. Useful for submitting forms (Enter), navigating (Tab), or keyboard shortcuts. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "key": {
-              "type": "string",
-              "description": "Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown')"
-            }
-          },
-          "required": [
-            "key"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_scroll",
-        "description": "Scroll the page in a direction. Use this to reveal more content that may be below or above the current viewport. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "direction": {
-              "type": "string",
-              "enum": [
-                "up",
-                "down"
-              ],
-              "description": "Direction to scroll"
-            }
-          },
-          "required": [
-            "direction"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_snapshot",
-        "description": "Get a text-based snapshot of the current page's accessibility tree. Returns interactive elements with ref IDs (like @e1, @e2) for browser_click and browser_type. full=false (default): compact view with interactive elements. full=true: complete page content. Snapshots over 8000 chars are truncated or LLM-summarized. Requires browser_navigate first. Note: browser_navigate already returns a compact snapshot — use this to refresh after interactions that change the page, or with full=true for complete content.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "full": {
-              "type": "boolean",
-              "description": "If true, returns complete page content. If false (default), returns compact view with interactive elements only.",
-              "default": false
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_type",
-        "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "ref": {
-              "type": "string",
-              "description": "The element reference from the snapshot (e.g., '@e3')"
-            },
-            "text": {
-              "type": "string",
-              "description": "The text to type into the field"
-            }
-          },
-          "required": [
-            "ref",
-            "text"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_vision",
-        "description": "Take a screenshot of the current page and analyze it with vision AI. Use this when you need to visually understand what's on the page - especially useful for CAPTCHAs, visual verification challenges, complex layouts, or when the text snapshot doesn't capture important visual information. Returns both the AI analysis and a screenshot_path that you can share with the user by including MEDIA:<screenshot_path> in your response. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "question": {
-              "type": "string",
-              "description": "What you want to know about the page visually. Be specific about what you're looking for."
-            },
-            "annotate": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, overlay numbered [N] labels on interactive elements. Each [N] maps to ref @eN for subsequent browser commands. Useful for QA and spatial reasoning about page layout."
-            }
-          },
-          "required": [
-            "question"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "clarify",
-        "description": "Ask the user a question when you need clarification, feedback, or a decision before proceeding. Supports two modes:\n\n1. **Multiple choice** — provide up to 4 choices. The user picks one or types their own answer via a 5th 'Other' option.\n2. **Open-ended** — omit choices entirely. The user types a free-form response.\n\nUse this tool when:\n- The task is ambiguous and you need the user to choose an approach\n- You want post-task feedback ('How did that work out?')\n- You want to offer to save a skill or update memory\n- A decision has meaningful trade-offs the user should weigh in on\n\nDo NOT use this tool for simple yes/no confirmation of dangerous commands (the terminal tool handles that). Prefer making a reasonable default choice yourself when the decision is low-stakes.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "question": {
-              "type": "string",
-              "description": "The question to present to the user."
-            },
-            "choices": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "maxItems": 4,
-              "description": "Up to 4 answer choices. Omit this parameter entirely to ask an open-ended question. When provided, the UI automatically appends an 'Other (type your answer)' option."
-            }
-          },
-          "required": [
-            "question"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "cronjob",
-        "description": "Manage scheduled cron jobs with a single compressed tool.\n\nUse action='create' to schedule a new job from a prompt or one or more skills.\nUse action='list' to inspect jobs.\nUse action='update', 'pause', 'resume', 'remove', or 'run' to manage an existing job.\n\nTo stop a job the user no longer wants: first action='list' to find the job_id, then action='remove' with that job_id. Never guess job IDs — always list first.\n\nJobs run in a fresh session with no current-chat context, so prompts must be self-contained.\nIf skills are provided on create, the future cron run loads those skills in order, then follows the prompt as the task instruction.\nOn update, passing skills=[] clears attached skills.\n\nNOTE: The agent's final response is auto-delivered to the target. Put the primary\nuser-facing content in the final response. Cron jobs run autonomously with no user\npresent — they cannot ask questions or request clarification.\n\nImportant safety rule: cron-run sessions should not recursively schedule more cron jobs.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "action": {
-              "type": "string",
-              "description": "One of: create, list, update, pause, resume, remove, run"
-            },
-            "job_id": {
-              "type": "string",
-              "description": "Required for update/pause/resume/remove/run"
-            },
-            "prompt": {
-              "type": "string",
-              "description": "For create: the full self-contained prompt. If skills are also provided, this becomes the task instruction paired with those skills."
-            },
-            "schedule": {
-              "type": "string",
-              "description": "For create/update: '30m', 'every 2h', '0 9 * * *', or ISO timestamp"
-            },
-            "name": {
-              "type": "string",
-              "description": "Optional human-friendly name"
-            },
-            "repeat": {
-              "type": "integer",
-              "description": "Optional repeat count. Omit for defaults (once for one-shot, forever for recurring)."
-            },
-            "deliver": {
-              "type": "string",
-              "description": "Omit this parameter to auto-deliver back to the current chat and topic (recommended). Auto-detection preserves thread/topic context. Only set explicitly when the user asks to deliver somewhere OTHER than the current conversation. Values: 'origin' (same as omitting), 'local' (no delivery, save only), or platform:chat_id:thread_id for a specific destination. Examples: 'telegram:-1001234567890:17585', 'discord:#engineering', 'sms:+15551234567'. WARNING: 'platform:chat_id' without :thread_id loses topic targeting."
-            },
-            "skills": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Optional ordered list of skill names to load before executing the cron prompt. On update, pass an empty array to clear attached skills."
-            },
-            "model": {
-              "type": "object",
-              "description": "Optional per-job model override. If provider is omitted, the current main provider is pinned at creation time so the job stays stable.",
-              "properties": {
-                "provider": {
-                  "type": "string",
-                  "description": "Provider name (e.g. 'openrouter', 'anthropic'). Omit to use and pin the current provider."
-                },
-                "model": {
-                  "type": "string",
-                  "description": "Model name (e.g. 'anthropic/claude-sonnet-4', 'claude-sonnet-4')"
-                }
-              },
-              "required": [
-                "model"
-              ]
-            },
-            "script": {
-              "type": "string",
-              "description": "Optional path to a Python script that runs before each cron job execution. Its stdout is injected into the prompt as context. Use for data collection and change detection. Relative paths resolve under ~/.hermes/scripts/. On update, pass empty string to clear."
-            },
-            "context_from": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Optional job ID or list of job IDs whose most recent completed output is injected into the prompt as context before each run. Use this to chain cron jobs: job A collects data, job B processes it. Each entry must be a valid job ID (from cronjob action='list'). Note: injects the most recent completed output — does not wait for upstream jobs running in the same tick. On update, pass an empty array to clear."
-            },
-            "enabled_toolsets": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Optional list of toolset names to restrict the job's agent to (e.g. [\"web\", \"terminal\", \"file\", \"delegation\"]). When set, only tools from these toolsets are loaded, significantly reducing input token overhead. When omitted, all default tools are loaded. Infer from the job's prompt — e.g. use \"web\" if it calls web_search, \"terminal\" if it runs scripts, \"file\" if it reads files, \"delegation\" if it calls delegate_task. On update, pass an empty array to clear."
-            },
-            "workdir": {
-              "type": "string",
-              "description": "Optional absolute path to run the job from. When set, AGENTS.md / CLAUDE.md / .cursorrules from that directory are injected into the system prompt, and the terminal/file/code_exec tools use it as their working directory — useful for running a job inside a specific project repo. Must be an absolute path that exists. When unset (default), preserves the original behaviour: no project context files, tools use the scheduler's cwd. On update, pass an empty string to clear. Jobs with workdir run sequentially (not parallel) to keep per-job directories isolated."
-            }
-          },
-          "required": [
-            "action"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "delegate_task",
-        "description": "Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window.\n\nTWO MODES (one of 'goal' or 'tasks' is required):\n1. Single task: provide 'goal' (+ optional context, toolsets)\n2. Batch (parallel): provide 'tasks' array with up to delegation.max_concurrent_children items (default 3, configurable via config.yaml, no hard ceiling). All run concurrently and results are returned together. Nested delegation requires role='orchestrator' and delegation.max_spawn_depth >= 2.\n\nWHEN TO USE delegate_task:\n- Reasoning-heavy subtasks (debugging, code review, research synthesis)\n- Tasks that would flood your context with intermediate data\n- Parallel independent workstreams (research A and B simultaneously)\n\nWHEN NOT TO USE (use these instead):\n- Mechanical multi-step work with no reasoning needed -> use execute_code\n- Single tool call -> just call the tool directly\n- Tasks needing user interaction -> subagents cannot use clarify\n- Durable long-running work that must outlive the current turn -> use cronjob (action='create') or terminal(background=True, notify_on_complete=True) instead. delegate_task runs SYNCHRONOUSLY inside the parent turn: if the parent is interrupted (user sends a new message, /stop, /new) the child is cancelled with status='interrupted' and its work is discarded. Children cannot continue in the background.\n\nIMPORTANT:\n- Subagents have NO memory of your conversation. Pass all relevant info (file paths, error messages, constraints) via the 'context' field.\n- If the user is writing in a non-English language, or asked for output in a specific language / tone / style, say so in 'context' (e.g. \"respond in Chinese\", \"return output in Japanese\"). Otherwise subagents default to English and their summaries will contaminate your final reply with the wrong language.\n- Subagent summaries are SELF-REPORTS, not verified facts. A subagent that claims \"uploaded successfully\" or \"file written\" may be wrong. For operations with external side-effects (HTTP POST/PUT, remote writes, file creation at shared paths, publishing), require the subagent to return a verifiable handle (URL, ID, absolute path, HTTP status) and verify it yourself — fetch the URL, stat the file, read back the content — before telling the user the operation succeeded.\n- Leaf subagents (role='leaf', the default) CANNOT call: delegate_task, clarify, memory, send_message, execute_code.\n- Orchestrator subagents (role='orchestrator') retain delegate_task so they can spawn their own workers, but still cannot use clarify, memory, send_message, or execute_code. Orchestrators are bounded by delegation.max_spawn_depth (default 2) and can be disabled globally via delegation.orchestrator_enabled=false.\n- Each subagent gets its own terminal session (separate working directory and state).\n- Results are always returned as an array, one entry per task.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "goal": {
-              "type": "string",
-              "description": "What the subagent should accomplish. Be specific and self-contained -- the subagent knows nothing about your conversation history."
-            },
-            "context": {
-              "type": "string",
-              "description": "Background information the subagent needs: file paths, error messages, project structure, constraints. The more specific you are, the better the subagent performs."
-            },
-            "toolsets": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Toolsets to enable for this subagent. Default: inherits your enabled toolsets. Available toolsets: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Common patterns: ['terminal', 'file'] for code work, ['web'] for research, ['browser'] for web interaction, ['terminal', 'file', 'web'] for full-stack tasks."
-            },
-            "tasks": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "goal": {
-                    "type": "string",
-                    "description": "Task goal"
-                  },
-                  "context": {
-                    "type": "string",
-                    "description": "Task-specific context"
-                  },
-                  "toolsets": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Toolsets for this specific task. Available: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Use 'web' for network access, 'terminal' for shell, 'browser' for web interaction."
-                  },
-                  "acp_command": {
-                    "type": "string",
-                    "description": "Per-task ACP command override (e.g. 'claude'). Overrides the top-level acp_command for this task only."
-                  },
-                  "acp_args": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Per-task ACP args override."
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": [
-                      "leaf",
-                      "orchestrator"
-                    ],
-                    "description": "Per-task role override. See top-level 'role' for semantics."
-                  }
-                },
-                "required": [
-                  "goal"
-                ]
-              },
-              "description": "Batch mode: tasks to run in parallel (limit configurable via delegation.max_concurrent_children, default 3). Each gets its own subagent with isolated context and terminal session. When provided, top-level goal/context/toolsets are ignored."
-            },
-            "role": {
-              "type": "string",
-              "enum": [
-                "leaf",
-                "orchestrator"
-              ],
-              "description": "Role of the child agent. 'leaf' (default) = focused worker, cannot delegate further. 'orchestrator' = can use delegate_task to spawn its own workers. Requires delegation.max_spawn_depth >= 2 in config; ignored (treated as 'leaf') when the child would exceed max_spawn_depth or when delegation.orchestrator_enabled=false."
-            },
-            "acp_command": {
-              "type": "string",
-              "description": "Override ACP command for child agents (e.g. 'claude', 'copilot'). When set, children use ACP subprocess transport instead of inheriting the parent's transport. Enables spawning Claude Code (claude --acp --stdio) or other ACP-capable agents from any parent, including Discord/Telegram/CLI."
-            },
-            "acp_args": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Arguments for the ACP command (default: ['--acp', '--stdio']). Only used when acp_command is set. Example: ['--acp', '--stdio', '--model', 'claude-opus-4-6']"
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "execute_code",
-        "description": "Run a Python script that can call Hermes tools programmatically. Use this when you need 3+ tool calls with processing logic between them, need to filter/reduce large tool outputs before they enter your context, need conditional branching (if X then Y else Z), or need to loop (fetch N pages, process N files, retry on failure).\n\nUse normal tool calls instead when: single tool call with no processing, you need to see the full result and apply complex reasoning, or the task requires interactive user input.\n\nAvailable via `from hermes_tools import ...`:\n\n  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n    Lines are 1-indexed. Returns {\"content\": \"...\", \"total_lines\": N}\n  write_file(path: str, content: str) -> dict\n    Always overwrites the entire file.\n  search_files(pattern: str, target=\"content\", path=\".\", file_glob=None, limit=50) -> dict\n    target: \"content\" (search inside files) or \"files\" (find files by name). Returns {\"matches\": [...]}\n  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n    Replaces old_string with new_string in the file.\n  terminal(command: str, timeout=None, workdir=None) -> dict\n    Foreground only (no background/pty). Returns {\"output\": \"...\", \"exit_code\": N}\n\nLimits: 5-minute timeout, 50KB stdout cap, max 50 tool calls per script. terminal() is foreground-only (no background or pty).\n\nScripts run in the session's working directory with the active venv's python, so project deps (pandas, etc.) and relative paths work like in terminal().\n\nPrint your final result to stdout. Use Python stdlib (json, re, math, csv, datetime, collections, etc.) for processing between tool calls.\n\nAlso available (no import needed — built into hermes_tools):\n  json_parse(text: str) — json.loads with strict=False; use for terminal() output with control chars\n  shell_quote(s: str) — shlex.quote(); use when interpolating dynamic strings into shell commands\n  retry(fn, max_attempts=3, delay=2) — retry with exponential backoff for transient failures",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "code": {
-              "type": "string",
-              "description": "Python code to execute. Import tools with `from hermes_tools import terminal, ...` and print your final result to stdout."
-            }
-          },
-          "required": [
-            "code"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "image_generate",
-        "description": "Generate high-quality images from text prompts. The underlying backend (FAL, OpenAI, etc.) and model are user-configured and not selectable by the agent. Returns either a URL or an absolute file path in the `image` field; display it with markdown ![description](url-or-path) and the gateway will deliver it.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "prompt": {
-              "type": "string",
-              "description": "The text prompt describing the desired image. Be detailed and descriptive."
-            },
-            "aspect_ratio": {
-              "type": "string",
-              "enum": [
-                "landscape",
-                "square",
-                "portrait"
-              ],
-              "description": "The aspect ratio of the generated image. 'landscape' is 16:9 wide, 'portrait' is 16:9 tall, 'square' is 1:1.",
-              "default": "landscape"
-            }
-          },
-          "required": [
-            "prompt"
-          ]
-        }
-      }
-    },
     {
       "type": "function",
       "function": {
@@ -489,248 +45,6 @@
             "action",
             "target"
           ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "patch",
-        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "mode": {
-              "type": "string",
-              "enum": [
-                "replace",
-                "patch"
-              ],
-              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
-              "default": "replace"
-            },
-            "path": {
-              "type": "string",
-              "description": "File path to edit (required for 'replace' mode)"
-            },
-            "old_string": {
-              "type": "string",
-              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
-            },
-            "new_string": {
-              "type": "string",
-              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
-            },
-            "replace_all": {
-              "type": "boolean",
-              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
-              "default": false
-            },
-            "patch": {
-              "type": "string",
-              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
-            }
-          },
-          "required": [
-            "mode"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "process",
-        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "action": {
-              "type": "string",
-              "enum": [
-                "list",
-                "poll",
-                "log",
-                "wait",
-                "kill",
-                "write",
-                "submit",
-                "close"
-              ],
-              "description": "Action to perform on background processes"
-            },
-            "session_id": {
-              "type": "string",
-              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
-            },
-            "data": {
-              "type": "string",
-              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
-            },
-            "timeout": {
-              "type": "integer",
-              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
-              "minimum": 1
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Line offset for 'log' action (default: last 200 lines)"
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Max lines to return for 'log' action",
-              "minimum": 1
-            }
-          },
-          "required": [
-            "action"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "read_file",
-        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "path": {
-              "type": "string",
-              "description": "Path to the file to read (absolute, relative, or ~/path)"
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Line number to start reading from (1-indexed, default: 1)",
-              "default": 1,
-              "minimum": 1
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Maximum number of lines to read (default: 500, max: 2000)",
-              "default": 500,
-              "maximum": 2000
-            }
-          },
-          "required": [
-            "path"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "search_files",
-        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "pattern": {
-              "type": "string",
-              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
-            },
-            "target": {
-              "type": "string",
-              "enum": [
-                "content",
-                "files"
-              ],
-              "description": "'content' searches inside file contents, 'files' searches for files by name",
-              "default": "content"
-            },
-            "path": {
-              "type": "string",
-              "description": "Directory or file to search in (default: current working directory)",
-              "default": "."
-            },
-            "file_glob": {
-              "type": "string",
-              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Maximum number of results to return (default: 50)",
-              "default": 50
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Skip first N results for pagination (default: 0)",
-              "default": 0
-            },
-            "output_mode": {
-              "type": "string",
-              "enum": [
-                "content",
-                "files_only",
-                "count"
-              ],
-              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
-              "default": "content"
-            },
-            "context": {
-              "type": "integer",
-              "description": "Number of context lines before and after each match (grep mode only)",
-              "default": 0
-            }
-          },
-          "required": [
-            "pattern"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "send_message",
-        "description": "Send a message to a connected messaging platform, or list available targets.\n\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "action": {
-              "type": "string",
-              "enum": [
-                "send",
-                "list"
-              ],
-              "description": "Action to perform. 'send' (default) sends a message. 'list' returns all available channels/contacts across connected platforms."
-            },
-            "target": {
-              "type": "string",
-              "description": "Delivery target. Format: 'platform' (uses home channel), 'platform:#channel-name', 'platform:chat_id', or 'platform:chat_id:thread_id' for Telegram topics and Discord threads. Examples: 'telegram', 'telegram:-1001234567890:17585', 'discord:999888777:555444333', 'discord:#bot-home', 'slack:#engineering', 'signal:+155****4567', 'matrix:!roomid:server.org', 'matrix:@user:server.org', 'yuanbao:direct:<account_id>' (DM), 'yuanbao:group:<group_code>' (group chat)"
-            },
-            "message": {
-              "type": "string",
-              "description": "The message text to send. To send an image or file, include MEDIA:<local_path> (e.g. 'MEDIA:/tmp/hermes/cache/img_xxx.jpg') in the message — the platform will deliver it as a native media attachment."
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "session_search",
-        "description": "Search your long-term memory of past conversations, or browse recent sessions. This is your recall -- every past session is searchable, and this tool summarizes what happened.\n\nTWO MODES:\n1. Recent sessions (no query): Call with no arguments to see what was worked on recently. Returns titles, previews, and timestamps. Zero LLM cost, instant. Start here when the user asks what were we working on or what did we do recently.\n2. Keyword search (with query): Search for specific topics across all past sessions. Returns LLM-generated summaries of matching sessions.\n\nUSE THIS PROACTIVELY when:\n- The user says 'we did this before', 'remember when', 'last time', 'as I mentioned'\n- The user asks about a topic you worked on before but don't have in current context\n- The user references a project, person, or concept that seems familiar but isn't in memory\n- You want to check if you've solved a similar problem before\n- The user asks 'what did we do about X?' or 'how did we fix Y?'\n\nDon't hesitate to search when it is actually cross-session -- it's fast and cheap. Better to search and confirm than to guess or ask the user to repeat themselves.\n\nSearch syntax: keywords joined with OR for broad recall (elevenlabs OR baseten OR funding), phrases for exact match (\"docker networking\"), boolean (python NOT java), prefix (deploy*). IMPORTANT: Use OR between keywords for best results — FTS5 defaults to AND which misses sessions that only mention some terms. If a broad OR query returns nothing, try individual keyword searches in parallel. Returns summaries of the top matching sessions.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "query": {
-              "type": "string",
-              "description": "Search query — keywords, phrases, or boolean expressions to find in past sessions. Omit this parameter entirely to browse recent sessions instead (returns titles, previews, timestamps with no LLM cost)."
-            },
-            "role_filter": {
-              "type": "string",
-              "description": "Optional: only search messages from specific roles (comma-separated). E.g. 'user,assistant' to skip tool outputs."
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Max sessions to summarize (default: 3, max: 5).",
-              "default": 3
-            }
-          }
         }
       }
     },
@@ -836,155 +150,9 @@
           }
         }
       }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "terminal",
-        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "command": {
-              "type": "string",
-              "description": "The command to execute on the VM"
-            },
-            "background": {
-              "type": "boolean",
-              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
-              "default": false
-            },
-            "timeout": {
-              "type": "integer",
-              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
-              "minimum": 1
-            },
-            "workdir": {
-              "type": "string",
-              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
-            },
-            "pty": {
-              "type": "boolean",
-              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
-              "default": false
-            },
-            "notify_on_complete": {
-              "type": "boolean",
-              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
-              "default": false
-            },
-            "watch_patterns": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
-            }
-          },
-          "required": [
-            "command"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "text_to_speech",
-        "description": "Convert text to speech audio. Returns a MEDIA: path that the platform delivers as native audio. Compatible providers render as a voice bubble on Telegram; otherwise audio is sent as a regular attachment. In CLI mode, saves to ~/voice-memos/. Voice and provider are user-configured (built-in providers like edge/openai or custom command providers under tts.providers.<name>), not model-selected.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "text": {
-              "type": "string",
-              "description": "The text to convert to speech. Provider-specific character caps apply and are enforced automatically (OpenAI 4096, xAI 15000, MiniMax 10000, ElevenLabs 5k-40k depending on model); over-long input is truncated."
-            },
-            "output_path": {
-              "type": "string",
-              "description": "Optional custom file path to save the audio. Defaults to ~/.hermes/audio_cache/<timestamp>.mp3"
-            }
-          },
-          "required": [
-            "text"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "todo",
-        "description": "Manage your task list for the current session. Use for complex tasks with 3+ steps or when the user provides multiple tasks. Call with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "todos": {
-              "type": "array",
-              "description": "Task items to write. Omit to read current list.",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "description": "Unique item identifier"
-                  },
-                  "content": {
-                    "type": "string",
-                    "description": "Task description"
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "pending",
-                      "in_progress",
-                      "completed",
-                      "cancelled"
-                    ],
-                    "description": "Current status"
-                  }
-                },
-                "required": [
-                  "id",
-                  "content",
-                  "status"
-                ]
-              }
-            },
-            "merge": {
-              "type": "boolean",
-              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
-              "default": false
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "write_file",
-        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "path": {
-              "type": "string",
-              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
-            },
-            "content": {
-              "type": "string",
-              "description": "Complete content to write to the file"
-            }
-          },
-          "required": [
-            "path",
-            "content"
-          ]
-        }
-      }
     }
   ],
-  "message_count": 172,
+  "message_count": 191,
   "messages": [
     {
       "role": "user",
@@ -3022,6 +2190,210 @@
       "reasoning": "We have completed the task. The user wanted a two-stage processing with Chinese output and full acceptance. We have:\n 1. Synchronized the repository and calculated changes (found raw changes in notebooklm-analysis and notebooklm-mindmaps).\n 2. Since we are in stage C (notebooklm-analysis/mindmaps changed), we performed incremental wiki compilation.\n 3. We updated the source page with the latest report, updated the entity page, and generated concept pages from the mindmap.\n 4. We updated index.md and log.md.\n 5. We committed and pushed the changes.\n 6. We sent a Telegram message with the required format and metrics.\n\n All steps were successful. We now return a final response to the user.\n",
       "finish_reason": "stop",
       "reasoning_content": "We have completed the task. The user wanted a two-stage processing with Chinese output and full acceptance. We have:\n 1. Synchronized the repository and calculated changes (found raw changes in notebooklm-analysis and notebooklm-mindmaps).\n 2. Since we are in stage C (notebooklm-analysis/mindmaps changed), we performed incremental wiki compilation.\n 3. We updated the source page with the latest report, updated the entity page, and generated concept pages from the mindmap.\n 4. We updated index.md and log.md.\n 5. We committed and pushed the changes.\n 6. We sent a Telegram message with the required format and metrics.\n\n All steps were successful. We now return a final response to the user.\n"
+    },
+    {
+      "role": "user",
+      "content": "Review the conversation above and update the skill library. Be ACTIVE — most sessions produce at least one skill update, even if small. A pass that does nothing is a missed learning opportunity, not a neutral outcome.\n\nTarget shape of the library: CLASS-LEVEL skills, each with a rich SKILL.md and a `references/` directory for session-specific detail. Not a long flat list of narrow one-session-one-skill entries. This shapes HOW you update, not WHETHER you update.\n\nSignals to look for (any one of these warrants action):\n  • User corrected your style, tone, format, legibility, or verbosity. Frustration signals like 'stop doing X', 'this is too verbose', 'don't format like this', 'why are you explaining', 'just give me the answer', 'you always do Y and I hate it', or an explicit 'remember this' are FIRST-CLASS skill signals, not just memory signals. Update the relevant skill(s) to embed the preference so the next session starts already knowing.\n  • User corrected your workflow, approach, or sequence of steps. Encode the correction as a pitfall or explicit step in the skill that governs that class of task.\n  • Non-trivial technique, fix, workaround, debugging path, or tool-usage pattern emerged that a future session would benefit from. Capture it.\n  • A skill that got loaded or consulted this session turned out to be wrong, missing a step, or outdated. Patch it NOW.\n\nPreference order — prefer the earliest action that fits, but do pick one when a signal above fired:\n  1. UPDATE A CURRENTLY-LOADED SKILL. Look back through the conversation for skills the user loaded via /skill-name or you read via skill_view. If any of them covers the territory of the new learning, PATCH that one first. It is the skill that was in play, so it's the right one to extend.\n  2. UPDATE AN EXISTING UMBRELLA (via skills_list + skill_view). If no loaded skill fits but an existing class-level skill does, patch it. Add a subsection, a pitfall, or broaden a trigger.\n  3. ADD A SUPPORT FILE under an existing umbrella. Skills can be packaged with three kinds of support files — use the right directory per kind:\n     • `references/<topic>.md` — session-specific detail (error transcripts, reproduction recipes, provider quirks) AND condensed knowledge banks: quoted research, API docs, external authoritative excerpts, or domain notes you found while working on the problem. Write it concise and for the value of the task, not as a full mirror of upstream docs.\n     • `templates/<name>.<ext>` — starter files meant to be copied and modified (boilerplate configs, scaffolding, a known-good example the agent can `reproduce with modifications`).\n     • `scripts/<name>.<ext>` — statically re-runnable actions the skill can invoke directly (verification scripts, fixture generators, deterministic probes, anything the agent should run rather than hand-type each time).\n     Add support files via skill_manage action=write_file with file_path starting 'references/', 'templates/', or 'scripts/'. The umbrella's SKILL.md should gain a one-line pointer to any new support file so future agents know it exists.\n  4. CREATE A NEW CLASS-LEVEL UMBRELLA SKILL when no existing skill covers the class. The name MUST be at the class level. The name MUST NOT be a specific PR number, error string, feature codename, library-alone name, or 'fix-X / debug-Y / audit-Z-today' session artifact. If the proposed name only makes sense for today's task, it's wrong — fall back to (1), (2), or (3).\n\nUser-preference embedding (important): when the user expressed a style/format/workflow preference, the update belongs in the SKILL.md body, not just in memory. Memory captures 'who the user is and what the current situation and state of your operations are'; skills capture 'how to do this class of task for this user'. When they complain about how you handled a task, the skill that governs that task needs to carry the lesson.\n\nIf you notice two existing skills that overlap, note it in your reply — the background curator handles consolidation at scale.\n\n'Nothing to save.' is a real option but should NOT be the default. If the session ran smoothly with no corrections and produced no new technique, just say 'Nothing to save.' and stop. Otherwise, act."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Looking at the conversation, I need to identify what skills were loaded or consulted and whether they need updates based on the session.\n\nFrom the conversation, I can see that the following skills were loaded/referenced:\n1. `notebooklm-cli` - explicitly invoked at the beginning\n2. `sop-wiki-build` - viewed multiple times\n3. `llm-wiki` - viewed\n4. `youtube-wiki-processing` - viewed\n\nThe user was executing a YouTube Wiki automation workflow with specific constraints. Let me analyze what went well and what might need improvement in the skills.\n\nLooking at the execution:\n- The user had a very specific workflow with two stages (B and C) and strict rules\n- They processed YouTube links through NotebookLM and then built the wiki incrementally\n- They followed the exact specifications from TheSchema.md\n- They generated concept pages from a mindmap JSON\n- They updated source and entity pages\n- They maintained proper frontmatter and linking\n- They created a detailed run log\n- They sent a Telegram notification with the required format\n\nNow, let me check if any of the skills need updates based on what happened in this session.\n\nFirst, let's look at the `sop-wiki-build` skill since it was directly relevant to the wiki build stage (Stage C) that was executed.\n\nFrom viewing the `sop-wiki-build` skill earlier, I can see it describes Stage C operations. However, looking at what was actually done in this session, I notice a few things:\n\n1. The skill mentions updating `index.md` and `log.md` but doesn't specify the exact format for the log entry that was used in this session.\n2. The skill doesn't mention generating multiple concept pages from a mindmap JSON - it talks about creating/updating entity and concept pages but doesn't detail how to extract concepts from NotebookLM mindmaps.\n3. The skill doesn't mention the specific Telegram message format that was required (with all the key=value pairs).\n\nLooking at the `youtube-wiki-processing` skill, it describes the overall workflow but might benefit from updates based on what was learned.\n\nLet me check if there were any specific issues or corrections made during the session that would indicate a need to update a skill.\n\nFrom the conversation, I don't see explicit user corrections like \"stop doing X\" or \"this is wrong\". However, I can see that the user had very specific requirements that were followed precisely, which suggests that the skills as they exist might be adequate, but could be enhanced with the specific patterns used in this session.\n\nOne thing that stands out is the very specific Telegram message format that was required. The `sop-wiki-build` skill has a Telegram notification section, but let's see if it matches what was used:\n\nFrom the `sop-wiki-build` skill:\n```\n### Telegram 通知（push 成功后发送）\\n14. ```bash\\n    TOKEN=$(printenv {tg_token_env})\\n    curl -s -X POST \\\"https://api.telegram.org/bot${TOKEN}/sendMessage\\\" \\\\\\n      -d \\\"chat_id={tg_chat_id}\\\" \\\\\\n      -d \\\"disable_web_page_preview=true\\\" \\\\\\n      --data-urlencode \\\"text=[YOUTUBE-WIKI-RUN]\\nrun_id={run_id}\\n新增 source: <n>个 - <名称列表>\\n新增 entity: <n>个 - <名称列表(≤5)>\\n新增 concept: <n>个 - <名称列表(≤5)>\\ncommit: <hash>\\nlog: logs/webhook-runs/{run_id}.md\\\"\\n    ```\\n```\n\nBut in the actual execution, the Telegram message was:\n```\n[YOUTUBE-WIKI-RUN]\naction=wiki-build\nrun_id=gh-25588579201-1\nnotebook=youtube-video-research-wiki\nlanguage=zh_Hans\nraw_changed_count=2\nwiki_updates=yes\ncommit=d9367d5c3fc3694d5bbe5404305997aa6fe8d53d\npush=success\ncompile_check=pass\ntg_send=success\nrun_log=/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25588579201-1.md\n```\n\nThis is significantly different - it includes many more fields that were required by the user's specific constraints.\n\nAlso, the `sop-wiki-build` skill doesn't mention extracting concepts from mindmap JSON files, which was a key part of this session.\n\nLet me also check the `notebooklm-cli` skill to see if it needs updates, but since the user was using a referenced script (`notebooklm_processor.py`) rather than the CLI directly, this might not be the best place.\n\nLooking at the `youtube-wiki-processing` skill, it describes the overall workflow and might be the best place to update.\n\nActually, let me reconsider. The user's message at the beginning said: \"[IMPORTANT: The user has invoked the \"notebooklm-cli\" skill, indicating they want you to follow its instructions.\" So the `notebooklm-cli` skill was loaded.\n\nBut looking at what was actually done, the user didn't use the notebooklm CLI directly - they used a referenced script: `/home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py`\n\nLet me check if that script is referenced in the `notebooklm-cli` skill or the `youtube-wiki-processing` skill.\n\nFrom the `youtube-wiki-processing` skill, I see it has a linked script: `\"scripts\": [\"scripts/notebooklm_processor.py\"]`\n\nSo the `youtube-wiki-processing` skill references this script.\n\nGiven that:\n1. The `notebooklm-cli` skill was explicitly invoked\n2. The session involved processing YouTube links through NotebookLM and then building the wiki\n3. The Telegram notification format used was more detailed than what's in the current skills\n4. The concept generation from mindmap JSON was a specific technique used\n\nI think the best approach is to update the `youtube-wiki-processing` skill since it encompasses the overall workflow and references the specific script used.\n\nLet me formulate what should be added to the `youtube-wiki-processing` skill:\n\n1. Add details about the required Telegram message format (with all the specific fields)\n2. Add details about extracting concepts from NotebookLM mindmap JSON files\n3. Add notes about the strict source-scoped generation requirement (only using newly added sources for generation)\n4. Add notes about the language enforcement (zh_Hans)\n5. Add notes about the two-stage processing constraint\n\nLet me update the `youtube-wiki-processing` skill with these additions.\n\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Looking at the conversation, I need to identify what skills were loaded or consulted and whether they need updates based on the session.\n\nFrom the conversation, I can see that the following skills were loaded/referenced:\n1. `notebooklm-cli` - explicitly invoked at the beginning\n2. `sop-wiki-build` - viewed multiple times\n3. `llm-wiki` - viewed\n4. `youtube-wiki-processing` - viewed\n\nThe user was executing a YouTube Wiki automation workflow with specific constraints. Let me analyze what went well and what might need improvement in the skills.\n\nLooking at the execution:\n- The user had a very specific workflow with two stages (B and C) and strict rules\n- They processed YouTube links through NotebookLM and then built the wiki incrementally\n- They followed the exact specifications from TheSchema.md\n- They generated concept pages from a mindmap JSON\n- They updated source and entity pages\n- They maintained proper frontmatter and linking\n- They created a detailed run log\n- They sent a Telegram notification with the required format\n\nNow, let me check if any of the skills need updates based on what happened in this session.\n\nFirst, let's look at the `sop-wiki-build` skill since it was directly relevant to the wiki build stage (Stage C) that was executed.\n\nFrom viewing the `sop-wiki-build` skill earlier, I can see it describes Stage C operations. However, looking at what was actually done in this session, I notice a few things:\n\n1. The skill mentions updating `index.md` and `log.md` but doesn't specify the exact format for the log entry that was used in this session.\n2. The skill doesn't mention generating multiple concept pages from a mindmap JSON - it talks about creating/updating entity and concept pages but doesn't detail how to extract concepts from NotebookLM mindmaps.\n3. The skill doesn't mention the specific Telegram message format that was required (with all the key=value pairs).\n\nLooking at the `youtube-wiki-processing` skill, it describes the overall workflow but might benefit from updates based on what was learned.\n\nLet me check if there were any specific issues or corrections made during the session that would indicate a need to update a skill.\n\nFrom the conversation, I don't see explicit user corrections like \"stop doing X\" or \"this is wrong\". However, I can see that the user had very specific requirements that were followed precisely, which suggests that the skills as they exist might be adequate, but could be enhanced with the specific patterns used in this session.\n\nOne thing that stands out is the very specific Telegram message format that was required. The `sop-wiki-build` skill has a Telegram notification section, but let's see if it matches what was used:\n\nFrom the `sop-wiki-build` skill:\n```\n### Telegram 通知（push 成功后发送）\\n14. ```bash\\n    TOKEN=$(printenv {tg_token_env})\\n    curl -s -X POST \\\"https://api.telegram.org/bot${TOKEN}/sendMessage\\\" \\\\\\n      -d \\\"chat_id={tg_chat_id}\\\" \\\\\\n      -d \\\"disable_web_page_preview=true\\\" \\\\\\n      --data-urlencode \\\"text=[YOUTUBE-WIKI-RUN]\\nrun_id={run_id}\\n新增 source: <n>个 - <名称列表>\\n新增 entity: <n>个 - <名称列表(≤5)>\\n新增 concept: <n>个 - <名称列表(≤5)>\\ncommit: <hash>\\nlog: logs/webhook-runs/{run_id}.md\\\"\\n    ```\\n```\n\nBut in the actual execution, the Telegram message was:\n```\n[YOUTUBE-WIKI-RUN]\naction=wiki-build\nrun_id=gh-25588579201-1\nnotebook=youtube-video-research-wiki\nlanguage=zh_Hans\nraw_changed_count=2\nwiki_updates=yes\ncommit=d9367d5c3fc3694d5bbe5404305997aa6fe8d53d\npush=success\ncompile_check=pass\ntg_send=success\nrun_log=/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25588579201-1.md\n```\n\nThis is significantly different - it includes many more fields that were required by the user's specific constraints.\n\nAlso, the `sop-wiki-build` skill doesn't mention extracting concepts from mindmap JSON files, which was a key part of this session.\n\nLet me also check the `notebooklm-cli` skill to see if it needs updates, but since the user was using a referenced script (`notebooklm_processor.py`) rather than the CLI directly, this might not be the best place.\n\nLooking at the `youtube-wiki-processing` skill, it describes the overall workflow and might be the best place to update.\n\nActually, let me reconsider. The user's message at the beginning said: \"[IMPORTANT: The user has invoked the \"notebooklm-cli\" skill, indicating they want you to follow its instructions.\" So the `notebooklm-cli` skill was loaded.\n\nBut looking at what was actually done, the user didn't use the notebooklm CLI directly - they used a referenced script: `/home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py`\n\nLet me check if that script is referenced in the `notebooklm-cli` skill or the `youtube-wiki-processing` skill.\n\nFrom the `youtube-wiki-processing` skill, I see it has a linked script: `\"scripts\": [\"scripts/notebooklm_processor.py\"]`\n\nSo the `youtube-wiki-processing` skill references this script.\n\nGiven that:\n1. The `notebooklm-cli` skill was explicitly invoked\n2. The session involved processing YouTube links through NotebookLM and then building the wiki\n3. The Telegram notification format used was more detailed than what's in the current skills\n4. The concept generation from mindmap JSON was a specific technique used\n\nI think the best approach is to update the `youtube-wiki-processing` skill since it encompasses the overall workflow and references the specific script used.\n\nLet me formulate what should be added to the `youtube-wiki-processing` skill:\n\n1. Add details about the required Telegram message format (with all the specific fields)\n2. Add details about extracting concepts from NotebookLM mindmap JSON files\n3. Add notes about the strict source-scoped generation requirement (only using newly added sources for generation)\n4. Add notes about the language enforcement (zh_Hans)\n5. Add notes about the two-stage processing constraint\n\nLet me update the `youtube-wiki-processing` skill with these additions.\n\n",
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-bcdb429c688958a2",
+          "call_id": "chatcmpl-tool-bcdb429c688958a2",
+          "response_item_id": "fc_chatcmpl-tool-bcdb429c688958a2",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"youtube-wiki-processing\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"youtube-wiki-processing\", \"description\": \"Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\", \"tags\": [], \"related_skills\": [], \"content\": \"---\\nname: youtube-wiki-processing\\ndescription: Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n---\\n# YouTube Wiki Processing Flow\\n\\nAutomated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n\\n## Trigger Conditions\\n\\n- Webhook receives push event with changes to `raw/` directory\\n- Skill activates when user provides `run_id`, `before`, and `sha` git references\\n- Or when manually executing the flow for a given commit range\\n\\n## Workflow Overview\\n\\n1. **Detect change type** – check for modifications in raw Markdown files\\n2. **Branch A – No raw changes** → skip processing\\n3. **Branch B – YouTube links added/changed** → Run NotebookLM analysis on new videos\\n4. **Branch C – NotebookLM artifacts added** → Incremental wiki compilation and push\\n\\n## Detailed Steps\\n\\n### Step 1: Detect Changes\\n```bash\\ncd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki\\ngit diff --name-only <before>..<sha> -- 'raw/*.md' 'raw/**/*.md' > /tmp/changed_files.txt\\n```\\n- If file is empty or contains no paths → **Branch A** (skip)\\n- If any paths match `raw/youtube-links/` → **Branch B**\\n- If any paths match `raw/notebooklm-*` but **no** `raw/youtube-links/` → **Branch C**\\n\\n### Branch A: No Raw Changes\\n- Log: `skipped:no_raw_changes`\\n- Stop processing; do not modify wiki, commit, or push\\n- Exit successfully\\n\\n### Branch B: Process YouTube Links\\n1. Scan `raw/youtube-links/` for new/changed files\\n2. Extract all YouTube URLs using regex: `https://youtu(\\\\.)?be(\\\\.com)?/`\\n3. Call Python processor with all URLs:\\n   ```bash\\n   /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py <url1> <url2> ...\\n   ```\\n4. Script outputs JSON with generated report and mindmap file paths\\n5. Move output files:\\n   - Reports → `raw/notebooklm-analysis/`\\n   - Mindmaps → `raw/notebooklm-mindmaps/`\\n6. Git commit and push:\\n   ```bash\\n   git add -A\\n   git commit -m \\\"chore: add notebooklm analysis from {{url_count}} videos\\\"\\n   git push origin main\\n   ```\\n7. Log completion: `第一步成功，等待第二步自动触发`\\n8. Await automatic trigger for Branch C (via subsequent webhook or manual run)\\n\\n### Branch C: Incremental Wiki Compilation\\n1. Execute standard llm-wiki incremental compilation process\\n2. Scan changes in:\\n   - `raw/notebooklm-analysis/`\\n   - `raw/notebooklm-mindmaps/`\\n3. Generate/update wiki pages:\\n   - `wiki/sources/`\\n   - `wiki/concepts/`\\n   - `wiki/entities/`\\n4. Update relationship links\\n5. Git commit and push:\\n   ```bash\\n   git add -A\\n   git commit -m \\\"chore: update llm wiki graph\\\"\\n   git push origin main\\n   ```\\n6. Send Telegram notification:\\n   ```\\n   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>\\n   ```\\n7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`\\n\\n## Logging\\n- Append all operations to `logs/webhook-runs/<run_id>.md`\\n- Include timestamps, commands executed, and outcomes\\n\\n## Error Handling\\n- If any step fails, log error and exit non-zero\\n- For git failures, attempt to resolve conflicts or notify user\\n- For NotebookLM processor failures, skip commit and log details\\n\\n## Requirements\\n- bash, git, python3\\n- notebooklm-cli skill (for NotebookLM operations via referenced script)\\n- Access to YouTube Wiki repository at `/home/zhouhuijuan1987/wiki/youtube-video-research-wiki`\\n- Telegram webhook configured for notifications\\n\\n## Notes\\n- The flow assumes linear history; merge commits may require adaptation\\n- Processor script must be present and executable\\n- Ensure sufficient permissions for git push and file moves\", \"path\": \"devops/youtube-wiki-processing/SKILL.md\", \"skill_dir\": \"/home/zhouhuijuan1987/.hermes/skills/devops/youtube-wiki-processing\", \"linked_files\": {\"references\": [\"references/test-session-2026-05-08-krEDel3aGGw.md\", \"references/session-gh-25543389523-1.md\"], \"scripts\": [\"scripts/notebooklm_processor.py\"]}, \"usage_hint\": \"To view linked files, call skill_view(name, file_path) where file_path is e.g. 'references/api.md' or 'assets/config.yaml'\", \"required_environment_variables\": [], \"required_commands\": [], \"missing_required_environment_variables\": [], \"missing_credential_files\": [], \"missing_required_commands\": [], \"setup_needed\": false, \"setup_skipped\": false, \"readiness_status\": \"available\"}",
+      "tool_call_id": "chatcmpl-tool-bcdb429c688958a2"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "I need to update the youtube-wiki-processing skill based on what I learned from this session. Looking at the conversation, I can see several things that could be improved or added to the skill:\n\n1. The skill needs to handle the case where we're processing NotebookLM artifacts (Branch C) but there are actually YouTube link changes that were missed in the initial detection. In this session, we had changes in notebooklm-analysis and notebooklm-mindmaps but no changes in youtube-links.\n\n2. The skill should better handle the generation of concept pages from mindmaps - I saw that I had to extract concept names from the mindmap JSON and create concept pages for each.\n\n3. The skill should enforce the Chinese language requirement (zh_Hans) for all generated content.\n\n4. The skill should include proper run-log creation and Telegram notification with the exact format specified in the requirements.\n\n5. The skill should handle the protective stash/sync workflow properly.\n\nLooking at the current skill, I see it already has a good structure, but I can enhance it based on what I learned.\n\nLet me check if there are any specific references or scripts that I should update or add.\n\nFrom the session, I learned:\n- How to properly detect raw changes (using git diff with the before and after SHAs)\n- How to handle Branch C (NotebookLM artifacts) properly\n- How to extract concept names from mindmap JSON and create concept pages\n- The exact format for the Telegram notification\n- The importance of updating both source and entity pages with the latest report\n- The need to update index.md and log.md properly\n- The exact run-log format and location\n\nI should update the youtube-wiki-processing skill to incorporate these learnings, particularly enhancing the Branch C section and adding more detail about the concept page generation from mindmaps.\n\nLet me update the skill now.\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I need to update the youtube-wiki-processing skill based on what I learned from this session. Looking at the conversation, I can see several things that could be improved or added to the skill:\n\n1. The skill needs to handle the case where we're processing NotebookLM artifacts (Branch C) but there are actually YouTube link changes that were missed in the initial detection. In this session, we had changes in notebooklm-analysis and notebooklm-mindmaps but no changes in youtube-links.\n\n2. The skill should better handle the generation of concept pages from mindmaps - I saw that I had to extract concept names from the mindmap JSON and create concept pages for each.\n\n3. The skill should enforce the Chinese language requirement (zh_Hans) for all generated content.\n\n4. The skill should include proper run-log creation and Telegram notification with the exact format specified in the requirements.\n\n5. The skill should handle the protective stash/sync workflow properly.\n\nLooking at the current skill, I see it already has a good structure, but I can enhance it based on what I learned.\n\nLet me check if there are any specific references or scripts that I should update or add.\n\nFrom the session, I learned:\n- How to properly detect raw changes (using git diff with the before and after SHAs)\n- How to handle Branch C (NotebookLM artifacts) properly\n- How to extract concept names from mindmap JSON and create concept pages\n- The exact format for the Telegram notification\n- The importance of updating both source and entity pages with the latest report\n- The need to update index.md and log.md properly\n- The exact run-log format and location\n\nI should update the youtube-wiki-processing skill to incorporate these learnings, particularly enhancing the Branch C section and adding more detail about the concept page generation from mindmaps.\n\nLet me update the skill now.\n",
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-a2341a465526e7a5",
+          "call_id": "chatcmpl-tool-a2341a465526e7a5",
+          "response_item_id": "fc_chatcmpl-tool-a2341a465526e7a5",
+          "type": "function",
+          "function": {
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"youtube-wiki-processing\", \"old_string\": \"## Branch C: Incremental Wiki Compilation\\\\n1. Execute standard llm-wiki incremental compilation process\\\\n2. Scan changes in:\\\\n   - `raw/notebooklm-analysis/`\\\\n   - `raw/notebooklm-mindmaps/`\\\\n3. Generate/update wiki pages:\\\\n   - `wiki/sources/`\\\\n   - `wiki/concepts/`\\\\n   - `wiki/entities/`\\\\n4. Update relationship links\\\\n5. Git commit and push:\\\\n   ```bash\\\\n   git add -A\\\\n   git commit -m \\\\\\\"chore: update llm wiki graph\\\\\\\"\\\\n   git push origin main\\\\n   ```\\\\n6. Send Telegram notification:\\\\n   ```\\\\n   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>\\\\n   ```\\\\n7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`\", \"new_string\": \"## Branch C: Incremental Wiki Compilation (Triggered by changes in raw/notebooklm-analysis/ or raw/notebooklm-mindmaps/)\\\\n1. **Execute protective stash/sync workflow**:\\\\n   ```bash\\\\n   git stash push -u -m \\\\\\\"youtube-wiki-stage-c-{run_id}\\\\\\\" 2>/dev/null || true\\\\n   git fetch origin && git checkout main && git pull --ff-only origin main\\\\n   git stash pop 2>/dev/null || true\\\\n   ```\\\\n2. **Verify no conflicting YouTube link changes**: Run `git diff --name-only {before}..{sha} -- 'raw/youtube-links/' 'raw/youtube-links/**/*.md'`. If any YouTube links changed, this indicates the webhook should have triggered Branch B instead - log this discrepancy but continue with Branch C processing.\\\\n3. **Process NotebookLM analysis reports**:\\\\n   - For each new/changed report in `raw/notebooklm-analysis/`:\\\\n     * Update the corresponding source page in `wiki/sources/` to point to this report\\\\n     * Update the corresponding entity page in `wiki/entities/` to point to this report\\\\n4. **Process NotebookLM mindmaps**:\\\\n   - For each new/changed mindmap in `raw/notebooklm-mindmaps/`:\\\\n     * Parse the JSON mindmap to extract concept names\\\\n     * For each concept, create/update a concept page in `wiki/concepts/` with:\\\\n       - Proper frontmatter (type: concept, tags, summary, sources pointing to the mindmap, created/updated dates, layer: L1, confidence: high, reasoning: \\\\\\\"直接从NotebookLM思维导图中提取的概念。\\\\\\\")\\\\n       - Content including the concept description and links to related source/entity pages\\\\n       - Ensure minimum 2 outgoing [[wikilinks]]\\\\n       - Ensure content density (≥200 Chinese characters for concept pages)\\\\n5. **Language enforcement**: Ensure all generated content is in Chinese (zh_Hans). Set language explicitly before any NotebookLM operations if needed.\\\\n6. **Update navigation files**:\\\\n   - Update `index.md` (group by type, alphabetical order, with summaries, update \\\\\\\"Last updated\\\\\\\" and \\\\\\\"Total pages\\\\\\\")\\\\n   - Append to `log.md` with run_id, date, and list of new/updated files\\\\n7. **Quality checks** (must pass before commit):\\\\n   - Every wiki page must have complete frontmatter (type/tags/summary/sources/updated/layer)\\\\n   - L2/L3 pages must have confidence+reasoning fields\\\\n   - Every page must have minimum 2 outgoing [[wikilinks]]\\\\n   - Source pages: ≥300 Chinese characters\\\\n   - Entity/concept pages: ≥200 Chinese characters\\\\n   - All sources in frontmatter must point to existing raw/ files\\\\n8. **Git commit and push**:\\\\n   ```bash\\\\n   git add wiki/ index.md log.md logs/\\\\n   git commit -m \\\\\\\"chore: update llm wiki graph from notebooklm analysis [run:{run_id}]\\\\\\\"\\\\n   git push origin main\\\\n   ```\\\\n9. **Send Telegram notification** (only after successful push):\\\\n   ```\\\\n   [YOUTUBE-WIKI-RUN]\\\\n   action=wiki-build\\\\n   run_id={run_id}\\\\n   notebook=youtube-video-research-wiki\\\\n   language=zh_Hans\\\\n   raw_changed_count=<n>\\\\n   wiki_updates=<yes|no>\\\\n   commit=<hash>\\\\n   push=<success|failed>\\\\n   compile_check=<pass|fail>\\\\n   tg_send=<success|failed>\\\\n   run_log=<absolute_path>\\\\n   ```\\\\n10. **Log run** to: `logs/webhook-runs/{run_id}.md` with detailed execution record\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": false, \"error\": \"Could not find a match for old_string in the file\", \"file_preview\": \"---\\nname: youtube-wiki-processing\\ndescription: Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n---\\n# YouTube Wiki Processing Flow\\n\\nAutomated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n\\n## Trigger Conditions\\n\\n- Webhook...\"}",
+      "tool_call_id": "chatcmpl-tool-a2341a465526e7a5"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me check the exact content of the skill to see what needs to be updated.\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me check the exact content of the skill to see what needs to be updated.\n",
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-84ca9459ab212b49",
+          "call_id": "chatcmpl-tool-84ca9459ab212b49",
+          "response_item_id": "fc_chatcmpl-tool-84ca9459ab212b49",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"youtube-wiki-processing\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"youtube-wiki-processing\", \"description\": \"Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\", \"tags\": [], \"related_skills\": [], \"content\": \"---\\nname: youtube-wiki-processing\\ndescription: Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n---\\n# YouTube Wiki Processing Flow\\n\\nAutomated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n\\n## Trigger Conditions\\n\\n- Webhook receives push event with changes to `raw/` directory\\n- Skill activates when user provides `run_id`, `before`, and `sha` git references\\n- Or when manually executing the flow for a given commit range\\n\\n## Workflow Overview\\n\\n1. **Detect change type** – check for modifications in raw Markdown files\\n2. **Branch A – No raw changes** → skip processing\\n3. **Branch B – YouTube links added/changed** → Run NotebookLM analysis on new videos\\n4. **Branch C – NotebookLM artifacts added** → Incremental wiki compilation and push\\n\\n## Detailed Steps\\n\\n### Step 1: Detect Changes\\n```bash\\ncd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki\\ngit diff --name-only <before>..<sha> -- 'raw/*.md' 'raw/**/*.md' > /tmp/changed_files.txt\\n```\\n- If file is empty or contains no paths → **Branch A** (skip)\\n- If any paths match `raw/youtube-links/` → **Branch B**\\n- If any paths match `raw/notebooklm-*` but **no** `raw/youtube-links/` → **Branch C**\\n\\n### Branch A: No Raw Changes\\n- Log: `skipped:no_raw_changes`\\n- Stop processing; do not modify wiki, commit, or push\\n- Exit successfully\\n\\n### Branch B: Process YouTube Links\\n1. Scan `raw/youtube-links/` for new/changed files\\n2. Extract all YouTube URLs using regex: `https://youtu(\\\\.)?be(\\\\.com)?/`\\n3. Call Python processor with all URLs:\\n   ```bash\\n   /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py <url1> <url2> ...\\n   ```\\n4. Script outputs JSON with generated report and mindmap file paths\\n5. Move output files:\\n   - Reports → `raw/notebooklm-analysis/`\\n   - Mindmaps → `raw/notebooklm-mindmaps/`\\n6. Git commit and push:\\n   ```bash\\n   git add -A\\n   git commit -m \\\"chore: add notebooklm analysis from {{url_count}} videos\\\"\\n   git push origin main\\n   ```\\n7. Log completion: `第一步成功，等待第二步自动触发`\\n8. Await automatic trigger for Branch C (via subsequent webhook or manual run)\\n\\n### Branch C: Incremental Wiki Compilation\\n1. Execute standard llm-wiki incremental compilation process\\n2. Scan changes in:\\n   - `raw/notebooklm-analysis/`\\n   - `raw/notebooklm-mindmaps/`\\n3. Generate/update wiki pages:\\n   - `wiki/sources/`\\n   - `wiki/concepts/`\\n   - `wiki/entities/`\\n4. Update relationship links\\n5. Git commit and push:\\n   ```bash\\n   git add -A\\n   git commit -m \\\"chore: update llm wiki graph\\\"\\n   git push origin main\\n   ```\\n6. Send Telegram notification:\\n   ```\\n   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>\\n   ```\\n7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`\\n\\n## Logging\\n- Append all operations to `logs/webhook-runs/<run_id>.md`\\n- Include timestamps, commands executed, and outcomes\\n\\n## Error Handling\\n- If any step fails, log error and exit non-zero\\n- For git failures, attempt to resolve conflicts or notify user\\n- For NotebookLM processor failures, skip commit and log details\\n\\n## Requirements\\n- bash, git, python3\\n- notebooklm-cli skill (for NotebookLM operations via referenced script)\\n- Access to YouTube Wiki repository at `/home/zhouhuijuan1987/wiki/youtube-video-research-wiki`\\n- Telegram webhook configured for notifications\\n\\n## Notes\\n- The flow assumes linear history; merge commits may require adaptation\\n- Processor script must be present and executable\\n- Ensure sufficient permissions for git push and file moves\", \"path\": \"devops/youtube-wiki-processing/SKILL.md\", \"skill_dir\": \"/home/zhouhuijuan1987/.hermes/skills/devops/youtube-wiki-processing\", \"linked_files\": {\"references\": [\"references/test-session-2026-05-08-krEDel3aGGw.md\", \"references/session-gh-25543389523-1.md\"], \"scripts\": [\"scripts/notebooklm_processor.py\"]}, \"usage_hint\": \"To view linked files, call skill_view(name, file_path) where file_path is e.g. 'references/api.md' or 'assets/config.yaml'\", \"required_environment_variables\": [], \"required_commands\": [], \"missing_required_environment_variables\": [], \"missing_credential_files\": [], \"missing_required_commands\": [], \"setup_needed\": false, \"setup_skipped\": false, \"readiness_status\": \"available\"}",
+      "tool_call_id": "chatcmpl-tool-84ca9459ab212b49"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "I need to patch the skill with more specific details from the session. Let me look for the exact text to replace. I'll extract the Branch C section and replace it with the detailed version based on what we learned in this session.\n\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I need to patch the skill with more specific details from the session. Let me look for the exact text to replace. I'll extract the Branch C section and replace it with the detailed version based on what we learned in this session.\n\n",
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-85012f37bce0a8f0",
+          "call_id": "chatcmpl-tool-85012f37bce0a8f0",
+          "response_item_id": "fc_chatcmpl-tool-85012f37bce0a8f0",
+          "type": "function",
+          "function": {
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"youtube-wiki-processing\", \"old_string\": \"### Branch C: Incremental Wiki Compilation\\\\n1. Execute standard llm-wiki incremental compilation process\\\\n2. Scan changes in:\\\\n   - `raw/notebooklm-analysis/`\\\\n   - `raw/notebooklm-mindmaps/`\\\\n3. Generate/update wiki pages:\\\\n   - `wiki/sources/`\\\\n   - `wiki/concepts/`\\\\n   - `wiki/entities/`\\\\n4. Update relationship links\\\\n5. Git commit and push:\\\\n   ```bash\\\\n   git add -A\\\\n   git commit -m \\\\\\\"chore: update llm wiki graph\\\\\\\"\\\\n   git push origin main\\\\n   ```\\\\n6. Send Telegram notification:\\\\n   ```\\\\n   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>\\\\n   ```\\\\n7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`\", \"new_string\": \"### Branch C: Incremental Wiki Compilation\\\\n1. Execute protective stash/sync workflow:\\\\n   ```bash\\\\n   git stash push -u -m \\\\\\\"youtube-wiki-stage-c-{run_id}\\\\\\\" 2>/dev/null || true\\\\n   git fetch origin && git checkout main && git pull --ff-only origin main\\\\n   git stash pop 2>/dev/null || true\\\\n   ```\\\\n2. Verify no conflicting YouTube link changes: Run `git diff --name-only {before}..{sha} -- 'raw/youtube-links/' 'raw/youtube-links/**/*.md'`. If any YouTube links changed, this indicates the webhook should have triggered Branch B instead - log this discrepancy but continue with Branch C processing.\\\\n3. Process NotebookLM analysis reports:\\\\n   - For each new/changed report in `raw/notebooklm-analysis/`:\\\\n     * Update the corresponding source page in `wiki/sources/` to point to this report\\\\n     * Update the corresponding entity page in `wiki/entities/` to point to this report\\\\n4. Process NotebookLM mindmaps:\\\\n   - For each new/changed mindmap in `raw/notebooklm-mindmaps/`:\\\\n     * Parse the JSON mindmap to extract concept names\\\\n     * For each concept, create/update a concept page in `wiki/concepts/` with:\\\\n       - Proper frontmatter (type: concept, tags, summary, sources pointing to the mindmap, created/updated dates, layer: L1, confidence: high, reasoning: \\\\\\\"直接从NotebookLM思维导图中提取的概念。\\\\\\\")\\\\n       - Content including the concept description and links to related source/entity pages\\\\n       - Ensure minimum 2 outgoing [[wikilinks]]\\\\n       - Ensure content density (≥200 Chinese characters for concept pages)\\\\n5. Language enforcement: Ensure all generated content is in Chinese (zh_Hans). Set language explicitly before any NotebookLM operations if needed.\\\\n6. Update navigation files:\\\\n   - Update `index.md` (group by type, alphabetical order, with summaries, update \\\\\\\"Last updated\\\\\\\" and \\\\\\\"Total pages\\\\\\\")\\\\n   - Append to `log.md` with run_id, date, and list of new/updated files\\\\n7. Quality checks (must pass before commit):\\\\n   - Every wiki page must have complete frontmatter (type/tags/summary/sources/updated/layer)\\\\n   - L2/L3 pages must have confidence+reasoning fields\\\\n   - Every page must have minimum 2 outgoing [[wikilinks]]\\\\n   - Source pages: ≥300 Chinese characters\\\\n   - Entity/concept pages: ≥200 Chinese characters\\\\n   - All sources in frontmatter must point to existing raw/ files\\\\n8. Git commit and push:\\\\n   ```bash\\\\n   git add wiki/ index.md log.md logs/\\\\n   git commit -m \\\\\\\"chore: update llm wiki graph from notebooklm analysis [run:{run_id}]\\\\\\\"\\\\n   git push origin main\\\\n   ```\\\\n9. Send Telegram notification (only after successful push):\\\\n   ```\\\\n   [YOUTUBE-WIKI-RUN]\\\\n   action=wiki-build\\\\n   run_id={run_id}\\\\n   notebook=youtube-video-research-wiki\\\\n   language=zh_Hans\\\\n   raw_changed_count=<n>\\\\n   wiki_updates=<yes|no>\\\\n   commit=<hash>\\\\n   push=<success|failed>\\\\n   compile_check=<pass|fail>\\\\n   tg_send=<success|failed>\\\\n   run_log=<absolute_path>\\\\n   ```\\\\n10. Log run to: `logs/webhook-runs/{run_id}.md` with detailed execution record\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": false, \"error\": \"Could not find a match for old_string in the file\", \"file_preview\": \"---\\nname: youtube-wiki-processing\\ndescription: Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n---\\n# YouTube Wiki Processing Flow\\n\\nAutomated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n\\n## Trigger Conditions\\n\\n- Webhook...\"}",
+      "tool_call_id": "chatcmpl-tool-85012f37bce0a8f0"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "I need to view the exact content to make a proper patch. Let me get the exact text of the Branch C section.\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I need to view the exact content to make a proper patch. Let me get the exact text of the Branch C section.\n",
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-b676d44a8b8569a4",
+          "call_id": "chatcmpl-tool-b676d44a8b8569a4",
+          "response_item_id": "fc_chatcmpl-tool-b676d44a8b8569a4",
+          "type": "function",
+          "function": {
+            "name": "execute_code",
+            "arguments": "{\"code\": \"import os\\nskill_path = '/home/zhouhuijuan1987/.hermes/skills/devops/youtube-wiki-processing/SKILL.md'\\nwith open(skill_path, 'r', encoding='utf-8') as f:\\n    content = f.read()\\n    \\n# Find the Branch C section\\nlines = content.split('\\\\n')\\nin_branch_c = False\\nbranch_c_lines = []\\nfor i, line in enumerate(lines):\\n    if line.strip() == '### Branch C: Incremental Wiki Compilation':\\n        in_branch_c = True\\n        branch_c_lines.append(line)\\n        continue\\n    if in_branch_c:\\n        if line.startswith('## ') and 'Branch' not in line:\\n            # Next section started\\n            break\\n        branch_c_lines.append(line)\\n        \\nprint('Branch C section:')\\nprint('\\\\n'.join(branch_c_lines))\\nprint('---')\\n# Also show a bit before and after for context\\nfor i, line in enumerate(lines):\\n    if '### Branch C: Incremental Wiki Compilation' in line:\\n        print('Context before:')\\n        for j in range(max(0, i-3), i):\\n            print(f\\\"{j}: {lines[j]}\\\")\\n        print('---')\\n        print('Branch C section:')\\n        for j in range(i, min(len(lines), i+20)):\\n            print(f\\\"{j}: {lines[j]}\\\")\\n        break\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "chatcmpl-tool-b676d44a8b8569a4",
+      "content": "Tool 'execute_code' does not exist. Available tools: memory, skill_manage, skill_view, skills_list"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "I need to look at the actual content of the youtube-wiki-processing skill to see what exactly is in the Branch C section. Let me read it again and then try to patch it properly.\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I need to look at the actual content of the youtube-wiki-processing skill to see what exactly is in the Branch C section. Let me read it again and then try to patch it properly.\n",
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-898732e3e887915e",
+          "call_id": "chatcmpl-tool-898732e3e887915e",
+          "response_item_id": "fc_chatcmpl-tool-898732e3e887915e",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"youtube-wiki-processing\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"youtube-wiki-processing\", \"description\": \"Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\", \"tags\": [], \"related_skills\": [], \"content\": \"---\\nname: youtube-wiki-processing\\ndescription: Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n---\\n# YouTube Wiki Processing Flow\\n\\nAutomated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\\n\\n## Trigger Conditions\\n\\n- Webhook receives push event with changes to `raw/` directory\\n- Skill activates when user provides `run_id`, `before`, and `sha` git references\\n- Or when manually executing the flow for a given commit range\\n\\n## Workflow Overview\\n\\n1. **Detect change type** – check for modifications in raw Markdown files\\n2. **Branch A – No raw changes** → skip processing\\n3. **Branch B – YouTube links added/changed** → Run NotebookLM analysis on new videos\\n4. **Branch C – NotebookLM artifacts added** → Incremental wiki compilation and push\\n\\n## Detailed Steps\\n\\n### Step 1: Detect Changes\\n```bash\\ncd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki\\ngit diff --name-only <before>..<sha> -- 'raw/*.md' 'raw/**/*.md' > /tmp/changed_files.txt\\n```\\n- If file is empty or contains no paths → **Branch A** (skip)\\n- If any paths match `raw/youtube-links/` → **Branch B**\\n- If any paths match `raw/notebooklm-*` but **no** `raw/youtube-links/` → **Branch C**\\n\\n### Branch A: No Raw Changes\\n- Log: `skipped:no_raw_changes`\\n- Stop processing; do not modify wiki, commit, or push\\n- Exit successfully\\n\\n### Branch B: Process YouTube Links\\n1. Scan `raw/youtube-links/` for new/changed files\\n2. Extract all YouTube URLs using regex: `https://youtu(\\\\.)?be(\\\\.com)?/`\\n3. Call Python processor with all URLs:\\n   ```bash\\n   /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py <url1> <url2> ...\\n   ```\\n4. Script outputs JSON with generated report and mindmap file paths\\n5. Move output files:\\n   - Reports → `raw/notebooklm-analysis/`\\n   - Mindmaps → `raw/notebooklm-mindmaps/`\\n6. Git commit and push:\\n   ```bash\\n   git add -A\\n   git commit -m \\\"chore: add notebooklm analysis from {{url_count}} videos\\\"\\n   git push origin main\\n   ```\\n7. Log completion: `第一步成功，等待第二步自动触发`\\n8. Await automatic trigger for Branch C (via subsequent webhook or manual run)\\n\\n### Branch C: Incremental Wiki Compilation\\n1. Execute standard llm-wiki incremental compilation process\\n2. Scan changes in:\\n   - `raw/notebooklm-analysis/`\\n   - `raw/notebooklm-mindmaps/`\\n3. Generate/update wiki pages:\\n   - `wiki/sources/`\\n   - `wiki/concepts/`\\n   - `wiki/entities/`\\n4. Update relationship links\\n5. Git commit and push:\\n   ```bash\\n   git add -A\\n   git commit -m \\\"chore: update llm wiki graph\\\"\\n   git push origin main\\n   ```\\n6. Send Telegram notification:\\n   ```\\n   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>\\n   ```\\n7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`\\n\\n## Logging\\n- Append all operations to `logs/webhook-runs/<run_id>.md`\\n- Include timestamps, commands executed, and outcomes\\n\\n## Error Handling\\n- If any step fails, log error and exit non-zero\\n- For git failures, attempt to resolve conflicts or notify user\\n- For NotebookLM processor failures, skip commit and log details\\n\\n## Requirements\\n- bash, git, python3\\n- notebooklm-cli skill (for NotebookLM operations via referenced script)\\n- Access to YouTube Wiki repository at `/home/zhouhuijuan1987/wiki/youtube-video-research-wiki`\\n- Telegram webhook configured for notifications\\n\\n## Notes\\n- The flow assumes linear history; merge commits may require adaptation\\n- Processor script must be present and executable\\n- Ensure sufficient permissions for git push and file moves\", \"path\": \"devops/youtube-wiki-processing/SKILL.md\", \"skill_dir\": \"/home/zhouhuijuan1987/.hermes/skills/devops/youtube-wiki-processing\", \"linked_files\": {\"references\": [\"references/test-session-2026-05-08-krEDel3aGGw.md\", \"references/session-gh-25543389523-1.md\"], \"scripts\": [\"scripts/notebooklm_processor.py\"]}, \"usage_hint\": \"To view linked files, call skill_view(name, file_path) where file_path is e.g. 'references/api.md' or 'assets/config.yaml'\", \"required_environment_variables\": [], \"required_commands\": [], \"missing_required_environment_variables\": [], \"missing_credential_files\": [], \"missing_required_commands\": [], \"setup_needed\": false, \"setup_skipped\": false, \"readiness_status\": \"available\"}",
+      "tool_call_id": "chatcmpl-tool-898732e3e887915e"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "I need to patch the youtube-wiki-processing skill to incorporate the detailed steps I followed during this session. The key improvements needed:\n\n1. Add protective stash/sync workflow (stash, fetch/checkout/pull --ff-only, stash pop)\n2. Explicitly check for raw changes in the specific directories (notebooklm-analysis/ and notebooklm-mindmaps/)\n3. Update source pages to point to the specific report used\n4. Update entity pages to point to the specific report used  \n5. Process mindmaps to extract concepts and create concept pages with proper frontmatter\n6. Add language enforcement (zh_Hans)\n7. Add quality checks (frontmatter completeness, wikilinks, content density)\n8. Specific commit message format\n9. Detailed Telegram notification format with all required fields\n10. Detailed run-log recording\n\nLet me first extract the exact Branch C section to see what needs replacing.\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I need to patch the youtube-wiki-processing skill to incorporate the detailed steps I followed during this session. The key improvements needed:\n\n1. Add protective stash/sync workflow (stash, fetch/checkout/pull --ff-only, stash pop)\n2. Explicitly check for raw changes in the specific directories (notebooklm-analysis/ and notebooklm-mindmaps/)\n3. Update source pages to point to the specific report used\n4. Update entity pages to point to the specific report used  \n5. Process mindmaps to extract concepts and create concept pages with proper frontmatter\n6. Add language enforcement (zh_Hans)\n7. Add quality checks (frontmatter completeness, wikilinks, content density)\n8. Specific commit message format\n9. Detailed Telegram notification format with all required fields\n10. Detailed run-log recording\n\nLet me first extract the exact Branch C section to see what needs replacing.\n",
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-a999bfec0ee4e47d",
+          "call_id": "chatcmpl-tool-a999bfec0ee4e47d",
+          "response_item_id": "fc_chatcmpl-tool-a999bfec0ee4e47d",
+          "type": "function",
+          "function": {
+            "name": "execute_code",
+            "arguments": "{\"code\": \"# Let me read the skill file and find the exact text to replace\\nwith open('/home/zhouhuijuan1987/.hermes/skills/devops/youtube-wiki-processing/SKILL.md', 'r', encoding='utf-8') as f:\\n    content = f.read()\\n\\n# Find the Branch C section\\nimport re\\n# Match from \\\"### Branch C: Incremental Wiki Compilation\\\" to the next \\\"### \\\" or end of file\\npattern = r'(### Branch C: Incremental Wiki Compilation\\\\n)(.*?)(?=\\\\n### |\\\\Z)'\\nmatch = re.search(pattern, content, re.DOTALL)\\n\\nif match:\\n    print(\\\"Current Branch C section:\\\")\\n    print(\\\"=\\\" * 50)\\n    print(match.group(0))\\n    print(\\\"=\\\" * 50)\\nelse:\\n    print(\\\"Could not find Branch C section\\\")\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "chatcmpl-tool-a999bfec0ee4e47d",
+      "content": "Tool 'execute_code' does not exist. Available tools: memory, skill_manage, skill_view, skills_list"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "I need to update the youtube-wiki-processing skill with the detailed steps I learned from the session. Let me first try to get the exact text to replace by viewing the skill and then patching it.\n\nSince I can't use execute_code, I'll try to manually construct the patch based on what I saw in the skill view.\n\nLooking at the skill, I can see the Branch C section is:\n```\n### Branch C: Incremental Wiki Compilation\n1. Execute standard llm-wiki incremental compilation process\n2. Scan changes in:\n   - `raw/notebooklm-analysis/`\n   - `raw/notebooklm-mindmaps/`\n3. Generate/update wiki pages:\n   - `wiki/sources/`\n   - `wiki/concepts/`\n   - `wiki/entities/`\n4. Update relationship links\n5. Git commit and push:\n   ```bash\n   git add -A\n   git commit -m \"chore: update llm wiki graph\"\n   git push origin main\n   ```\n6. Send Telegram notification:\n   ``` \n   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>\n   ```\n7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`\n```\n\nI need to replace this with the detailed steps from the session, including:\n- Protective stash/sync workflow\n- Processing analysis reports and mindmaps properly\n- Language enforcement\n- Quality checks\n- Detailed Telegram notification format\n- Proper run logging\n\nLet me construct the patch.\n",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I need to update the youtube-wiki-processing skill with the detailed steps I learned from the session. Let me first try to get the exact text to replace by viewing the skill and then patching it.\n\nSince I can't use execute_code, I'll try to manually construct the patch based on what I saw in the skill view.\n\nLooking at the skill, I can see the Branch C section is:\n```\n### Branch C: Incremental Wiki Compilation\n1. Execute standard llm-wiki incremental compilation process\n2. Scan changes in:\n   - `raw/notebooklm-analysis/`\n   - `raw/notebooklm-mindmaps/`\n3. Generate/update wiki pages:\n   - `wiki/sources/`\n   - `wiki/concepts/`\n   - `wiki/entities/`\n4. Update relationship links\n5. Git commit and push:\n   ```bash\n   git add -A\n   git commit -m \"chore: update llm wiki graph\"\n   git push origin main\n   ```\n6. Send Telegram notification:\n   ``` \n   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>\n   ```\n7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`\n```\n\nI need to replace this with the detailed steps from the session, including:\n- Protective stash/sync workflow\n- Processing analysis reports and mindmaps properly\n- Language enforcement\n- Quality checks\n- Detailed Telegram notification format\n- Proper run logging\n\nLet me construct the patch.\n",
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-ba4a6f77a81a6eaa",
+          "call_id": "chatcmpl-tool-ba4a6f77a81a6eaa",
+          "response_item_id": "fc_chatcmpl-tool-ba4a6f77a81a6eaa",
+          "type": "function",
+          "function": {
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"youtube-wiki-processing\", \"old_string\": \"### Branch C: Incremental Wiki Compilation\\n1. Execute standard llm-wiki incremental compilation process\\n2. Scan changes in:\\n   - `raw/notebooklm-analysis/`\\n   - `raw/notebooklm-mindmaps/`\\n3. Generate/update wiki pages:\\n   - `wiki/sources/`\\n   - `wiki/concepts/`\\n   - `wiki/entities/`\\n4. Update relationship links\\n5. Git commit and push:\\n   ```bash\\n   git add -A\\n   git commit -m \\\"chore: update llm wiki graph\\\"\\n   git push origin main\\n   ```\\n6. Send Telegram notification:\\n   ``` \\n   [YOUTUBE-WIKI-RUN] run_id=gh-<run_id>-<attempt> stage=completed commit=<hash> entities_created=<n>\\n   ```\\n7. Log run to: `logs/webhook-runs/gh-<run_id>-<attempt>.md`\", \"new_string\": \"### Branch C: Incremental Wiki Compilation (Triggered by changes in raw/notebooklm-analysis/ or raw/notebooklm-mindmaps/)\\n1. **Execute protective stash/sync workflow**:\\n   ```bash\\n   git stash push -u -m \\\"youtube-wiki-stage-c-{run_id}\\\" 2>/dev/null || true\\n   git fetch origin && git checkout main && git pull --ff-only origin main\\n   git stash pop 2>/dev/null || true\\n   ```\\n2. **Verify no conflicting YouTube link changes**: Run `git diff --name-only {before}..{sha} -- 'raw/youtube-links/' 'raw/youtube-links/**/*.md'`. If any YouTube links changed, this indicates the webhook should have triggered Branch B instead - log this discrepancy but continue with Branch C processing.\\n3. **Process NotebookLM analysis reports**:\\n   - For each new/changed report in `raw/notebooklm-analysis/`:\\n     * Update the corresponding source page in `wiki/sources/` to point to this report\\n     * Update the corresponding entity page in `wiki/entities/` to point to this report\\n4. **Process NotebookLM mindmaps**:\\n   - For each new/changed mindmap in `raw/notebooklm-mindmaps/`:\\n     * Parse the JSON mindmap to extract concept names\\n     * For each concept, create/update a concept page in `wiki/concepts/` with:\\n       - Proper frontmatter (type: concept, tags, summary, sources pointing to the mindmap, created/updated dates, layer: L1, confidence: high, reasoning: \\\"直接从NotebookLM思维导图中提取的概念。\\\")\\n       - Content including the concept description and links to related source/entity pages\\n       - Ensure minimum 2 outgoing [[wikilinks]]\\n       - Ensure content density (≥200 Chinese characters for concept pages)\\n5. **Language enforcement**: Ensure all generated content is in Chinese (zh_Hans). Set language explicitly before any NotebookLM operations if needed.\\n6. **Update navigation files**:\\n   - Update `index.md` (group by type, alphabetical order, with summaries, update \\\"Last updated\\\" and \\\"Total pages\\\")\\n   - Append to `log.md` with run_id, date, and list of new/updated files\\n7. **Quality checks** (must pass before commit):\\n   - Every wiki page must have complete frontmatter (type/tags/summary/sources/updated/layer)\\n   - L2/L3 pages must have confidence+reasoning fields\\n   - Every page must have minimum 2 outgoing [[wikilinks]]\\n   - Source pages: ≥300 Chinese characters\\n   - Entity/concept pages: ≥200 Chinese characters\\n   - All sources in frontmatter must point to existing raw/ files\\n8. **Git commit and push**:\\n   ```bash\\n   git add wiki/ index.md log.md logs/\\n   git commit -m \\\"chore: update llm wiki graph from notebooklm analysis [run:{run_id}]\\\"\\n   git push origin main\\n   ```\\n9. **Send Telegram notification** (only after successful push):\\n   ```\\n   [YOUTUBE-WIKI-RUN]\\n   action=wiki-build\\n   run_id={run_id}\\n   notebook=youtube-video-research-wiki\\n   language=zh_Hans\\n   raw_changed_count=<n>\\n   wiki_updates=<yes|no>\\n   commit=<hash>\\n   push=<success|failed>\\n   compile_check=<pass|fail>\\n   tg_send=<success|failed>\\n   run_log=<absolute_path>\\n   ```\\n10. **Log run** to: `logs/webhook-runs/{run_id}.md` with detailed execution record\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"message\": \"Patched SKILL.md in skill 'youtube-wiki-processing' (1 replacement).\"}",
+      "tool_call_id": "chatcmpl-tool-ba4a6f77a81a6eaa"
+    },
+    {
+      "role": "user",
+      "content": "You've reached the maximum number of tool-calling iterations allowed. Please provide a final response summarizing what you've found and accomplished so far, without calling any more tools."
+    },
+    {
+      "role": "assistant",
+      "content": "I've successfully updated the `youtube-wiki-processing` skill to incorporate the detailed workflow we just executed. The key improvements include:\n\n1. **Enhanced Branch C workflow** with explicit steps for:\n   - Protective stash/sync workflow (stash, fetch/checkout/pull, pop)\n   - Verification that no conflicting YouTube link changes exist\n   - Detailed processing of NotebookLM analysis reports (updating source and entity pages)\n   - Detailed processing of NotebookLM mindmaps (extracting concepts and creating concept pages)\n   - Language enforcement for Chinese (zh_Hans) content\n   - Navigation file updates (index.md and log.md)\n   - Quality checks before commit (frontmatter completeness, wikilinks, content density, source validity)\n   - Proper git commit and push sequence with specific commit message format\n   - Detailed Telegram notification format matching the requirements\n   - Comprehensive run logging\n\n2. **The updated skill now accurately reflects** the exact workflow we just executed, which included:\n   - Processing raw changes in notebooklm-analysis and notebooklm-mindmaps\n   - Updating the source page with the latest report\n   - Updating the entity page with the latest report\n   - Generating 32 concept pages from the mindmap data\n   - Updating navigation files (index.md and log.md)\n   - Committing and pushing changes\n   - Sending the required Telegram notification with all specified fields\n\nThis update captures the specific techniques, workarounds, and quality controls that emerged during this session, making the skill more robust and aligned with the user's expectations for processing YouTube wiki updates.\n\nThe skill now serves as a proper class-level umbrella that encapsulates the complete workflow for handling YouTube video research wiki updates via webhook triggers, incorporating all the lessons learned from this session."
     }
   ]
 }
