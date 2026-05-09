@@ -34,24 +34,7 @@ webhook 收到 `stage=wiki-build`
 - **必须用 write_file 工具写入文件**，禁止用 `echo`、`cat <<EOF`、`heredoc` 等 shell 方式。
 - shell 方式会导致 `\n` 变成字面字符串而不是真实换行符，造成文件格式损坏。
 
-### 构建（严格遵循 TheSchema.md）
-7. 读取 `index.md` 和 `log.md` 了解现有内容，避免重复创建。
-8. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts`
-9. 对每个新分析报告：
-   a. **Source 页** (`wiki/sources/{video-id}-{slug}.md`)：
-      - 视频信息（标题、URL、发布者）
-      - 执行摘要（3-5句）
-      - 核心要点（5-10条）
-      - 关联实体/概念的 `[[wikilinks]]`
-      - frontmatter: type/tags/summary/sources/layer=L1/confidence=high
-   b. **Entity 页** (`wiki/entities/{slug}.md`)：
-      - 人物、产品、组织、AI模型
-      - 每页 ≥ 2 个出链 wikilinks
-      - layer=L1 或 L2（跨视频推断时标注 reasoning）
-   c. **Concept 页** (`wiki/concepts/{slug}.md`)：
-      - 技术方法、框架、趋势
-      - 每页 ≥ 2 个出链 wikilinks
-      - 包含本库中具体例子
+### 构建（严格遵循 TheSchema.md）\n7. 读取 `index.md` 和 `log.md` 了解现有内容，避免重复创建。\n8. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts`\n9. 对每个新分析报告：\n   a. **Source 页** (`wiki/sources/{video-id}-{slug}.md`)：\n      - 必须创建（每个分析报告对应一个 source 页）\n      - 视频信息（标题、URL、发布者）\n      - 执行摘要（3-5句）\n      - 核心要点（5-10条）\n      - 关联实体/概念的 `[[wikilinks]]`\n      - frontmatter: type/tags/summary/sources/layer=L1/confidence=high\n   b. **Entity 页** (`wiki/entities/{slug}.md`)：\n      - 仅当实体页面尚不存在时创建\n      - 人物、产品、组织、AI模型\n      - 每页 ≥ 2 个出链 wikilinks\n      - layer=L1 或 L2（跨视频推断时标注 reasoning）\n   c. **Concept 页** (`wiki/concepts/{slug}.md`)：\n      - 仅当概念页面尚不存在时创建\n      - 技术方法、框架、趋势\n      - 每页 ≥ 2 个出链 wikilinks\n      - 包含本库中具体例子
 
 ### 质量检查（必须通过）
 9. 每个新页面：
@@ -90,3 +73,9 @@ log: logs/webhook-runs/{run_id}.md"
 ## 注意
 - push 失败时重试一次，仍失败则记录错误，**禁止发送 Telegram**。
 - TG 发送失败不影响整体成功状态，但须在 run-log 记录。
+
+## 常见问题与经验教训
+- **文件写入换行问题**：使用 `write_file` 工具时，必须确保内容中使用实际的换行符（`\n`），而不是转义的字面字符串 `\\n`。如果发现生成的文件出现 YAML 解析错误（如 "expected a single document in the stream"），检查 frontmatter 是否包含字面的 `\\n` 字符，需要使用 `write_file` 重写文件并确保换行符正确。
+- **前置文件检查**：在处理现有 wiki 文件时，如果发现 frontmatter 解析错误，可能是由于之前的写入方式导致的换行问题。此时应先读取文件内容，将所有 `\\n` 替换为实际换行符，然后重新写入。
+- **日志文件冲突**：`log.md` 等频繁追加的文件可能出现合并冲突。在保护性同步阶段的 `git stash pop` 后，应检查并解决任何冲突，然后再继续执行。
+- **索引更新**：更新 `index.md` 时，应保持现有格式和排序，避免重复条目。可以先读取现有内容，然后在适当位置插入新条目，最后更新页码统计。
