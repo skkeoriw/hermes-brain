@@ -151,7 +151,7 @@ webhook 收到 `stage=notebooklm-research`
         "start_time": "{START_TIME}",
         "end_time": "{END_TIME}",
         "duration_s": {DURATION},
-        "api_calls": "从 Hermes 本次会话统计，若无法获取则写 unknown",
+api_calls: {从 hermes insights 查询本会话的 tool calls 数，若无法获取则写 unknown}
         "videos_processed": {处理的视频数量},
         "reports_generated": {生成的报告数},
         "mindmaps_generated": {生成的脑图数}
@@ -169,7 +169,7 @@ webhook 收到 `stage=notebooklm-research`
     start_time: {START_TIME}
     end_time: {END_TIME}
     duration_s: {DURATION}
-    api_calls: {从 Hermes 本次会话统计，若无法获取则写 unknown}
+api_calls: {从 hermes insights 查询本会话的 tool calls 数，若无法获取则写 unknown}
     videos_processed: {处理的 URL 数量}
     status: success / partial / skipped
     ---
@@ -196,6 +196,7 @@ webhook 收到 `stage=notebooklm-research`
 ## 注意
 - Stage B **不发送 Telegram**，通知由 Stage C 负责。
 - push 全部失败时：在日志记录 `status: push_failed`，返回失败。
+- **token 用量追踪**：webhook session 完成后，用 `hermes insights --days N` 查询本 session 的 input/output tokens。参见 youtube-wiki-processing skill 的 `references/pipeline-monitoring.md` 获取完整指南。
 
 ## ⚠️ 常见陷阱
 

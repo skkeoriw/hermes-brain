@@ -109,6 +109,36 @@ git diff --name-only <before>..<sha> -- 'raw/*.md' 'raw/**/*.md' > /tmp/changed_
    ```
 10. **Log run** to: `logs/webhook-runs/{run_id}.md` with detailed execution record
 
+## Pipeline Monitoring & Tracking
+
+每个 pipeline 运行由三个独立 webhook session 组成（Stage B → C → D）。参见 `references/pipeline-monitoring.md` 获取完整的监控指南。
+
+### 核心追踪手段
+
+- **pipeline-context.json** (`raw/pipeline-context.json`)：记录每个阶段的 start_time/end_time/duration_s，由各阶段写入自己的节点
+- **hermes insights**：各 webhook session 完成后可用 `hermes insights --days N` 查询每 session 的 input/output tokens
+- **webhook run logs**：`logs/webhook-runs/{run_id}.md` 记录每个阶段的执行细节
+
+### Webhook 路由架构
+
+| 路由 | 阶段 | 状态 |
+|------|------|------|
+| `youtube-wiki-ops` | 主编排器 | 可能 disabled |
+| `sop-notebooklm-research` | Stage B | 独立可触发 |
+| `sop-wiki-build` | Stage C | 独立可触发 |
+| `sop-tg-notify` | Stage D | 独立可触发 |
+
+检查状态：`hermes webhook list`
+
+### 按阶段手动触发（当编排器 disabled 时）
+
+如果 `youtube-wiki-ops` 已禁用，可以手动触发每个 SOP webhook 来运行 pipeline：
+
+1. 推送 YouTube link 文件 → 直接 git commit + push
+2. 调用 `curl -X POST http://localhost:8644/webhooks/sop-notebooklm-research -H "Content-Type: application/json" -d '{...}'`
+3. 等待 Stage B 完成并 push 后 → 调用 sop-wiki-build
+4. 等待 Stage C 完成并 push 后 → 调用 sop-tg-notify
+
 ## Logging
 - Append all operations to `logs/webhook-runs/<run_id>.md`
 - Include timestamps, commands executed, and outcomes
