@@ -1,0 +1,1535 @@
+{
+  "session_id": "20260509_055146_e81eb624",
+  "model": "deepseek-v4-flash",
+  "base_url": "https://api.deepseek.com/v1",
+  "platform": "webhook",
+  "session_start": "2026-05-09T05:51:46.755287",
+  "last_updated": "2026-05-09T05:56:47.032389",
+  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. When the user references something from a past conversation or you suspect relevant cross-session context exists, use session_search to recall it before asking them to repeat themselves. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [99% — 2,195/2,200 chars]\n══════════════════════════════════════════════\nprompt-qa-unified-wiki: https://github.com/divanoo65/prompt-qa-unified-wiki, local /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki, PAT: 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 (divanoo65). Wiki uses TheSchema.md layout (raw/ + wiki/sources|entities|concepts|comparisons|overview|queries). llm-wiki webhook run IDs use gh-<run_id>-<attempt> prefix format.\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to handle stash pop conflicts by resetting to origin/main and dropping stash changes when conflicts occur during protected sync step.\n§\nUpdated sop-notebooklm-research skill to reflect actual notebooklm_processor.py output structure: JSON includes generated_files list with type and path; copy files preserving original filenames.\n§\nUpdated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.\n§\nSuccessfully executed SOP Stage B for youtube-video-research-wiki: processed 3 YouTube links, generated reports and mindmaps, committed and pushed changes. Updated the skill to include timing logs and enhanced log requirements.\n§\nReviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [98% — 1,358/1,375 chars]\n══════════════════════════════════════════════\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - brain-sync-reporting: Standardized workflow for generating Telegram reports fro...\n    - brain-sync-workflow: Class-level skill for Hermes Brain synchronization workfl...\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - llm-wiki-multiwiki-e2e-gate: Bootstrap and validate multi-wiki factory flow: push->Git...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - sop-notebooklm-research: SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图...\n    - sop-wiki-build: SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n    - youtube-wiki-processing: Automated workflow for processing YouTube video research ...\n  devops/video-summarizer-local/vendor/summarize/.agent/skills:\n    - summarize: Transcribe and summarize videos from YouTube, local files...\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube transcripts to summaries, threads, blogs.\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Saturday, May 09, 2026 05:51 AM\nModel: deepseek-v4-flash\nProvider: deepseek",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_back",
+        "description": "Navigate back to the previous page in browser history. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_click",
+        "description": "Click on an element identified by its ref ID from the snapshot (e.g., '@e5'). The ref IDs are shown in square brackets in the snapshot output. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e5', '@e12')"
+            }
+          },
+          "required": [
+            "ref"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_console",
+        "description": "Get browser console output and JavaScript errors from the current page. Returns console.log/warn/error/info messages and uncaught JS exceptions. Use this to detect silent JavaScript errors, failed API calls, and application warnings. Requires browser_navigate to be called first. When 'expression' is provided, evaluates JavaScript in the page context and returns the result — use this for DOM inspection, reading page state, or extracting data programmatically.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clear": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, clear the message buffers after reading"
+            },
+            "expression": {
+              "type": "string",
+              "description": "JavaScript expression to evaluate in the page context. Runs in the browser like DevTools console — full access to DOM, window, document. Return values are serialized to JSON. Example: 'document.title' or 'document.querySelectorAll(\"a\").length'"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_get_images",
+        "description": "Get a list of all images on the current page with their URLs and alt text. Useful for finding images to analyze with the vision tool. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_navigate",
+        "description": "Navigate to a URL in the browser. Initializes the session and loads the page. Must be called before other browser tools. For plain-text endpoints — URLs ending in .md, .txt, .json, .yaml, .yml, .csv, .xml, raw.githubusercontent.com, or any documented API endpoint — prefer curl via the terminal tool or web_extract; the browser stack is overkill and much slower for these. Use browser tools when you need to interact with a page (click, fill forms, dynamic content). Returns a compact page snapshot with interactive elements and ref IDs — no need to call browser_snapshot separately after navigating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL to navigate to (e.g., 'https://example.com')"
+            }
+          },
+          "required": [
+            "url"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_press",
+        "description": "Press a keyboard key. Useful for submitting forms (Enter), navigating (Tab), or keyboard shortcuts. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown')"
+            }
+          },
+          "required": [
+            "key"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_scroll",
+        "description": "Scroll the page in a direction. Use this to reveal more content that may be below or above the current viewport. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "direction": {
+              "type": "string",
+              "enum": [
+                "up",
+                "down"
+              ],
+              "description": "Direction to scroll"
+            }
+          },
+          "required": [
+            "direction"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_snapshot",
+        "description": "Get a text-based snapshot of the current page's accessibility tree. Returns interactive elements with ref IDs (like @e1, @e2) for browser_click and browser_type. full=false (default): compact view with interactive elements. full=true: complete page content. Snapshots over 8000 chars are truncated or LLM-summarized. Requires browser_navigate first. Note: browser_navigate already returns a compact snapshot — use this to refresh after interactions that change the page, or with full=true for complete content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "full": {
+              "type": "boolean",
+              "description": "If true, returns complete page content. If false (default), returns compact view with interactive elements only.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_type",
+        "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e3')"
+            },
+            "text": {
+              "type": "string",
+              "description": "The text to type into the field"
+            }
+          },
+          "required": [
+            "ref",
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_vision",
+        "description": "Take a screenshot of the current page and analyze it with vision AI. Use this when you need to visually understand what's on the page - especially useful for CAPTCHAs, visual verification challenges, complex layouts, or when the text snapshot doesn't capture important visual information. Returns both the AI analysis and a screenshot_path that you can share with the user by including MEDIA:<screenshot_path> in your response. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "What you want to know about the page visually. Be specific about what you're looking for."
+            },
+            "annotate": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, overlay numbered [N] labels on interactive elements. Each [N] maps to ref @eN for subsequent browser commands. Useful for QA and spatial reasoning about page layout."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "clarify",
+        "description": "Ask the user a question when you need clarification, feedback, or a decision before proceeding. Supports two modes:\n\n1. **Multiple choice** — provide up to 4 choices. The user picks one or types their own answer via a 5th 'Other' option.\n2. **Open-ended** — omit choices entirely. The user types a free-form response.\n\nUse this tool when:\n- The task is ambiguous and you need the user to choose an approach\n- You want post-task feedback ('How did that work out?')\n- You want to offer to save a skill or update memory\n- A decision has meaningful trade-offs the user should weigh in on\n\nDo NOT use this tool for simple yes/no confirmation of dangerous commands (the terminal tool handles that). Prefer making a reasonable default choice yourself when the decision is low-stakes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "The question to present to the user."
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 4,
+              "description": "Up to 4 answer choices. Omit this parameter entirely to ask an open-ended question. When provided, the UI automatically appends an 'Other (type your answer)' option."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "cronjob",
+        "description": "Manage scheduled cron jobs with a single compressed tool.\n\nUse action='create' to schedule a new job from a prompt or one or more skills.\nUse action='list' to inspect jobs.\nUse action='update', 'pause', 'resume', 'remove', or 'run' to manage an existing job.\n\nTo stop a job the user no longer wants: first action='list' to find the job_id, then action='remove' with that job_id. Never guess job IDs — always list first.\n\nJobs run in a fresh session with no current-chat context, so prompts must be self-contained.\nIf skills are provided on create, the future cron run loads those skills in order, then follows the prompt as the task instruction.\nOn update, passing skills=[] clears attached skills.\n\nNOTE: The agent's final response is auto-delivered to the target. Put the primary\nuser-facing content in the final response. Cron jobs run autonomously with no user\npresent — they cannot ask questions or request clarification.\n\nImportant safety rule: cron-run sessions should not recursively schedule more cron jobs.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "description": "One of: create, list, update, pause, resume, remove, run"
+            },
+            "job_id": {
+              "type": "string",
+              "description": "Required for update/pause/resume/remove/run"
+            },
+            "prompt": {
+              "type": "string",
+              "description": "For create: the full self-contained prompt. If skills are also provided, this becomes the task instruction paired with those skills."
+            },
+            "schedule": {
+              "type": "string",
+              "description": "For create/update: '30m', 'every 2h', '0 9 * * *', or ISO timestamp"
+            },
+            "name": {
+              "type": "string",
+              "description": "Optional human-friendly name"
+            },
+            "repeat": {
+              "type": "integer",
+              "description": "Optional repeat count. Omit for defaults (once for one-shot, forever for recurring)."
+            },
+            "deliver": {
+              "type": "string",
+              "description": "Omit this parameter to auto-deliver back to the current chat and topic (recommended). Auto-detection preserves thread/topic context. Only set explicitly when the user asks to deliver somewhere OTHER than the current conversation. Values: 'origin' (same as omitting), 'local' (no delivery, save only), or platform:chat_id:thread_id for a specific destination. Examples: 'telegram:-1001234567890:17585', 'discord:#engineering', 'sms:+15551234567'. WARNING: 'platform:chat_id' without :thread_id loses topic targeting."
+            },
+            "skills": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional ordered list of skill names to load before executing the cron prompt. On update, pass an empty array to clear attached skills."
+            },
+            "model": {
+              "type": "object",
+              "description": "Optional per-job model override. If provider is omitted, the current main provider is pinned at creation time so the job stays stable.",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "description": "Provider name (e.g. 'openrouter', 'anthropic'). Omit to use and pin the current provider."
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Model name (e.g. 'anthropic/claude-sonnet-4', 'claude-sonnet-4')"
+                }
+              },
+              "required": [
+                "model"
+              ]
+            },
+            "script": {
+              "type": "string",
+              "description": "Optional path to a Python script that runs before each cron job execution. Its stdout is injected into the prompt as context. Use for data collection and change detection. Relative paths resolve under ~/.hermes/scripts/. On update, pass empty string to clear."
+            },
+            "context_from": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional job ID or list of job IDs whose most recent completed output is injected into the prompt as context before each run. Use this to chain cron jobs: job A collects data, job B processes it. Each entry must be a valid job ID (from cronjob action='list'). Note: injects the most recent completed output — does not wait for upstream jobs running in the same tick. On update, pass an empty array to clear."
+            },
+            "enabled_toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional list of toolset names to restrict the job's agent to (e.g. [\"web\", \"terminal\", \"file\", \"delegation\"]). When set, only tools from these toolsets are loaded, significantly reducing input token overhead. When omitted, all default tools are loaded. Infer from the job's prompt — e.g. use \"web\" if it calls web_search, \"terminal\" if it runs scripts, \"file\" if it reads files, \"delegation\" if it calls delegate_task. On update, pass an empty array to clear."
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Optional absolute path to run the job from. When set, AGENTS.md / CLAUDE.md / .cursorrules from that directory are injected into the system prompt, and the terminal/file/code_exec tools use it as their working directory — useful for running a job inside a specific project repo. Must be an absolute path that exists. When unset (default), preserves the original behaviour: no project context files, tools use the scheduler's cwd. On update, pass an empty string to clear. Jobs with workdir run sequentially (not parallel) to keep per-job directories isolated."
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "delegate_task",
+        "description": "Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window.\n\nTWO MODES (one of 'goal' or 'tasks' is required):\n1. Single task: provide 'goal' (+ optional context, toolsets)\n2. Batch (parallel): provide 'tasks' array with up to delegation.max_concurrent_children items (default 3, configurable via config.yaml, no hard ceiling). All run concurrently and results are returned together. Nested delegation requires role='orchestrator' and delegation.max_spawn_depth >= 2.\n\nWHEN TO USE delegate_task:\n- Reasoning-heavy subtasks (debugging, code review, research synthesis)\n- Tasks that would flood your context with intermediate data\n- Parallel independent workstreams (research A and B simultaneously)\n\nWHEN NOT TO USE (use these instead):\n- Mechanical multi-step work with no reasoning needed -> use execute_code\n- Single tool call -> just call the tool directly\n- Tasks needing user interaction -> subagents cannot use clarify\n- Durable long-running work that must outlive the current turn -> use cronjob (action='create') or terminal(background=True, notify_on_complete=True) instead. delegate_task runs SYNCHRONOUSLY inside the parent turn: if the parent is interrupted (user sends a new message, /stop, /new) the child is cancelled with status='interrupted' and its work is discarded. Children cannot continue in the background.\n\nIMPORTANT:\n- Subagents have NO memory of your conversation. Pass all relevant info (file paths, error messages, constraints) via the 'context' field.\n- If the user is writing in a non-English language, or asked for output in a specific language / tone / style, say so in 'context' (e.g. \"respond in Chinese\", \"return output in Japanese\"). Otherwise subagents default to English and their summaries will contaminate your final reply with the wrong language.\n- Subagent summaries are SELF-REPORTS, not verified facts. A subagent that claims \"uploaded successfully\" or \"file written\" may be wrong. For operations with external side-effects (HTTP POST/PUT, remote writes, file creation at shared paths, publishing), require the subagent to return a verifiable handle (URL, ID, absolute path, HTTP status) and verify it yourself — fetch the URL, stat the file, read back the content — before telling the user the operation succeeded.\n- Leaf subagents (role='leaf', the default) CANNOT call: delegate_task, clarify, memory, send_message, execute_code.\n- Orchestrator subagents (role='orchestrator') retain delegate_task so they can spawn their own workers, but still cannot use clarify, memory, send_message, or execute_code. Orchestrators are bounded by delegation.max_spawn_depth (default 2) and can be disabled globally via delegation.orchestrator_enabled=false.\n- Each subagent gets its own terminal session (separate working directory and state).\n- Results are always returned as an array, one entry per task.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "goal": {
+              "type": "string",
+              "description": "What the subagent should accomplish. Be specific and self-contained -- the subagent knows nothing about your conversation history."
+            },
+            "context": {
+              "type": "string",
+              "description": "Background information the subagent needs: file paths, error messages, project structure, constraints. The more specific you are, the better the subagent performs."
+            },
+            "toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Toolsets to enable for this subagent. Default: inherits your enabled toolsets. Available toolsets: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Common patterns: ['terminal', 'file'] for code work, ['web'] for research, ['browser'] for web interaction, ['terminal', 'file', 'web'] for full-stack tasks."
+            },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "goal": {
+                    "type": "string",
+                    "description": "Task goal"
+                  },
+                  "context": {
+                    "type": "string",
+                    "description": "Task-specific context"
+                  },
+                  "toolsets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Toolsets for this specific task. Available: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Use 'web' for network access, 'terminal' for shell, 'browser' for web interaction."
+                  },
+                  "acp_command": {
+                    "type": "string",
+                    "description": "Per-task ACP command override (e.g. 'claude'). Overrides the top-level acp_command for this task only."
+                  },
+                  "acp_args": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Per-task ACP args override."
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "leaf",
+                      "orchestrator"
+                    ],
+                    "description": "Per-task role override. See top-level 'role' for semantics."
+                  }
+                },
+                "required": [
+                  "goal"
+                ]
+              },
+              "description": "Batch mode: tasks to run in parallel (limit configurable via delegation.max_concurrent_children, default 3). Each gets its own subagent with isolated context and terminal session. When provided, top-level goal/context/toolsets are ignored."
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "leaf",
+                "orchestrator"
+              ],
+              "description": "Role of the child agent. 'leaf' (default) = focused worker, cannot delegate further. 'orchestrator' = can use delegate_task to spawn its own workers. Requires delegation.max_spawn_depth >= 2 in config; ignored (treated as 'leaf') when the child would exceed max_spawn_depth or when delegation.orchestrator_enabled=false."
+            },
+            "acp_command": {
+              "type": "string",
+              "description": "Override ACP command for child agents (e.g. 'claude', 'copilot'). When set, children use ACP subprocess transport instead of inheriting the parent's transport. Enables spawning Claude Code (claude --acp --stdio) or other ACP-capable agents from any parent, including Discord/Telegram/CLI."
+            },
+            "acp_args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Arguments for the ACP command (default: ['--acp', '--stdio']). Only used when acp_command is set. Example: ['--acp', '--stdio', '--model', 'claude-opus-4-6']"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "execute_code",
+        "description": "Run a Python script that can call Hermes tools programmatically. Use this when you need 3+ tool calls with processing logic between them, need to filter/reduce large tool outputs before they enter your context, need conditional branching (if X then Y else Z), or need to loop (fetch N pages, process N files, retry on failure).\n\nUse normal tool calls instead when: single tool call with no processing, you need to see the full result and apply complex reasoning, or the task requires interactive user input.\n\nAvailable via `from hermes_tools import ...`:\n\n  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n    Lines are 1-indexed. Returns {\"content\": \"...\", \"total_lines\": N}\n  write_file(path: str, content: str) -> dict\n    Always overwrites the entire file.\n  search_files(pattern: str, target=\"content\", path=\".\", file_glob=None, limit=50) -> dict\n    target: \"content\" (search inside files) or \"files\" (find files by name). Returns {\"matches\": [...]}\n  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n    Replaces old_string with new_string in the file.\n  terminal(command: str, timeout=None, workdir=None) -> dict\n    Foreground only (no background/pty). Returns {\"output\": \"...\", \"exit_code\": N}\n\nLimits: 5-minute timeout, 50KB stdout cap, max 50 tool calls per script. terminal() is foreground-only (no background or pty).\n\nScripts run in the session's working directory with the active venv's python, so project deps (pandas, etc.) and relative paths work like in terminal().\n\nPrint your final result to stdout. Use Python stdlib (json, re, math, csv, datetime, collections, etc.) for processing between tool calls.\n\nAlso available (no import needed — built into hermes_tools):\n  json_parse(text: str) — json.loads with strict=False; use for terminal() output with control chars\n  shell_quote(s: str) — shlex.quote(); use when interpolating dynamic strings into shell commands\n  retry(fn, max_attempts=3, delay=2) — retry with exponential backoff for transient failures",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Python code to execute. Import tools with `from hermes_tools import terminal, ...` and print your final result to stdout."
+            }
+          },
+          "required": [
+            "code"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "image_generate",
+        "description": "Generate high-quality images from text prompts. The underlying backend (FAL, OpenAI, etc.) and model are user-configured and not selectable by the agent. Returns either a URL or an absolute file path in the `image` field; display it with markdown ![description](url-or-path) and the gateway will deliver it.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "The text prompt describing the desired image. Be detailed and descriptive."
+            },
+            "aspect_ratio": {
+              "type": "string",
+              "enum": [
+                "landscape",
+                "square",
+                "portrait"
+              ],
+              "description": "The aspect ratio of the generated image. 'landscape' is 16:9 wide, 'portrait' is 16:9 tall, 'square' is 1:1.",
+              "default": "landscape"
+            }
+          },
+          "required": [
+            "prompt"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "memory",
+        "description": "Save durable information to persistent memory that survives across sessions. Memory is injected into future turns, so keep it compact and focused on facts that will still matter later.\n\nWHEN TO SAVE (do this proactively, don't wait to be asked):\n- User corrects you or says 'remember this' / 'don't do that again'\n- User shares a preference, habit, or personal detail (name, role, timezone, coding style)\n- You discover something about the environment (OS, installed tools, project structure)\n- You learn a convention, API quirk, or workflow specific to this user's setup\n- You identify a stable fact that will be useful again in future sessions\n\nPRIORITY: User preferences and corrections > environment facts > procedural knowledge. The most valuable memory prevents the user from having to repeat themselves.\n\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts.\nIf you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\n\nTWO TARGETS:\n- 'user': who the user is -- name, role, preferences, communication style, pet peeves\n- 'memory': your notes -- environment facts, project conventions, tool quirks, lessons learned\n\nACTIONS: add (new entry), replace (update existing -- old_text identifies it), remove (delete -- old_text identifies it).\n\nSKIP: trivial/obvious info, things easily re-discovered, raw data dumps, and temporary task state.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "add",
+                "replace",
+                "remove"
+              ],
+              "description": "The action to perform."
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "memory",
+                "user"
+              ],
+              "description": "Which memory store: 'memory' for personal notes, 'user' for user profile."
+            },
+            "content": {
+              "type": "string",
+              "description": "The entry content. Required for 'add' and 'replace'."
+            },
+            "old_text": {
+              "type": "string",
+              "description": "Short unique substring identifying the entry to replace or remove."
+            }
+          },
+          "required": [
+            "action",
+            "target"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "patch",
+        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "replace",
+                "patch"
+              ],
+              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
+              "default": "replace"
+            },
+            "path": {
+              "type": "string",
+              "description": "File path to edit (required for 'replace' mode)"
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
+              "default": false
+            },
+            "patch": {
+              "type": "string",
+              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "send_message",
+        "description": "Send a message to a connected messaging platform, or list available targets.\n\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "send",
+                "list"
+              ],
+              "description": "Action to perform. 'send' (default) sends a message. 'list' returns all available channels/contacts across connected platforms."
+            },
+            "target": {
+              "type": "string",
+              "description": "Delivery target. Format: 'platform' (uses home channel), 'platform:#channel-name', 'platform:chat_id', or 'platform:chat_id:thread_id' for Telegram topics and Discord threads. Examples: 'telegram', 'telegram:-1001234567890:17585', 'discord:999888777:555444333', 'discord:#bot-home', 'slack:#engineering', 'signal:+155****4567', 'matrix:!roomid:server.org', 'matrix:@user:server.org', 'yuanbao:direct:<account_id>' (DM), 'yuanbao:group:<group_code>' (group chat)"
+            },
+            "message": {
+              "type": "string",
+              "description": "The message text to send. To send an image or file, include MEDIA:<local_path> (e.g. 'MEDIA:/tmp/hermes/cache/img_xxx.jpg') in the message — the platform will deliver it as a native media attachment."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "session_search",
+        "description": "Search your long-term memory of past conversations, or browse recent sessions. This is your recall -- every past session is searchable, and this tool summarizes what happened.\n\nTWO MODES:\n1. Recent sessions (no query): Call with no arguments to see what was worked on recently. Returns titles, previews, and timestamps. Zero LLM cost, instant. Start here when the user asks what were we working on or what did we do recently.\n2. Keyword search (with query): Search for specific topics across all past sessions. Returns LLM-generated summaries of matching sessions.\n\nUSE THIS PROACTIVELY when:\n- The user says 'we did this before', 'remember when', 'last time', 'as I mentioned'\n- The user asks about a topic you worked on before but don't have in current context\n- The user references a project, person, or concept that seems familiar but isn't in memory\n- You want to check if you've solved a similar problem before\n- The user asks 'what did we do about X?' or 'how did we fix Y?'\n\nDon't hesitate to search when it is actually cross-session -- it's fast and cheap. Better to search and confirm than to guess or ask the user to repeat themselves.\n\nSearch syntax: keywords joined with OR for broad recall (elevenlabs OR baseten OR funding), phrases for exact match (\"docker networking\"), boolean (python NOT java), prefix (deploy*). IMPORTANT: Use OR between keywords for best results — FTS5 defaults to AND which misses sessions that only mention some terms. If a broad OR query returns nothing, try individual keyword searches in parallel. Returns summaries of the top matching sessions.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query — keywords, phrases, or boolean expressions to find in past sessions. Omit this parameter entirely to browse recent sessions instead (returns titles, previews, timestamps with no LLM cost)."
+            },
+            "role_filter": {
+              "type": "string",
+              "description": "Optional: only search messages from specific roles (comma-separated). E.g. 'user,assistant' to skip tool outputs."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max sessions to summarize (default: 3, max: 5).",
+              "default": 3
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_manage",
+        "description": "Manage skills (create, update, delete). Skills are your procedural memory — reusable approaches for recurring task types. New skills go to ~/.hermes/skills/; existing skills can be modified wherever they live.\n\nActions: create (full SKILL.md + optional category), patch (old_string/new_string — preferred for fixes), edit (full SKILL.md rewrite — major overhauls only), delete, write_file, remove_file.\n\nOn delete, pass `absorbed_into=<umbrella>` when you're merging this skill's content into another one, or `absorbed_into=\"\"` when you're pruning it with no forwarding target. This lets the curator tell consolidation from pruning without guessing, so downstream consumers (cron jobs that reference the old skill name, etc.) get updated correctly. The target you name in `absorbed_into` must already exist — create/patch the umbrella first, then delete.\n\nCreate when: complex task succeeded (5+ calls), errors overcome, user-corrected approach worked, non-trivial workflow discovered, or user asks you to remember a procedure.\nUpdate when: instructions stale/wrong, OS-specific failures, missing steps or pitfalls found during use. If you used a skill and hit issues not covered by it, patch it immediately.\n\nAfter difficult/iterative tasks, offer to save as a skill. Skip for simple one-offs. Confirm with user before creating/deleting.\n\nGood skills: trigger conditions, numbered steps with exact commands, pitfalls section, verification steps. Use skill_view() to see format examples.\n\nPinned skills are off-limits — all write actions refuse with a message pointing the user to `hermes curator unpin <name>`. Don't try to route around this by renaming or recreating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "create",
+                "patch",
+                "edit",
+                "delete",
+                "write_file",
+                "remove_file"
+              ],
+              "description": "The action to perform."
+            },
+            "name": {
+              "type": "string",
+              "description": "Skill name (lowercase, hyphens/underscores, max 64 chars). Must match an existing skill for patch/edit/delete/write_file/remove_file."
+            },
+            "content": {
+              "type": "string",
+              "description": "Full SKILL.md content (YAML frontmatter + markdown body). Required for 'create' and 'edit'. For 'edit', read the skill first with skill_view() and provide the complete updated text."
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'patch'). Must be unique unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'patch'). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "For 'patch': replace all occurrences instead of requiring a unique match (default: false)."
+            },
+            "category": {
+              "type": "string",
+              "description": "Optional category/domain for organizing the skill (e.g., 'devops', 'data-science', 'mlops'). Creates a subdirectory grouping. Only used with 'create'."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "Path to a supporting file within the skill directory. For 'write_file'/'remove_file': required, must be under references/, templates/, scripts/, or assets/. For 'patch': optional, defaults to SKILL.md if omitted."
+            },
+            "file_content": {
+              "type": "string",
+              "description": "Content for the file. Required for 'write_file'."
+            },
+            "absorbed_into": {
+              "type": "string",
+              "description": "For 'delete' only — declares intent so the curator can tell consolidation from pruning without guessing. Pass the umbrella skill name when this skill's content was merged into another (the target must already exist). Pass an empty string when the skill is truly stale and being pruned with no forwarding target. Omitting the arg on delete is supported for backward compatibility but downstream tooling (e.g. cron-job skill reference rewriting) will have to guess at intent."
+            }
+          },
+          "required": [
+            "action",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_view",
+        "description": "Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans')."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skills_list",
+        "description": "List available skills (name + description). Use skill_view(name) to load full content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional category filter to narrow results"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "text_to_speech",
+        "description": "Convert text to speech audio. Returns a MEDIA: path that the platform delivers as native audio. Compatible providers render as a voice bubble on Telegram; otherwise audio is sent as a regular attachment. In CLI mode, saves to ~/voice-memos/. Voice and provider are user-configured (built-in providers like edge/openai or custom command providers under tts.providers.<name>), not model-selected.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The text to convert to speech. Provider-specific character caps apply and are enforced automatically (OpenAI 4096, xAI 15000, MiniMax 10000, ElevenLabs 5k-40k depending on model); over-long input is truncated."
+            },
+            "output_path": {
+              "type": "string",
+              "description": "Optional custom file path to save the audio. Defaults to ~/.hermes/audio_cache/<timestamp>.mp3"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "todo",
+        "description": "Manage your task list for the current session. Use for complex tasks with 3+ steps or when the user provides multiple tasks. Call with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "todos": {
+              "type": "array",
+              "description": "Task items to write. Omit to read current list.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique item identifier"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Task description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ],
+                    "description": "Current status"
+                  }
+                },
+                "required": [
+                  "id",
+                  "content",
+                  "status"
+                ]
+              }
+            },
+            "merge": {
+              "type": "boolean",
+              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "vision_analyze",
+        "description": "Inspect an image from a URL, file path, or tool output when you need closer detail than what's visible in the conversation. If the user's image is already attached to the conversation and you can see it, just answer directly — only call this tool for images referenced by URL/path, images returned inside other tool results (browser screenshots, search thumbnails), or when you need a deeper look at a specific region the main model's vision may have missed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "description": "Image URL (http/https) or local file path to analyze."
+            },
+            "question": {
+              "type": "string",
+              "description": "Your specific question or request about the image to resolve. The AI will automatically provide a complete image description AND answer your specific question."
+            }
+          },
+          "required": [
+            "image_url",
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Complete content to write to the file"
+            }
+          },
+          "required": [
+            "path",
+            "content"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 44,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[IMPORTANT: The user has invoked the \"sop-notebooklm-research\" skill, indicating they want you to follow its instructions. The full skill content is loaded below.]\n\n---\nname: sop-notebooklm-research\ndescription: \"SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图，push 到仓库触发 Stage C。\"\nversion: 2.0.0\n---\n\n# SOP Stage B: NotebookLM Research\n\n## 触发条件\nwebhook 收到 `stage=notebooklm-research`\n\n---\n\n## Phase 1: Pre-Execution（准备阶段）\n\n**目标：确认环境就绪，找出需要处理的 YouTube URL**\n\n1. 记录开始时间：`START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`\n2. `cd {wiki_local_path}`\n3. 保护性同步：\n   ```bash\n   git stash push -u -m \"sop-b-{run_id}\" 2>/dev/null || true\n   git fetch origin && git checkout main && git pull --ff-only origin main\n   if ! git stash pop 2>/dev/null; then\n       git reset --hard origin/main && git stash drop 2>/dev/null || true\n   fi\n   ```\n4. 用 `-c core.quotepath=false` 计算变更文件（防止中文路径被引号包装）：\n   ```bash\n   git -c core.quotepath=false diff --name-only {before}..{sha} -- 'raw/youtube-links/'\n   ```\n   fallback（若 before 无效）：`git -c core.quotepath=false diff --name-only HEAD~1..HEAD -- 'raw/youtube-links/'`\n5. 从变更文件中提取 YouTube URL（支持 `youtu.be/`、`www.youtube.com/watch?v=` 和 `youtube.com/watch?v=` 三种格式）：\n   ```bash\n   grep -oP 'https?://(www\\.)?(youtube\\.com/watch\\?v=|youtu\\.be/)[\\w\\-?=&]+' {file}\n   ```\n   ⚠️ **常见坑**：简单正则 `youtu\\.?be(\\.com)?/[\\w\\-?=&]+` 无法匹配 `www.youtube.com/watch?v=...` 格式（缺 `www.` 前缀）。\n6. **若无 URL**：写跳过日志到 `logs/webhook-runs/{run_id}.md`（标题 `skipped:no_youtube_links`），git add + commit + push 日志，停止执行。\n\n---\n\n## Phase 2: Action（核心处理）\n\n**目标：调用 NotebookLM 生成分析文件，重命名为中文语义文件名**\n\n7. 确保目录存在，**清理旧文件**（防止前序失败运行遗留的旧文件被误提交）：\n   ```bash\n   mkdir -p {wiki_local_path}/raw/notebooklm-analysis {wiki_local_path}/raw/notebooklm-mindmaps logs/webhook-runs\n   # 清理本次运行之前的旧文件，只保留本次新生成的文件\n   rm -f {wiki_local_path}/raw/notebooklm-analysis/*.md {wiki_local_path}/raw/notebooklm-mindmaps/*.json 2>/dev/null || true\n   ```\n8. 调用 processor（**固定路径，不可更改**）：\n   ```bash\n   python3 /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py <url1> <url2> ...\n   ```\n   processor 返回 JSON，包含 `generated_files` 列表，每项有 `type`（report / mind-map）和 `path`。\n9. 对每个生成文件，按以下规则**重命名后**复制到仓库：\n   - 读取 report 文件第一行 `# 标题`，提取中文标题\n   - 清理特殊字符生成 slug：\n     - **保留：** 汉字（Unicode `\\u4e00`-`\\u9fff`）、英文字母（a-z A-Z）、数字（0-9）\n     - **替换为 `-`：** 中文标点（`：` `，` `。` `！` `？` `“` `”` 等）、英文标点、空格、符号\n     - 合并连续 `-`、去除首尾 `-`\n     - 截取前 40 字符\n   - **最终文件名：直接用中文标题 slug，不加 video_id 前缀**\n     - report → `{wiki_local_path}/raw/notebooklm-analysis/{中文标题}.md`\n     - mindmap → `{wiki_local_path}/raw/notebooklm-mindmaps/{中文标题}.json`\n   - report 和 mindmap 使用**完全相同的标题 slug**（便于 Stage C 关联）\n   ⚠️ **典型错误**：中文全角冒号 `：`（U+FF1A）不是汉字，必须替换为 `-`。例如 `Hermes Agent 与 OpenClaw：深度对比` → `Hermes-Agent-与-OpenClaw-深度对比`\n10. 记录处理结果（每个 URL 的状态、生成的文件路径）。\n\n---\n\n## Phase 3: Post-Execution（提交阶段）⚠️ 强制执行\n\n**目标：无论 Phase 2 是否完整，必须 commit + push**\n\n> **此阶段独立于 Phase 2，即使 Phase 2 部分失败，也必须执行 Phase 3。**\n\n11. 记录结束时间：`END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`\n12. 用 write_file 工具写执行日志到 `{wiki_local_path}/logs/webhook-runs/{run_id}.md`，必须包含：\n    - `start_time` / `end_time`\n    - `videos_processed`：处理的 URL 数量\n    - `files_generated`：生成的文件列表（中文名）\n    - `status`：success / partial / skipped\n13. **检查并提交所有变更**：\n    ```bash\n    cd {wiki_local_path}\n    git add raw/notebooklm-analysis/ raw/notebooklm-mindmaps/ logs/\n    if [ -n \"$(git status --porcelain)\" ]; then\n      git commit -m \"chore: add notebooklm analysis [run:{run_id}]\"\n    fi\n    ```\n14. **push，最多重试 3 次**：\n    ```bash\n    for i in 1 2 3; do\n      git push origin main && break\n      git pull --ff-only origin main\n    done\n    ```\n15. 验证 push 成功：`git log --oneline -1` 确认本地 HEAD 与 origin/main 一致。\n\n## 注意\n- Stage B **不发送 Telegram**，通知由 Stage C 负责。\n- push 全部失败时：在日志记录 `status: push_failed`，返回失败。\n\n## ⚠️ 常见陷阱\n\n### 1. /tmp/notebooklm_processor/ 目录污染\nprocessor 将文件输出到 `/tmp/notebooklm_processor/`，该目录会**累积所有历史运行的文件**。使用 glob 通配符（如 `Kh8tGD5liwo_*_report.md`）会匹配到之前运行的旧文件。\n\n**正确做法**：必须从 processor 返回的 JSON 中提取 `generated_files[].path` 的确切路径来读写文件，**不要用 glob 通配符**。\n\n### 2. 分析目录遗留旧文件\n如果前序 Stage B 运行未正常提交（如 push 失败后中断），`raw/notebooklm-analysis/` 和 `raw/notebooklm-mindmaps/` 中会留下属于之前 run 的文件。`git add` 时会一并提交。\n\n**解法**：Step 7 中已加入 `rm -f` 清理步骤。如果手动处理，务必先清理旧文件再复制新文件。\n\n### 3. 中文路径引号转义\n`git diff --name-only` 需要加 `-c core.quotepath=false`，否则包含中文字符的文件名会被引号包裹导致提取失败。**Step 4 已处理此问题**，如果在其他地方用 `git diff` 处理中文路径也需注意。\n\n### 4. 分析内容不变导致无变更可提交\nNotebookLM 对同一视频的生成结果通常是确定性的。如果同一组 URL 在前序 run 中已处理且内容不变，`git status` 会显示无变更（仅日志文件是新的）。\n\n**正确处理**：正常执行 Phase 3，git commit 会跳过（`if [ -n \"$(git status --porcelain)\" ]` 不满足），但日志和 push 仍正常进行。这不是错误，Stage C 检测到无分析的 raw 变更时会自行跳过。\n\n### 5. Stage C 触发条件\nStage C 由新 push 触发。如果只有日志变更而无分析内容变更，Stage C 会在 Diff 检测阶段发现 `raw/notebooklm-analysis/` 和 `raw/notebooklm-mindmaps/` 无变化，直接跳过 KG 编译。\n\n[Skill directory: /home/zhouhuijuan1987/.hermes/skills/devops/sop-notebooklm-research]\nResolve any relative paths in this skill (e.g. `scripts/foo.js`, `templates/config.yaml`) against that directory, then run them with the terminal tool using the absolute path.\n\n[This skill has supporting files:]\n- references/notebooklm-processor-output.md  ->  /home/zhouhuijuan1987/.hermes/skills/devops/sop-notebooklm-research/references/notebooklm-processor-output.md\n\nLoad any of these with skill_view(name=\"devops/sop-notebooklm-research\", file_path=\"<path>\"), or run scripts directly by absolute path (e.g. `node /home/zhouhuijuan1987/.hermes/skills/devops/sop-notebooklm-research/scripts/foo.js`).\n\nThe user has provided the following instruction alongside the skill invocation: 执行 SOP Stage B: NotebookLM 深度研究。\n\n仓库路径: /home/zhouhuijuan1987/wiki/youtube-video-research-wiki\nGitHub repo: divanoo65/youtube-video-research-wiki\nRun ID: gh-25593382528-1\n当前 SHA: 1b13698c33ca3b6ed66238e187f28d93c05c89db\n之前 SHA: d9189d8d73d0b0333e858721c8d0a3de8a97c7b3\n\nNotebookLM 配置:\n- 输出格式: [\n  \"report\",\n  \"mindmap\"\n]\n- 语言: zh_Hans\n- Notebook 名称: youtube-video-research-wiki\n- 报告提示词: 请深度研究这个视频，提炼技术架构、核心观点、关键论据，以及对行业的影响。生成结构化中文研究报告。\n- 脑图提示词: 基于视频内容生成清晰的中文思维导图，突出核心概念之间的关系与层级。\n\n请严格按照 sop-notebooklm-research skill 的定义执行，完成后 push 到 divanoo65/youtube-video-research-wiki。"
+    },
+    {
+      "role": "assistant",
+      "content": "好的，开始执行 **SOP Stage B: NotebookLM 深度研究**。\n\nRun ID: `gh-25593382528-1`\n仓库: `/home/zhouhuijuan1987/wiki/youtube-video-research-wiki`\n\n---\n\n## Phase 1: 准备阶段\n\n### 1. 记录开始时间 & 进入仓库目录",
+      "reasoning": "The user wants me to execute SOP Stage B: NotebookLM Research according to the skill instructions. Let me follow the phases step by step.\n\nLet me start with Phase 1: Pre-Execution.\n\nKey parameters:\n- wiki_local_path: /home/zhouhuijuan1987/wiki/youtube-video-research-wiki\n- run_id: gh-25593382528-1\n- before SHA: d9189d8d73d0b0333e858721c8d0a3de8a97c7b3\n- current SHA: 1b13698c33ca3b6ed66238e187f28d93c05c89db\n\nLet me begin!",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The user wants me to execute SOP Stage B: NotebookLM Research according to the skill instructions. Let me follow the phases step by step.\n\nLet me start with Phase 1: Pre-Execution.\n\nKey parameters:\n- wiki_local_path: /home/zhouhuijuan1987/wiki/youtube-video-research-wiki\n- run_id: gh-25593382528-1\n- before SHA: d9189d8d73d0b0333e858721c8d0a3de8a97c7b3\n- current SHA: 1b13698c33ca3b6ed66238e187f28d93c05c89db\n\nLet me begin!",
+      "tool_calls": [
+        {
+          "id": "call_00_74wVWb2gxYLRqXxEXewV3533",
+          "call_id": "call_00_74wVWb2gxYLRqXxEXewV3533",
+          "response_item_id": "fc_00_74wVWb2gxYLRqXxEXewV3533",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) && echo \\\"START_TIME=$START_TIME\\\" && pwd\", \"timeout\": 10}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"START_TIME=2026-05-09T05:51:54Z\\n/home/zhouhuijuan1987/wiki/youtube-video-research-wiki\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_74wVWb2gxYLRqXxEXewV3533"
+    },
+    {
+      "role": "assistant",
+      "content": "### 2. 保护性同步",
+      "reasoning": "Good, start time recorded. Now let me do the protective sync.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, start time recorded. Now let me do the protective sync.",
+      "tool_calls": [
+        {
+          "id": "call_00_JiTvNAYxcARRJbYZrqz15495",
+          "call_id": "call_00_JiTvNAYxcARRJbYZrqz15495",
+          "response_item_id": "fc_00_JiTvNAYxcARRJbYZrqz15495",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && git stash push -u -m \\\"sop-b-gh-25593382528-1\\\" 2>/dev/null || true && git fetch origin && git checkout main && git pull --ff-only origin main && if ! git stash pop 2>/dev/null; then git reset --hard origin/main && git stash drop 2>/dev/null || true; fi && git log --oneline -1\", \"timeout\": 30}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"No local changes to save\\nAlready on 'main'\\nYour branch is up to date with 'origin/main'.\\nFrom https://github.com/divanoo65/youtube-video-research-wiki\\n * branch            main       -> FETCH_HEAD\\nAlready up to date.\\nHEAD is now at 1b13698 feat: verification test v2 - 3 YouTube links\\n1b13698 feat: verification test v2 - 3 YouTube links\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_JiTvNAYxcARRJbYZrqz15495"
+    },
+    {
+      "role": "assistant",
+      "content": "### 3. 提取变更的 YouTube 链接文件",
+      "reasoning": "Good. Now let me get the diff to find changed files in the raw/youtube-links/ directory between the before SHA and current SHA.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good. Now let me get the diff to find changed files in the raw/youtube-links/ directory between the before SHA and current SHA.",
+      "tool_calls": [
+        {
+          "id": "call_00_MLdJLNlb0VwVIB3iwrYO7185",
+          "call_id": "call_00_MLdJLNlb0VwVIB3iwrYO7185",
+          "response_item_id": "fc_00_MLdJLNlb0VwVIB3iwrYO7185",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && git -c core.quotepath=false diff --name-only d9189d8d73d0b0333e858721c8d0a3de8a97c7b3..1b13698c33ca3b6ed66238e187f28d93c05c89db -- 'raw/youtube-links/'\", \"timeout\": 10}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"raw/youtube-links/Kh8tGD5liwo.md\\nraw/youtube-links/NbldZVdusKo.md\\nraw/youtube-links/krEDel3aGGw.md\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_MLdJLNlb0VwVIB3iwrYO7185"
+    },
+    {
+      "role": "assistant",
+      "content": "### 4. 提取 YouTube URL",
+      "reasoning": "Three files changed. Let me extract the YouTube URLs from these files.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Three files changed. Let me extract the YouTube URLs from these files.",
+      "tool_calls": [
+        {
+          "id": "call_00_o3ZgilxKgDtd8yv1Hhf28881",
+          "call_id": "call_00_o3ZgilxKgDtd8yv1Hhf28881",
+          "response_item_id": "fc_00_o3ZgilxKgDtd8yv1Hhf28881",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && for f in raw/youtube-links/Kh8tGD5liwo.md raw/youtube-links/NbldZVdusKo.md raw/youtube-links/krEDel3aGGw.md; do echo \\\"=== $f ===\\\"; grep -oP 'https?://(www\\\\.)?(youtube\\\\.com/watch\\\\?v=|youtu\\\\.be/)[\\\\w\\\\-?=&]+' \\\"$f\\\" || echo \\\"(no URL found)\\\"; done\", \"timeout\": 10}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"=== raw/youtube-links/Kh8tGD5liwo.md ===\\nhttps://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\\n=== raw/youtube-links/NbldZVdusKo.md ===\\nhttps://www.youtube.com/watch?v=NbldZVdusKo\\n=== raw/youtube-links/krEDel3aGGw.md ===\\nhttps://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_o3ZgilxKgDtd8yv1Hhf28881"
+    },
+    {
+      "role": "assistant",
+      "content": "找到 3 个 YouTube URL，进入 **Phase 2: 核心处理**。\n\n### 5. 清理旧文件 & 准备目录",
+      "reasoning": "I have 3 YouTube URLs:\n1. https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\n2. https://www.youtube.com/watch?v=NbldZVdusKo\n3. https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\n\nFor the processor, I need to pass the video IDs or the URLs. Let me check what format the notebooklm_processor.py expects.\n\nLet me clean the URLs first - the processor probably expects clean URLs. Let me extract the video IDs:\n1. Kh8tGD5liwo\n2. NbldZVdusKo\n3. krEDel3aGGw\n\nLet me proceed to Phase 2.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I have 3 YouTube URLs:\n1. https://youtu.be/Kh8tGD5liwo?si=5iFozTq5MXJrT2Qh\n2. https://www.youtube.com/watch?v=NbldZVdusKo\n3. https://youtu.be/krEDel3aGGw?si=cpspNxde_7Qbd77F\n\nFor the processor, I need to pass the video IDs or the URLs. Let me check what format the notebooklm_processor.py expects.\n\nLet me clean the URLs first - the processor probably expects clean URLs. Let me extract the video IDs:\n1. Kh8tGD5liwo\n2. NbldZVdusKo\n3. krEDel3aGGw\n\nLet me proceed to Phase 2.",
+      "tool_calls": [
+        {
+          "id": "call_00_LjRSoiEwXzPI2WqctBcG5435",
+          "call_id": "call_00_LjRSoiEwXzPI2WqctBcG5435",
+          "response_item_id": "fc_00_LjRSoiEwXzPI2WqctBcG5435",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && mkdir -p raw/notebooklm-analysis raw/notebooklm-mindmaps logs/webhook-runs && rm -f raw/notebooklm-analysis/*.md raw/notebooklm-mindmaps/*.json 2>/dev/null || true && echo \\\"Cleanup done\\\"\", \"timeout\": 10}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"Cleanup done\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_LjRSoiEwXzPI2WqctBcG5435"
+    },
+    {
+      "role": "assistant",
+      "content": "### 6. 调用 NotebookLM Processor\n\n先看一下 processor 脚本的参数格式：",
+      "reasoning": "Now let me first check the processor script to understand its input format, then call it.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now let me first check the processor script to understand its input format, then call it.",
+      "tool_calls": [
+        {
+          "id": "call_00_SIfXRzVYAR4LcC8gKfpf7688",
+          "call_id": "call_00_SIfXRzVYAR4LcC8gKfpf7688",
+          "response_item_id": "fc_00_SIfXRzVYAR4LcC8gKfpf7688",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|#!/usr/bin/env python3\\n     2|\\\"\\\"\\\"\\n     3|NotebookLM Processor for Hermes Webhooks\\n     4|优化点：\\n     5|1) 所有 YouTube 链接写入同一个共享笔记本（默认名=GitHub 项目名）\\n     6|2) 对每个“新加入”的 source 单独生成报告和脑图（source scoped）\\n     7|3) 强制中文输出（默认 zh_Hans）\\n     8|\\\"\\\"\\\"\\n     9|\\n    10|import argparse\\n    11|import json\\n    12|import re\\n    13|import subprocess\\n    14|import sys\\n    15|from datetime import datetime\\n    16|from pathlib import Path\\n    17|from typing import Dict, List, Optional, Tuple\\n    18|\\n    19|\\n    20|class NotebookLMProcessor:\\n    21|    def __init__(self, language: str = \\\"zh_Hans\\\"):\\n    22|        self.notebooklm_bin = \\\"notebooklm\\\"\\n    23|        self.temp_dir = Path(\\\"/tmp/notebooklm_processor\\\")\\n    24|        self.temp_dir.mkdir(exist_ok=True)\\n    25|        self.language = language\\n    26|        self.results = {\\n    27|            \\\"status\\\": \\\"pending\\\",\\n    28|            \\\"language\\\": language,\\n    29|            \\\"shared_notebook\\\": None,\\n    30|            \\\"processed_urls\\\": [],\\n    31|            \\\"generated_files\\\": [],\\n    32|            \\\"errors\\\": [],\\n    33|            \\\"summary\\\": {},\\n    34|        }\\n    35|        self._set_language(language)\\n    36|\\n    37|    def run_command(self, cmd: List[str], timeout: int = 300) -> Tuple[int, str, str]:\\n    38|        try:\\n    39|            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)\\n    40|            return result.returncode, result.stdout, result.stderr\\n    41|        except subprocess.TimeoutExpired:\\n    42|            return 124, \\\"\\\", f\\\"Command timed out after {timeout}s\\\"\\n    43|        except Exception as e:\\n    44|            return 1, \\\"\\\", str(e)\\n    45|\\n    46|    def _json(self, text: str) -> Optional[dict]:\\n    47|        try:\\n    48|            return json.loads(text)\\n    49|        except Exception:\\n    50|            return None\\n    51|\\n    52|    def _set_language(self, language: str) -> bool:\\n    53|        rc, _, err = self.run_command([self.notebooklm_bin, \\\"language\\\", \\\"set\\\", language], timeout=60)\\n    54|        if rc == 0:\\n    55|            return True\\n    56|        self.results[\\\"errors\\\"].append(f\\\"Failed to set language {language}: {err}\\\")\\n    57|        return False\\n    58|\\n    59|    def verify_notebooklm_auth(self) -> bool:\\n    60|        rc, out, _ = self.run_command([self.notebooklm_bin, \\\"auth\\\", \\\"check\\\", \\\"--json\\\"], timeout=30)\\n    61|        if rc != 0:\\n    62|            return False\\n    63|        data = self._json(out) or {}\\n    64|        return data.get(\\\"status\\\") == \\\"ok\\\"\\n    65|\\n    66|    def list_notebooks(self) -> List[dict]:\\n    67|        rc, out, err = self.run_command([self.notebooklm_bin, \\\"list\\\", \\\"--json\\\"], timeout=60)\\n    68|        if rc != 0:\\n    69|            self.results[\\\"errors\\\"].append(f\\\"Failed to list notebooks: {err}\\\")\\n    70|            return []\\n    71|        data = self._json(out)\\n    72|        if isinstance(data, list):\\n    73|            return data\\n    74|        if isinstance(data, dict):\\n    75|            for k in (\\\"notebooks\\\", \\\"items\\\", \\\"data\\\"):\\n    76|                if isinstance(data.get(k), list):\\n    77|                    return data[k]\\n    78|        return []\\n    79|\\n    80|    def create_notebook(self, title: str) -> Optional[str]:\\n    81|        rc, out, err = self.run_command([self.notebooklm_bin, \\\"create\\\", title, \\\"--json\\\"], timeout=120)\\n    82|        if rc != 0:\\n    83|            self.results[\\\"errors\\\"].append(f\\\"Failed to create notebook '{title}': {err}\\\")\\n    84|            return None\\n    85|        data = self._json(out) or {}\\n    86|        nb = data.get(\\\"notebook\\\") if isinstance(data.get(\\\"notebook\\\"), dict) else data\\n    87|        nid = nb.get(\\\"id\\\") if isinstance(nb, dict) else None\\n    88|        if not nid:\\n    89|            self.results[\\\"errors\\\"].append(f\\\"Create notebook returned no id: {out[:300]}\\\")\\n    90|            return None\\n    91|        return nid\\n    92|\\n    93|    def get_or_create_shared_notebook(self, title: str) -> Optional[str]:\\n    94|        notebooks = self.list_notebooks()\\n    95|        for nb in notebooks:\\n    96|            nb_title = nb.get(\\\"title\\\") or nb.get(\\\"name\\\")\\n    97|            if nb_title == title:\\n    98|                nid = nb.get(\\\"id\\\")\\n    99|                if nid:\\n   100|                    return nid\\n   101|        return self.create_notebook(title)\\n   102|\\n   103|    def add_source(self, notebook_id: str, source_url: str) -> Optional[str]:\\n   104|        rc, out, err = self.run_command([\\n   105|            self.notebooklm_bin, \\\"source\\\", \\\"add\\\", source_url, \\\"-n\\\", notebook_id, \\\"--json\\\"\\n   106|        ], timeout=300)\\n   107|        if rc != 0:\\n   108|            self.results[\\\"errors\\\"].append(f\\\"Failed to add source {source_url}: {err}\\\")\\n   109|            return None\\n   110|        data = self._json(out) or {}\\n   111|        src = data.get(\\\"source\\\") if isinstance(data.get(\\\"source\\\"), dict) else data\\n   112|        sid = src.get(\\\"id\\\") if isinstance(src, dict) else None\\n   113|        if not sid:\\n   114|            self.results[\\\"errors\\\"].append(f\\\"Add source returned no id for {source_url}: {out[:300]}\\\")\\n   115|            return None\\n   116|        return sid\\n   117|\\n   118|    def wait_source_processing(self, notebook_id: str, source_id: str, timeout: int = 900) -> bool:\\n   119|        rc, _, err = self.run_command([\\n   120|            self.notebooklm_bin, \\\"source\\\", \\\"wait\\\", source_id, \\\"-n\\\", notebook_id, \\\"--timeout\\\", str(timeout)\\n   121|        ], timeout=timeout + 30)\\n   122|        if rc == 0:\\n   123|            return True\\n   124|        self.results[\\\"errors\\\"].append(f\\\"Source wait failed ({source_id}): {err}\\\")\\n   125|        return False\\n   126|\\n   127|    def generate_and_download(self, notebook_id: str, source_id: str, artifact_type: str, output_path: Path) -> bool:\\n   128|        gen_cmd = [self.notebooklm_bin, \\\"generate\\\", artifact_type, \\\"-n\\\", notebook_id, \\\"-s\\\", source_id, \\\"--language\\\", self.language, \\\"--json\\\"]\\n   129|        if artifact_type == \\\"report\\\":\\n   130|            gen_cmd.extend([\\\"--format\\\", \\\"briefing-doc\\\"])  # 统一概览格式\\n   131|\\n   132|        rc, out, err = self.run_command(gen_cmd, timeout=1800)\\n   133|        if rc != 0:\\n   134|            self.results[\\\"errors\\\"].append(f\\\"Generate {artifact_type} failed: {err}\\\")\\n   135|            return False\\n   136|\\n   137|        data = self._json(out) or {}\\n   138|        task_id = data.get(\\\"task_id\\\")\\n   139|\\n   140|        # report 通常异步，mind-map 有时同步\\n   141|        if artifact_type == \\\"report\\\" and task_id:\\n   142|            rc, _, wait_err = self.run_command([\\n   143|                self.notebooklm_bin, \\\"artifact\\\", \\\"wait\\\", task_id, \\\"-n\\\", notebook_id, \\\"--timeout\\\", \\\"900\\\"\\n   144|            ], timeout=1200)\\n   145|            if rc != 0:\\n   146|                self.results[\\\"errors\\\"].append(f\\\"Artifact wait failed ({task_id}): {wait_err}\\\")\\n   147|                return False\\n   148|\\n   149|        if artifact_type == \\\"report\\\":\\n   150|            dl_cmd = [self.notebooklm_bin, \\\"download\\\", \\\"report\\\", str(output_path), \\\"-n\\\", notebook_id]\\n   151|        else:\\n   152|            dl_cmd = [self.notebooklm_bin, \\\"download\\\", \\\"mind-map\\\", str(output_path), \\\"-n\\\", notebook_id]\\n   153|\\n   154|        rc, _, err = self.run_command(dl_cmd, timeout=600)\\n   155|        if rc != 0:\\n   156|            self.results[\\\"errors\\\"].append(f\\\"Download {artifact_type} failed: {err}\\\")\\n   157|            return False\\n   158|\\n   159|        self.results[\\\"generated_files\\\"].append({\\n   160|            \\\"type\\\": artifact_type,\\n   161|            \\\"path\\\": str(output_path),\\n   162|            \\\"source_id\\\": source_id,\\n   163|            \\\"language\\\": self.language,\\n   164|        })\\n   165|        return True\\n   166|\\n   167|    def extract_video_id(self, url: str) -> Optional[str]:\\n   168|        m = re.search(r\\\"(?:youtube\\\\.com\\\\/watch\\\\?v=|youtu\\\\.be\\\\/)([a-zA-Z0-9_-]+)\\\", url)\\n   169|        return m.group(1) if m else None\\n   170|\\n   171|    def process_one_url(self, notebook_id: str, url: str) -> Dict:\\n   172|        row = {\\n   173|            \\\"url\\\": url,\\n   174|            \\\"success\\\": False,\\n   175|            \\\"notebook_id\\\": notebook_id,\\n   176|            \\\"source_id\\\": None,\\n   177|            \\\"report_path\\\": None,\\n   178|            \\\"mindmap_path\\\": None,\\n   179|            \\\"error\\\": None,\\n   180|        }\\n   181|\\n   182|        vid = self.extract_video_id(url)\\n   183|        if not vid:\\n   184|            row[\\\"error\\\"] = \\\"invalid_youtube_url\\\"\\n   185|            self.results[\\\"errors\\\"].append(f\\\"Invalid YouTube URL: {url}\\\")\\n   186|            return row\\n   187|\\n   188|        sid = self.add_source(notebook_id, url)\\n   189|        if not sid:\\n   190|            row[\\\"error\\\"] = \\\"add_source_failed\\\"\\n   191|            return row\\n   192|        row[\\\"source_id\\\"] = sid\\n   193|\\n   194|        if not self.wait_source_processing(notebook_id, sid):\\n   195|            row[\\\"error\\\"] = \\\"source_processing_timeout_or_failed\\\"\\n   196|            return row\\n   197|\\n   198|        ts = datetime.utcnow().strftime(\\\"%Y%m%dT%H%M%SZ\\\")\\n   199|        report_path = self.temp_dir / f\\\"{vid}_{sid}_{ts}_report.md\\\"\\n   200|        mindmap_path = self.temp_dir / f\\\"{vid}_{sid}_{ts}_mindmap.json\\\"\\n   201|\\n   202|        # 关键：仅基于新加入 source_id 生成（满足“继续研究只选中新加入”）\\n   203|        ok_report = self.generate_and_download(notebook_id, sid, \\\"report\\\", report_path)\\n   204|        ok_map = self.generate_and_download(notebook_id, sid, \\\"mind-map\\\", mindmap_path)\\n   205|\\n   206|        if not ok_report:\\n   207|            row[\\\"error\\\"] = \\\"generate_report_failed\\\"\\n   208|            return row\\n   209|        if not ok_map:\\n   210|            row[\\\"error\\\"] = \\\"generate_mindmap_failed\\\"\\n   211|            return row\\n   212|\\n   213|        row[\\\"report_path\\\"] = str(report_path)\\n   214|        row[\\\"mindmap_path\\\"] = str(mindmap_path)\\n   215|        row[\\\"success\\\"] = True\\n   216|        return row\\n   217|\\n   218|    def process_youtube_links(self, youtube_links: List[str], notebook_title: str) -> Dict:\\n   219|        if not self.verify_notebooklm_auth():\\n   220|            self.results[\\\"status\\\"] = \\\"failed\\\"\\n   221|            self.results[\\\"errors\\\"].append(\\\"NotebookLM authentication failed\\\")\\n   222|            return self.results\\n   223|\\n   224|        nb_id = self.get_or_create_shared_notebook(notebook_title)\\n   225|        if not nb_id:\\n   226|            self.results[\\\"status\\\"] = \\\"failed\\\"\\n   227|            self.results[\\\"errors\\\"].append(f\\\"Failed to get/create shared notebook: {notebook_title}\\\")\\n   228|            return self.results\\n   229|\\n   230|        self.results[\\\"shared_notebook\\\"] = {\\\"title\\\": notebook_title, \\\"id\\\": nb_id}\\n   231|\\n   232|        rows = [self.process_one_url(nb_id, u) for u in youtube_links]\\n   233|        self.results[\\\"processed_urls\\\"] = rows\\n   234|\\n   235|        success_n = sum(1 for r in rows if r[\\\"success\\\"])\\n   236|        total_n = len(rows)\\n   237|        fail_n = total_n - success_n\\n   238|        self.results[\\\"summary\\\"] = {\\\"total\\\": total_n, \\\"successful\\\": success_n, \\\"failed\\\": fail_n}\\n   239|\\n   240|        if success_n == total_n:\\n   241|            self.results[\\\"status\\\"] = \\\"success\\\"\\n   242|        elif success_n > 0:\\n   243|            self.results[\\\"status\\\"] = \\\"partial_success\\\"\\n   244|        else:\\n   245|            self.results[\\\"status\\\"] = \\\"failed\\\"\\n   246|\\n   247|        return self.results\\n   248|\\n   249|\\n   250|def main():\\n   251|    parser = argparse.ArgumentParser(description=\\\"NotebookLM Processor\\\")\\n   252|    parser.add_argument(\\\"urls\\\", nargs=\\\"+\\\", help=\\\"YouTube URLs to process\\\")\\n   253|    parser.add_argument(\\\"--language\\\", default=\\\"zh_Hans\\\", help=\\\"Output language (default: zh_Hans)\\\")\\n   254|    parser.add_argument(\\\"--notebook-title\\\", default=\\\"youtube-video-research-wiki\\\", help=\\\"Shared notebook title\\\")\\n   255|    args = parser.parse_args()\\n   256|\\n   257|    p = NotebookLMProcessor(language=args.language)\\n   258|    result = p.process_youtube_links(args.urls, notebook_title=args.notebook_title)\\n   259|    print(json.dumps(result, ensure_ascii=False, indent=2))\\n   260|\\n   261|    if result[\\\"status\\\"] == \\\"success\\\":\\n   262|        sys.exit(0)\\n   263|    if result[\\\"status\\\"] == \\\"partial_success\\\":\\n   264|        sys.exit(1)\\n   265|    sys.exit(2)\\n   266|\\n   267|\\n   268|if __name__ == \\\"__main__\\\":\\n   269|    main()\\n   270|\", \"total_lines\": 269, \"file_size\": 10497, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_SIfXRzVYAR4LcC8gKfpf7688"
+    },
+    {
+      "role": "assistant",
+      "content": "### 7. 调用 NotebookLM Processor",
+      "reasoning": "The processor script expects YouTube URLs as arguments, with optional `--language` and `--notebook-title` flags. The defaults are already correct (zh_Hans and youtube-video-research-wiki).\n\nLet me call the processor with the 3 URLs. The clean URLs (without tracking params):\n1. https://youtu.be/Kh8tGD5liwo\n2. https://www.youtube.com/watch?v=NbldZVdusKo\n3. https://youtu.be/krEDel3aGGw\n\nActually, looking at the skill more carefully - it says to pass the URLs as arguments to the script. Let me use the extracted URLs directly.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The processor script expects YouTube URLs as arguments, with optional `--language` and `--notebook-title` flags. The defaults are already correct (zh_Hans and youtube-video-research-wiki).\n\nLet me call the processor with the 3 URLs. The clean URLs (without tracking params):\n1. https://youtu.be/Kh8tGD5liwo\n2. https://www.youtube.com/watch?v=NbldZVdusKo\n3. https://youtu.be/krEDel3aGGw\n\nActually, looking at the skill more carefully - it says to pass the URLs as arguments to the script. Let me use the extracted URLs directly.",
+      "tool_calls": [
+        {
+          "id": "call_00_GHH88J0Akybv2E1gmebQ5178",
+          "call_id": "call_00_GHH88J0Akybv2E1gmebQ5178",
+          "response_item_id": "fc_00_GHH88J0Akybv2E1gmebQ5178",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && python3 /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py \\\\\\n  \\\"https://youtu.be/Kh8tGD5liwo\\\" \\\\\\n  \\\"https://www.youtube.com/watch?v=NbldZVdusKo\\\" \\\\\\n  \\\"https://youtu.be/krEDel3aGGw\\\" \\\\\\n  --language zh_Hans \\\\\\n  --notebook-title \\\"youtube-video-research-wiki\\\" 2>&1\", \"timeout\": 3600}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"error\": \"Foreground timeout 3600s exceeds the maximum of 600s. Use background=true with notify_on_complete=true for long-running commands.\"}",
+      "tool_call_id": "call_00_GHH88J0Akybv2E1gmebQ5178"
+    },
+    {
+      "role": "assistant",
+      "content": "这个处理器可能耗时较长（每个 URL 最多 1800s），使用后台运行：",
+      "reasoning": "The processor can take up to 1800s (30 minutes) for each URL. Let me run it in background with notify_on_complete.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The processor can take up to 1800s (30 minutes) for each URL. Let me run it in background with notify_on_complete.",
+      "tool_calls": [
+        {
+          "id": "call_00_mK7Z3Aqi39Bi759BMTID6155",
+          "call_id": "call_00_mK7Z3Aqi39Bi759BMTID6155",
+          "response_item_id": "fc_00_mK7Z3Aqi39Bi759BMTID6155",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && python3 /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py \\\\\\n  \\\"https://youtu.be/Kh8tGD5liwo\\\" \\\\\\n  \\\"https://www.youtube.com/watch?v=NbldZVdusKo\\\" \\\\\\n  \\\"https://youtu.be/krEDel3aGGw\\\" \\\\\\n  --language zh_Hans \\\\\\n  --notebook-title \\\"youtube-video-research-wiki\\\" 2>&1\", \"background\": true, \"notify_on_complete\": true, \"timeout\": 7200}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"Background process started\", \"session_id\": \"proc_c09cfa82fcce\", \"pid\": 2967120, \"exit_code\": 0, \"error\": null, \"notify_on_complete\": true}",
+      "tool_call_id": "call_00_mK7Z3Aqi39Bi759BMTID6155"
+    },
+    {
+      "role": "assistant",
+      "content": "处理器已启动后台运行，等待处理完成后继续。先看一下 processor 的参考文档：",
+      "reasoning": "The process is running in background. I'll be notified when it completes. Let me wait for the notification. In the meantime, I could prepare other things.\n\nActually, let me also load the reference file for the notebooklm-processor-output to understand the output format better.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The process is running in background. I'll be notified when it completes. Let me wait for the notification. In the meantime, I could prepare other things.\n\nActually, let me also load the reference file for the notebooklm-processor-output to understand the output format better.",
+      "tool_calls": [
+        {
+          "id": "call_00_iyNHfrwK0fh1jTzPhWiD7216",
+          "call_id": "call_00_iyNHfrwK0fh1jTzPhWiD7216",
+          "response_item_id": "fc_00_iyNHfrwK0fh1jTzPhWiD7216",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"devops/sop-notebooklm-research\", \"file_path\": \"references/notebooklm-processor-output.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"devops/sop-notebooklm-research\", \"file\": \"references/notebooklm-processor-output.md\", \"content\": \"# NotebookLM Processor Output Format Example\\n\\nThe `notebooklm_processor.py` script outputs a JSON object with the following structure:\\n\\n```json\\n{\\n  \\\"status\\\": \\\"success\\\",\\n  \\\"language\\\": \\\"zh_Hans\\\",\\n  \\\"shared_notebook\\\": {\\n    \\\"title\\\": \\\"youtube-video-research-wiki\\\",\\n    \\\"id\\\": \\\"a1443ac1-71d3-4dfd-8eab-0b9fb2da56c7\\\"\\n  },\\n  \\\"processed_urls\\\": [\\n    {\\n      \\\"url\\\": \\\"https://www.youtube.com/watch?v=NbldZVdusKo\\\",\\n      \\\"success\\\": true,\\n      \\\"notebook_id\\\": \\\"a1443ac1-71d3-4dfd-8eab-0b9fb2da56c7\\\",\\n      \\\"source_id\\\": \\\"3901b545-87db-4ff8-bd0f-b171a5461196\\\",\\n      \\\"report_path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_3901b545-87db-4ff8-bd0f-b171a5461196_20260509T010438Z_report.md\\\",\\n      \\\"mindmap_path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_3901b545-87db-4ff8-bd0f-b171a5461196_20260509T010438Z_mindmap.json\\\",\\n      \\\"error\\\": null\\n    }\\n  ],\\n  \\\"generated_files\\\": [\\n    {\\n      \\\"type\\\": \\\"report\\\",\\n      \\\"path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_3901b545-87db-4ff8-bd0f-b171a5461196_20260509T010438Z_report.md\\\",\\n      \\\"source_id\\\": \\\"3901b545-87db-4ff8-bd0f-b171a5461196\\\",\\n      \\\"language\\\": \\\"zh_Hans\\\"\\n    },\\n    {\\n      \\\"type\\\": \\\"mind-map\\\",\\n      \\\"path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_3901b545-87db-4ff8-bd0f-b171a5461196_20260509T010438Z_mindmap.json\\\",\\n      \\\"source_id\\\": \\\"3901b545-87db-4ff8-bd0f-b171a5461196\\\",\\n      \\\"language\\\": \\\"zh_Hans\\\"\\n    }\\n  ],\\n  \\\"errors\\\": [],\\n  \\\"summary\\\": {\\n    \\\"total\\\": 1,\\n    \\\"successful\\\": 1,\\n    \\\"failed\\\": 0\\n  }\\n}\\n```\\n\\n## Key Points for Stage B\\n\\n- The `generated_files` array contains all output files for this run only.\\n- **⚠️ CRITICAL**: Always use the exact paths from `generated_files[].path` when reading files. Do NOT use glob patterns like `/tmp/notebooklm_processor/Kh8tGD5liwo_*_report.md` — the `/tmp/notebooklm_processor/` directory accumulates files from ALL historical runs, and a glob will match stale files from previous invocations.\\n- Each item has a `type` field: either `\\\"report\\\"` or `\\\"mind-map\\\"`.\\n- The `path` field gives the absolute path to the temporary file.\\n- Files should be copied to the repository, renaming based on the Chinese title (first line `# 标题` of the report).\\n\\n## Usage in SOP\\n\\nIn step 8 of the SOP, we call the processor and capture the JSON output. In step 9, we iterate over `generated_files` using the **exact paths** and copy each file to the appropriate directory:\\n- `report` → `raw/notebooklm-analysis/{title-slug}.md`\\n- `mind-map` → `raw/notebooklm-mindmaps/{title-slug}.json`\\n\\nThe report and mindmap for the same video must use **exactly the same title slug** so Stage C can correlate them.\\n\", \"file_type\": \".md\"}",
+      "tool_call_id": "call_00_iyNHfrwK0fh1jTzPhWiD7216"
+    },
+    {
+      "role": "assistant",
+      "content": "好的，processor 参考文档已确认。等待后台处理器完成...\n\n> **当前进度**：NotebookLM 正在处理 3 个 YouTube 链接（Kh8tGD5liwo、NbldZVdusKo、krEDel3aGGw），为每个链接生成中文研究报告和思维导图。预计需要几分钟到几十分钟。",
+      "reasoning": "Good, now I'm clear on the output format. Let me wait for the background process to complete.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, now I'm clear on the output format. Let me wait for the background process to complete.",
+      "tool_calls": [
+        {
+          "id": "call_00_NElXWWLp1SCzM6UkM6lM2168",
+          "call_id": "call_00_NElXWWLp1SCzM6UkM6lM2168",
+          "response_item_id": "fc_00_NElXWWLp1SCzM6UkM6lM2168",
+          "type": "function",
+          "function": {
+            "name": "process",
+            "arguments": "{\"action\": \"poll\", \"session_id\": \"proc_c09cfa82fcce\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"session_id\": \"proc_c09cfa82fcce\", \"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && python3 /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py \\\\\\n  \\\"https://youtu.be/Kh8tGD5liwo\\\" \\\\\\n  \\\"https://www.youtube.com/watch?v=NbldZVdusKo\\\" \\\\\\n  \\\"https://youtu.be/krEDel3aGGw\\\" \\\\\\n  --language zh_Hans \\\\\\n  --notebook-title \\\"youtube-video-research-wiki\\\" 2>&1\", \"status\": \"running\", \"pid\": 2967120, \"uptime_seconds\": 7, \"output_preview\": \"\"}",
+      "tool_call_id": "call_00_NElXWWLp1SCzM6UkM6lM2168"
+    },
+    {
+      "role": "assistant",
+      "content": "处理器正在运行中。等待完成后自动通知...\n\n> **当前状态**：NotebookLM 正在处理视频源，包括添加 source、等待 processing 完成、生成报告和思维导图。每个视频可能需要 5-15 分钟。",
+      "reasoning": "Still running. Let me poll again after some time. Since I can't call setTimeout or anything, I'll just wait and keep polling. Actually, the notify_on_complete should notify me when it's done. Let me just wait for the notification instead of polling.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Still running. Let me poll again after some time. Since I can't call setTimeout or anything, I'll just wait and keep polling. Actually, the notify_on_complete should notify me when it's done. Let me just wait for the notification instead of polling.",
+      "tool_calls": [
+        {
+          "id": "call_00_0mc7NCHiKIS3ZF5IPuAD1387",
+          "call_id": "call_00_0mc7NCHiKIS3ZF5IPuAD1387",
+          "response_item_id": "fc_00_0mc7NCHiKIS3ZF5IPuAD1387",
+          "type": "function",
+          "function": {
+            "name": "process",
+            "arguments": "{\"session_id\": \"proc_c09cfa82fcce\", \"timeout\": 120, \"action\": \"wait\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"status\": \"timeout\", \"output\": \"\", \"timeout_note\": \"Requested wait of 120s was clamped to configured limit of 60s\"}",
+      "tool_call_id": "call_00_0mc7NCHiKIS3ZF5IPuAD1387"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Still running. Let me poll to see current progress.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Still running. Let me poll to see current progress.",
+      "tool_calls": [
+        {
+          "id": "call_00_bb5kVir26cEgT2cpobI54787",
+          "call_id": "call_00_bb5kVir26cEgT2cpobI54787",
+          "response_item_id": "fc_00_bb5kVir26cEgT2cpobI54787",
+          "type": "function",
+          "function": {
+            "name": "process",
+            "arguments": "{\"action\": \"poll\", \"session_id\": \"proc_c09cfa82fcce\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"session_id\": \"proc_c09cfa82fcce\", \"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && python3 /home/zhouhuijuan1987/.hermes/scripts/notebooklm_processor.py \\\\\\n  \\\"https://youtu.be/Kh8tGD5liwo\\\" \\\\\\n  \\\"https://www.youtube.com/watch?v=NbldZVdusKo\\\" \\\\\\n  \\\"https://youtu.be/krEDel3aGGw\\\" \\\\\\n  --language zh_Hans \\\\\\n  --notebook-title \\\"youtube-video-research-wiki\\\" 2>&1\", \"status\": \"running\", \"pid\": 2967120, \"uptime_seconds\": 74, \"output_preview\": \"\"}",
+      "tool_call_id": "call_00_bb5kVir26cEgT2cpobI54787"
+    },
+    {
+      "role": "assistant",
+      "content": "仍在运行中（74s），继续等待...",
+      "reasoning": "Still running, 74 seconds in. The processor is waiting for sources to be processed and then generating reports. This could take a while. Let me wait more and keep polling periodically.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Still running, 74 seconds in. The processor is waiting for sources to be processed and then generating reports. This could take a while. Let me wait more and keep polling periodically.",
+      "tool_calls": [
+        {
+          "id": "call_00_lrvIJNE1ogeyrYklGy6c7357",
+          "call_id": "call_00_lrvIJNE1ogeyrYklGy6c7357",
+          "response_item_id": "fc_00_lrvIJNE1ogeyrYklGy6c7357",
+          "type": "function",
+          "function": {
+            "name": "process",
+            "arguments": "{\"timeout\": 60, \"session_id\": \"proc_c09cfa82fcce\", \"action\": \"wait\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"status\": \"exited\", \"exit_code\": 1, \"output\": \"ssor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_report.md\\\",\\n      \\\"mindmap_path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_mindmap.json\\\",\\n      \\\"error\\\": null\\n    },\\n    {\\n      \\\"url\\\": \\\"https://youtu.be/krEDel3aGGw\\\",\\n      \\\"success\\\": false,\\n      \\\"notebook_id\\\": \\\"a1443ac1-71d3-4dfd-8eab-0b9fb2da56c7\\\",\\n      \\\"source_id\\\": \\\"01cb3975-1f43-4d93-9c59-1876afa9b3b1\\\",\\n      \\\"report_path\\\": null,\\n      \\\"mindmap_path\\\": null,\\n      \\\"error\\\": \\\"generate_mindmap_failed\\\"\\n    }\\n  ],\\n  \\\"generated_files\\\": [\\n    {\\n      \\\"type\\\": \\\"report\\\",\\n      \\\"path\\\": \\\"/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_report.md\\\",\\n      \\\"source_id\\\": \\\"11c7e34c-4117-4185-b13a-8f6e8b1604cb\\\",\\n      \\\"language\\\": \\\"zh_Hans\\\"\\n    },\\n    {\\n      \\\"type\\\": \\\"mind-map\\\",\\n      \\\"path\\\": \\\"/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_mindmap.json\\\",\\n      \\\"source_id\\\": \\\"11c7e34c-4117-4185-b13a-8f6e8b1604cb\\\",\\n      \\\"language\\\": \\\"zh_Hans\\\"\\n    },\\n    {\\n      \\\"type\\\": \\\"report\\\",\\n      \\\"path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_report.md\\\",\\n      \\\"source_id\\\": \\\"bef9c0bb-c67d-48a7-a7f6-3f3913686242\\\",\\n      \\\"language\\\": \\\"zh_Hans\\\"\\n    },\\n    {\\n      \\\"type\\\": \\\"mind-map\\\",\\n      \\\"path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_mindmap.json\\\",\\n      \\\"source_id\\\": \\\"bef9c0bb-c67d-48a7-a7f6-3f3913686242\\\",\\n      \\\"language\\\": \\\"zh_Hans\\\"\\n    },\\n    {\\n      \\\"type\\\": \\\"report\\\",\\n      \\\"path\\\": \\\"/tmp/notebooklm_processor/krEDel3aGGw_01cb3975-1f43-4d93-9c59-1876afa9b3b1_20260509T055336Z_report.md\\\",\\n      \\\"source_id\\\": \\\"01cb3975-1f43-4d93-9c59-1876afa9b3b1\\\",\\n      \\\"language\\\": \\\"zh_Hans\\\"\\n    }\\n  ],\\n  \\\"errors\\\": [\\n    \\\"Generate mind-map failed: 05:54:29 ERROR [notebooklm._core] RPC GENERATE_MIND_MAP failed after 30.126s: \\\\n\\\"\\n  ],\\n  \\\"summary\\\": {\\n    \\\"total\\\": 3,\\n    \\\"successful\\\": 2,\\n    \\\"failed\\\": 1\\n  }\\n}\\n\"}",
+      "tool_call_id": "call_00_lrvIJNE1ogeyrYklGy6c7357"
+    },
+    {
+      "role": "assistant",
+      "content": "处理器完成！结果：**成功 2 个，失败 1 个**（krEDel3aGGw 的思维导图生成失败）。\n\n现在读取报告提取中文标题，重命名并复制到仓库。",
+      "reasoning": "OK so the processor completed with exit code 1 (partial_success). Let me analyze the results:\n\n**Processed URLs:**\n1. ✅ Kh8tGD5liwo - Success (report + mindmap)\n2. ✅ NbldZVdusKo - Success (report + mindmap)\n3. ❌ krEDel3aGGw - Failed (report succeeded but mindmap failed)\n\n**Generated files:**\n1. `/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_report.md` (report)\n2. `/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_mindmap.json` (mindmap)\n3. `/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_report.md` (report)\n4. `/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_mindmap.json` (mindmap)\n5. `/tmp/notebooklm_processor/krEDel3aGGw_01cb3975-1f43-4d93-9c59-1876afa9b3b1_20260509T055336Z_report.md` (report only, no mindmap)\n\nNow I need to:\n1. Read each report file to extract the title from the first line (`# 标题`)\n2. Generate the slug from the title (keeping Chinese characters, a-z, A-Z, 0-9, replacing everything else with `-`)\n3. Copy files to the wiki directories with the proper names\n\nLet me start by reading each report to get the titles.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "OK so the processor completed with exit code 1 (partial_success). Let me analyze the results:\n\n**Processed URLs:**\n1. ✅ Kh8tGD5liwo - Success (report + mindmap)\n2. ✅ NbldZVdusKo - Success (report + mindmap)\n3. ❌ krEDel3aGGw - Failed (report succeeded but mindmap failed)\n\n**Generated files:**\n1. `/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_report.md` (report)\n2. `/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_mindmap.json` (mindmap)\n3. `/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_report.md` (report)\n4. `/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_mindmap.json` (mindmap)\n5. `/tmp/notebooklm_processor/krEDel3aGGw_01cb3975-1f43-4d93-9c59-1876afa9b3b1_20260509T055336Z_report.md` (report only, no mindmap)\n\nNow I need to:\n1. Read each report file to extract the title from the first line (`# 标题`)\n2. Generate the slug from the title (keeping Chinese characters, a-z, A-Z, 0-9, replacing everything else with `-`)\n3. Copy files to the wiki directories with the proper names\n\nLet me start by reading each report to get the titles.",
+      "tool_calls": [
+        {
+          "id": "call_00_DZGvISXyWH5L4RromVno5631",
+          "call_id": "call_00_DZGvISXyWH5L4RromVno5631",
+          "response_item_id": "fc_00_DZGvISXyWH5L4RromVno5631",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_report.md\", \"limit\": 5}"
+          }
+        },
+        {
+          "id": "call_01_MEX2JKXexicA5CHmm3io5481",
+          "call_id": "call_01_MEX2JKXexicA5CHmm3io5481",
+          "response_item_id": "fc_01_MEX2JKXexicA5CHmm3io5481",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_report.md\", \"limit\": 5}"
+          }
+        },
+        {
+          "id": "call_02_QvEtb9jiT6GxZ6e76gcH4253",
+          "call_id": "call_02_QvEtb9jiT6GxZ6e76gcH4253",
+          "response_item_id": "fc_02_QvEtb9jiT6GxZ6e76gcH4253",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/tmp/notebooklm_processor/krEDel3aGGw_01cb3975-1f43-4d93-9c59-1876afa9b3b1_20260509T055336Z_report.md\", \"limit\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Hermes + Qwen3.6 本地 AI Agent 部署与应用简报\\n     2|\\n     3|本简报旨在详细分析利用最新开源模型 Qwen3.6 与 Hermes Agent 构建本地 AI 智能体（Agent）系统的技术路径、性能优势及部署流程。该组合的核心价值在于实现“Token 自由”、数据隐私保护以及通过手机远程调用的高度灵活性。\\n     4|\\n     5|---\\n     6|\", \"total_lines\": 89, \"file_size\": 5512, \"truncated\": true, \"hint\": \"Use offset=6 to continue reading (showing 1-5 of 89 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_DZGvISXyWH5L4RromVno5631"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# Hermes Agent 与 OpenClaw 深度对比简报\\n     2|\\n     3|## 执行摘要\\n     4|\\n     5|本报告旨在深入分析自托管智能体（Agent）领域的两款核心产品：**OpenClaw** 与 **Hermes Agent**。OpenClaw 凭借其清晰的架构和完善的工作区机制，定义了个人自托管智能体的初期标准。而由 Nous Research 开发的 Hermes Agent 则代表了下一代智能体的发展方向，其核心优势在于从“执行指令”向“自我进化”的范式转移。通过引入去中心化的执行循环、程序化知识生成以及精密的分层记忆体系，Hermes Agent 实现了能力的持续复利增长。尽管近期面临与 EvoMap 项目的抄袭争议，但其在架构创新与自动化能力方面的表现仍具有显著的研究与应用价值。\\n     6|\", \"total_lines\": 82, \"file_size\": 6001, \"truncated\": true, \"hint\": \"Use offset=6 to continue reading (showing 1-5 of 82 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_01_MEX2JKXexicA5CHmm3io5481"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|# GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察\\n     2|\\n     3|## 执行摘要\\n     4|\\n     5|OpenAI 近期发布了其最新且性能最强的大型语言模型——**GPT-5.5 Instant**。该模型已正式取代前代产品，成为 ChatGPT 的默认模型。本次更新的核心标志着人工智能从单纯追求参数规模转向追求更自然、更准确的用户体验。\\n     6|\", \"total_lines\": 78, \"file_size\": 6285, \"truncated\": true, \"hint\": \"Use offset=6 to continue reading (showing 1-5 of 78 lines)\", \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_02_QvEtb9jiT6GxZ6e76gcH4253"
+    },
+    {
+      "role": "assistant",
+      "content": "标题已提取。现在用脚本生成 slugs 并复制文件到仓库。",
+      "reasoning": "I have the titles:\n\n1. **Kh8tGD5liwo**: `Hermes + Qwen3.6 本地 AI Agent 部署与应用简报`\n   - Slug: `Hermes--Qwen36-本地-AI-Agent-部署与应用简报`\n   Wait, let me be more careful. The rules say:\n   - Keep: 汉字 (U+4E00-U+9FFF), a-z, A-Z, 0-9\n   - Replace with `-`: everything else (Chinese punct, English punct, spaces, symbols)\n   - Collapse consecutive dashes\n   - Trim leading/trailing dashes\n   - Truncate to 40 chars\n\n   `Hermes + Qwen3.6 本地 AI Agent 部署与应用简报`\n   \n   Characters breakdown:\n   H-e-r-m-e-s-[ ]-+-[ ]-Q-w-e-n-3-.-6-[ ]-本-地-[ ]-A-I-[ ]-A-g-e-n-t-[ ]-部-署-与-应-用-简-报\n   \n   Keep: H,e,r,m,e,s,Q,w,e,n,3,6,本,地,A,I,A,g,e,n,t,部,署,与,应,用,简,报\n   Replace with `-`: ' ', '+', ' ', '.', ' ', ' ', ' ', ' ', ' '\n   \n   After replacing: `Hermes---Qwen3-6-本地--AI--Agent-部署与应用简报`\n   Wait, let me redo this more carefully.\n   \n   Original: `Hermes + Qwen3.6 本地 AI Agent 部署与应用简报`\n   \n   Char by char:\n   H(keep) e r m e s(keep) ' '(replace with -) +(replace with -) ' '(replace with -) Q(keep) w e n(keep) 3(keep) .(replace with -) 6(keep) ' '(replace with -) 本(keep) 地(keep) ' '(replace with -) A(keep) I(keep) ' '(replace with -) A(keep) g e n t(keep) ' '(replace with -) 部(keep) 署(keep) 与(keep) 应(keep) 用(keep) 简(keep) 报(keep)\n   \n   Result: `Hermes---Qwen3-6-本地--AI--Agent-部署与应用简报`\n   \n   Collapse dashes: `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报`\n   \n   That's 42 characters. Trim to 40:\n   `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简`\n   \n   Hmm, let me count:\n   H-e-r-m-e-s = 6\n   - = 1\n   Q-w-e-n = 4\n   3 = 1\n   - = 1\n   6 = 1\n   - = 1\n   本-地 = 2\n   - = 1\n   A-I = 2\n   - = 1\n   A-g-e-n-t = 5\n   - = 1\n   部-署-与-应-用 = 5\n   - = 1\n   简-报 = 2\n   \n   Total: 6+1+4+1+1+1+1+2+1+2+1+5+1+5+1+2 = 36\n   \n   Wait, 36 chars. Let me recount more carefully.\n   H(1) e(2) r(3) m(4) e(5) s(6) -(7) Q(8) w(9) e(10) n(11) 3(12) -(13) 6(14) -(15) 本(16) 地(17) -(18) A(19) I(20) -(21) A(22) g(23) e(24) n(25) t(26) -(27) 部(28) 署(29) 与(30) 应(31) 用(32) -(33) 简(34) 报(35)\n   \n   35 chars. Under 40, so it stays as: `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报`\n   \n   Wait, let me check again. The `.` after `3` - in `3.6`, that's a period. Do I treat it differently? The rule says \"英文标点\" should be replaced with `-`. So `3.6` → `3-6`.\n   \n   And `+` is a symbol → replaced with `-`.\n   \n   OK so `Hermes---Qwen3-6-本地--AI--Agent-部署与应用简报` after collapsing → `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报`\n   \n   Count: 35 chars. Good, under 40.\n\n2. **NbldZVdusKo**: `Hermes Agent 与 OpenClaw 深度对比简报`\n   Breakdown:\n   H-e-r-m-e-s = 6\n   ' ' → -\n   A-g-e-n-t = 5\n   ' ' → -\n   与 = 1 + 1? No, 与 is 1 char\n   Wait, let me be careful with Chinese vs. English.\n   \n   `Hermes Agent 与 OpenClaw 深度对比简报`\n   \n   H(keep) e r m e s(keep) ' '(→-) A(keep) g e n t(keep) ' '(→-) 与(keep) ' '(→-) O(keep) p e n(keep) C(keep) l a w(keep) ' '(→-) 深(keep) 度(keep) 对(keep) 比(keep) 简(keep) 报(keep)\n   \n   Result: `Hermes-Agent-与-OpenClaw-深度对比简报`\n   \n   Count: H-e-r-m-e-s = 6, - = 1, A-g-e-n-t = 5, - = 1, 与 = 1, - = 1, O-p-e-n-C-l-a-w = 7, - = 1, 深-度-对-比-简-报 = 6\n   Total: 6+1+5+1+1+1+7+1+6 = 29 chars. Under 40.\n\n3. **krEDel3aGGw**: `GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察`\n   Carefully:\n   G-P-T = 3\n   -(keep, it's ASCII hyphen)\n   5 = 1\n   .(→-)\n   5 = 1\n   ' '(→-)\n   I-n-s-t-a-n-t = 7\n   ' '(→-)\n   深-度-分-析-简-报 = 5\n   ：→ - (fullwidth colon)\n   特-性 = 2\n   、→ - \n   实-测 = 2\n   、→ -\n   与 = 1\n   应-用-洞-察 = 4\n   \n   Wait, this is getting complex. Let me just use the slug rules programmatically.\n   \n   Actually, let me use a Python script to generate the slug correctly according to the rules.\n   \n   Rules from the skill:\n   - Keep: 汉字（Unicode \\u4e00-\\u9fff）、英文字母（a-z A-Z）、数字（0-9）\n   - Replace with `-`：中文标点（：，。！？“”等）、英文标点、空格、符号\n   - 合并连续`-`、去除首尾`-`\n   - 截取前 40 字符\n\n   So ASCII hyphen `-` is... hmm, the rule says keep: 汉字, a-z, A-Z, 0-9. So `-` (ASCII hyphen) is NOT in the keep list, so it should be replaced with `-` (the replacement char). But replacing `-` with `-` is a no-op. And if we collapse consecutive dashes, it's fine.\n\n   Let me just write a Python script to generate all slugs at once:\n   \n   For \"GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察\":\n   keep: G,P,T,5,5,I,n,s,t,a,n,t,深,度,分,析,简,报,特,性,实,测,与,应,用,洞,察\n   replace with `-`: -, ., ' ', ' ', ：, 、, 、\n   \n   Result: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n   Collapse: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n   \n   Count: G(1)P(2)T(3)-(4)5(5)-(6)5(7)-(8)I(9)n(10)s(11)t(12)a(13)n(14)t(15)-(16)深(17)度(18)分(19)析(20)简(21)报(22)-(23)特(24)性(25)-(26)实(27)测(28)-(29)与(30)应(31)用(32)洞(33)察(34)\n   \n   34 chars. Under 40. Wait, but this is krEDel3aGGw which only has a report but no mindmap. So I can still copy the report, just without a mindmap.\n   \n   Let me write a Python script to handle all the slug generation and file copying properly.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I have the titles:\n\n1. **Kh8tGD5liwo**: `Hermes + Qwen3.6 本地 AI Agent 部署与应用简报`\n   - Slug: `Hermes--Qwen36-本地-AI-Agent-部署与应用简报`\n   Wait, let me be more careful. The rules say:\n   - Keep: 汉字 (U+4E00-U+9FFF), a-z, A-Z, 0-9\n   - Replace with `-`: everything else (Chinese punct, English punct, spaces, symbols)\n   - Collapse consecutive dashes\n   - Trim leading/trailing dashes\n   - Truncate to 40 chars\n\n   `Hermes + Qwen3.6 本地 AI Agent 部署与应用简报`\n   \n   Characters breakdown:\n   H-e-r-m-e-s-[ ]-+-[ ]-Q-w-e-n-3-.-6-[ ]-本-地-[ ]-A-I-[ ]-A-g-e-n-t-[ ]-部-署-与-应-用-简-报\n   \n   Keep: H,e,r,m,e,s,Q,w,e,n,3,6,本,地,A,I,A,g,e,n,t,部,署,与,应,用,简,报\n   Replace with `-`: ' ', '+', ' ', '.', ' ', ' ', ' ', ' ', ' '\n   \n   After replacing: `Hermes---Qwen3-6-本地--AI--Agent-部署与应用简报`\n   Wait, let me redo this more carefully.\n   \n   Original: `Hermes + Qwen3.6 本地 AI Agent 部署与应用简报`\n   \n   Char by char:\n   H(keep) e r m e s(keep) ' '(replace with -) +(replace with -) ' '(replace with -) Q(keep) w e n(keep) 3(keep) .(replace with -) 6(keep) ' '(replace with -) 本(keep) 地(keep) ' '(replace with -) A(keep) I(keep) ' '(replace with -) A(keep) g e n t(keep) ' '(replace with -) 部(keep) 署(keep) 与(keep) 应(keep) 用(keep) 简(keep) 报(keep)\n   \n   Result: `Hermes---Qwen3-6-本地--AI--Agent-部署与应用简报`\n   \n   Collapse dashes: `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报`\n   \n   That's 42 characters. Trim to 40:\n   `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简`\n   \n   Hmm, let me count:\n   H-e-r-m-e-s = 6\n   - = 1\n   Q-w-e-n = 4\n   3 = 1\n   - = 1\n   6 = 1\n   - = 1\n   本-地 = 2\n   - = 1\n   A-I = 2\n   - = 1\n   A-g-e-n-t = 5\n   - = 1\n   部-署-与-应-用 = 5\n   - = 1\n   简-报 = 2\n   \n   Total: 6+1+4+1+1+1+1+2+1+2+1+5+1+5+1+2 = 36\n   \n   Wait, 36 chars. Let me recount more carefully.\n   H(1) e(2) r(3) m(4) e(5) s(6) -(7) Q(8) w(9) e(10) n(11) 3(12) -(13) 6(14) -(15) 本(16) 地(17) -(18) A(19) I(20) -(21) A(22) g(23) e(24) n(25) t(26) -(27) 部(28) 署(29) 与(30) 应(31) 用(32) -(33) 简(34) 报(35)\n   \n   35 chars. Under 40, so it stays as: `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报`\n   \n   Wait, let me check again. The `.` after `3` - in `3.6`, that's a period. Do I treat it differently? The rule says \"英文标点\" should be replaced with `-`. So `3.6` → `3-6`.\n   \n   And `+` is a symbol → replaced with `-`.\n   \n   OK so `Hermes---Qwen3-6-本地--AI--Agent-部署与应用简报` after collapsing → `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报`\n   \n   Count: 35 chars. Good, under 40.\n\n2. **NbldZVdusKo**: `Hermes Agent 与 OpenClaw 深度对比简报`\n   Breakdown:\n   H-e-r-m-e-s = 6\n   ' ' → -\n   A-g-e-n-t = 5\n   ' ' → -\n   与 = 1 + 1? No, 与 is 1 char\n   Wait, let me be careful with Chinese vs. English.\n   \n   `Hermes Agent 与 OpenClaw 深度对比简报`\n   \n   H(keep) e r m e s(keep) ' '(→-) A(keep) g e n t(keep) ' '(→-) 与(keep) ' '(→-) O(keep) p e n(keep) C(keep) l a w(keep) ' '(→-) 深(keep) 度(keep) 对(keep) 比(keep) 简(keep) 报(keep)\n   \n   Result: `Hermes-Agent-与-OpenClaw-深度对比简报`\n   \n   Count: H-e-r-m-e-s = 6, - = 1, A-g-e-n-t = 5, - = 1, 与 = 1, - = 1, O-p-e-n-C-l-a-w = 7, - = 1, 深-度-对-比-简-报 = 6\n   Total: 6+1+5+1+1+1+7+1+6 = 29 chars. Under 40.\n\n3. **krEDel3aGGw**: `GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察`\n   Carefully:\n   G-P-T = 3\n   -(keep, it's ASCII hyphen)\n   5 = 1\n   .(→-)\n   5 = 1\n   ' '(→-)\n   I-n-s-t-a-n-t = 7\n   ' '(→-)\n   深-度-分-析-简-报 = 5\n   ：→ - (fullwidth colon)\n   特-性 = 2\n   、→ - \n   实-测 = 2\n   、→ -\n   与 = 1\n   应-用-洞-察 = 4\n   \n   Wait, this is getting complex. Let me just use the slug rules programmatically.\n   \n   Actually, let me use a Python script to generate the slug correctly according to the rules.\n   \n   Rules from the skill:\n   - Keep: 汉字（Unicode \\u4e00-\\u9fff）、英文字母（a-z A-Z）、数字（0-9）\n   - Replace with `-`：中文标点（：，。！？“”等）、英文标点、空格、符号\n   - 合并连续`-`、去除首尾`-`\n   - 截取前 40 字符\n\n   So ASCII hyphen `-` is... hmm, the rule says keep: 汉字, a-z, A-Z, 0-9. So `-` (ASCII hyphen) is NOT in the keep list, so it should be replaced with `-` (the replacement char). But replacing `-` with `-` is a no-op. And if we collapse consecutive dashes, it's fine.\n\n   Let me just write a Python script to generate all slugs at once:\n   \n   For \"GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察\":\n   keep: G,P,T,5,5,I,n,s,t,a,n,t,深,度,分,析,简,报,特,性,实,测,与,应,用,洞,察\n   replace with `-`: -, ., ' ', ' ', ：, 、, 、\n   \n   Result: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n   Collapse: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n   \n   Count: G(1)P(2)T(3)-(4)5(5)-(6)5(7)-(8)I(9)n(10)s(11)t(12)a(13)n(14)t(15)-(16)深(17)度(18)分(19)析(20)简(21)报(22)-(23)特(24)性(25)-(26)实(27)测(28)-(29)与(30)应(31)用(32)洞(33)察(34)\n   \n   34 chars. Under 40. Wait, but this is krEDel3aGGw which only has a report but no mindmap. So I can still copy the report, just without a mindmap.\n   \n   Let me write a Python script to handle all the slug generation and file copying properly.",
+      "tool_calls": [
+        {
+          "id": "call_00_GHsmAa9OYoO1ORtm01sm8548",
+          "call_id": "call_00_GHsmAa9OYoO1ORtm01sm8548",
+          "response_item_id": "fc_00_GHsmAa9OYoO1ORtm01sm8548",
+          "type": "function",
+          "function": {
+            "name": "execute_code",
+            "arguments": "{\"code\": \"import json, re, shutil\\nfrom pathlib import Path\\n\\nWIKI_DIR = Path(\\\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki\\\")\\n\\ndef make_slug(title: str) -> str:\\n    \\\"\\\"\\\"Generate slug from Chinese title per skill rules.\\\"\\\"\\\"\\n    # Keep: 汉字 (U+4E00-U+9FFF), a-z, A-Z, 0-9\\n    # Replace everything else with -\\n    slug = []\\n    for ch in title.strip():\\n        if '\\\\u4e00' <= ch <= '\\\\u9fff' or 'a' <= ch <= 'z' or 'A' <= ch <= 'Z' or '0' <= ch <= '9':\\n            slug.append(ch)\\n        else:\\n            slug.append('-')\\n    result = ''.join(slug)\\n    # Collapse consecutive dashes\\n    result = re.sub(r'-+', '-', result)\\n    # Trim leading/trailing dashes\\n    result = result.strip('-')\\n    # Truncate to 40 chars\\n    result = result[:40]\\n    return result\\n\\n# Generated files from processor output\\ngenerated_files = [\\n    {\\\"type\\\": \\\"report\\\", \\\"path\\\": \\\"/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_report.md\\\"},\\n    {\\\"type\\\": \\\"mind-map\\\", \\\"path\\\": \\\"/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_mindmap.json\\\"},\\n    {\\\"type\\\": \\\"report\\\", \\\"path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_report.md\\\"},\\n    {\\\"type\\\": \\\"mind-map\\\", \\\"path\\\": \\\"/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_mindmap.json\\\"},\\n    {\\\"type\\\": \\\"report\\\", \\\"path\\\": \\\"/tmp/notebooklm_processor/krEDel3aGGw_01cb3975-1f43-4d93-9c59-1876afa9b3b1_20260509T055336Z_report.md\\\"},\\n]\\n\\n# Group by source (file prefix) to pair report and mindmap with same slug\\n# We can use the report content's first line to determine the title for each pair\\nresults = []\\n\\nfor gf in generated_files:\\n    fpath = Path(gf[\\\"path\\\"])\\n    if not fpath.exists():\\n        print(f\\\"WARNING: {fpath} does not exist, skipping\\\")\\n        continue\\n    \\n    if gf[\\\"type\\\"] == \\\"report\\\":\\n        # Read first line to get title\\n        content = fpath.read_text(encoding='utf-8')\\n        first_line = content.split('\\\\n')[0].strip()\\n        title = first_line.lstrip('#').strip()\\n        slug = make_slug(title)\\n        \\n        dest = WIKI_DIR / \\\"raw/notebooklm-analysis\\\" / f\\\"{slug}.md\\\"\\n        shutil.copy2(fpath, dest)\\n        print(f\\\"REPORT: {title} -> {slug}.md\\\")\\n        results.append({\\\"slug\\\": slug, \\\"title\\\": title, \\\"report\\\": str(dest)})\\n        \\n        # Also try to find matching mindmap\\n        mindmap_path = fpath.with_name(fpath.stem.replace(\\\"_report\\\", \\\"_mindmap\\\") + \\\".json\\\")\\n        if not mindmap_path.exists():\\n            # Try the one from generated_files\\n            pass\\n        mm_src = Path(gf[\\\"path\\\"]).parent / fpath.stem.replace(\\\"_report\\\", \\\"_mindmap\\\").replace(fpath.suffix, \\\"\\\") + \\\".json\\\"\\n        \\n    elif gf[\\\"type\\\"] == \\\"mind-map\\\":\\n        # Need to match this with its report\\n        # The mindmap file path stem has \\\"_mindmap\\\" where report has \\\"_report\\\"\\n        report_stem = Path(gf[\\\"path\\\"]).stem.replace(\\\"_mindmap\\\", \\\"_report\\\")\\n        \\n        # Check if we already have a slug for this source\\n        # Actually, let me just use the report-derived slug by matching source_id patterns\\n        \\n        # Simpler approach: find the matching report file name\\n        # For mindmap, the filename has _mindmap, report has _report\\n        # But we need to match them. Let me use the UUID part which is the same.\\n        \\n        # The pattern is: {video_id}_{source_uuid}_{timestamp}_{type}.ext\\n        # video_id + source_uuid is unique per video\\n        \\n        # Extract the unique prefix\\n        parts = Path(gf[\\\"path\\\"]).stem.rsplit(\\\"_mindmap\\\", 1)[0]\\n        \\n        # Find matching report from results\\n        for r in results:\\n            if parts in r[\\\"report\\\"]:\\n                slug = r[\\\"slug\\\"]\\n                dest = WIKI_DIR / \\\"raw/notebooklm-mindmaps\\\" / f\\\"{slug}.json\\\"\\n                shutil.copy2(Path(gf[\\\"path\\\"]), dest)\\n                print(f\\\"MINDMAP: {slug}.json\\\")\\n                break\\n        else:\\n            print(f\\\"WARNING: No matching report found for mindmap {gf['path']}\\\")\\n\\n# Print summary\\nprint(\\\"\\\\n=== 复制完成 ===\\\")\\nprint(f\\\"Reports: {len(list(WIKI_DIR.glob('raw/notebooklm-analysis/*.md')))} files\\\")\\nprint(f\\\"Mindmaps: {len(list(WIKI_DIR.glob('raw/notebooklm-mindmaps/*.json')))} files\\\")\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"status\": \"error\", \"output\": \"REPORT: Hermes + Qwen3.6 本地 AI Agent 部署与应用简报 -> Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.md\\n\\n--- stderr ---\\nTraceback (most recent call last):\\n  File \\\"/tmp/hermes_sandbox_l5mrinit/script.py\\\", line 61, in <module>\\n    mm_src = Path(gf[\\\"path\\\"]).parent / fpath.stem.replace(\\\"_report\\\", \\\"_mindmap\\\").replace(fpath.suffix, \\\"\\\") + \\\".json\\\"\\n             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~\\nTypeError: unsupported operand type(s) for +: 'PosixPath' and 'str'\\n\", \"tool_calls_made\": 0, \"duration_seconds\": 0.24, \"error\": \"Traceback (most recent call last):\\n  File \\\"/tmp/hermes_sandbox_l5mrinit/script.py\\\", line 61, in <module>\\n    mm_src = Path(gf[\\\"path\\\"]).parent / fpath.stem.replace(\\\"_report\\\", \\\"_mindmap\\\").replace(fpath.suffix, \\\"\\\") + \\\".json\\\"\\n             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~\\nTypeError: unsupported operand type(s) for +: 'PosixPath' and 'str'\\n\"}",
+      "tool_call_id": "call_00_GHsmAa9OYoO1ORtm01sm8548"
+    },
+    {
+      "role": "assistant",
+      "content": "第一个报告已复制，修复脚本后继续：",
+      "reasoning": "The script partially worked - it copied the first report. But the mindmap matching logic had a bug. Let me rewrite it more carefully. Actually, looking at the output, it seems the first report was already copied. Let me rewrite the script more carefully to handle the mindmap matching.\n\nActually, a simpler approach: for each generated file, I can determine the slug by reading the corresponding report. Since the mindmap files already exist in /tmp/, let me just match them properly.\n\nThe generated_files list has:\n1. report: Kh8tGD5liwo..._report.md → slug: Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报\n2. mind-map: Kh8tGD5liwo..._mindmap.json → same slug\n3. report: NbldZVdusKo..._report.md → slug: Hermes-Agent-与-OpenClaw-深度对比简报\n4. mind-map: NbldZVdusKo..._mindmap.json → same slug\n5. report: krEDel3aGGw..._report.md → slug: GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察\n\nLet me write a cleaner script.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The script partially worked - it copied the first report. But the mindmap matching logic had a bug. Let me rewrite it more carefully. Actually, looking at the output, it seems the first report was already copied. Let me rewrite the script more carefully to handle the mindmap matching.\n\nActually, a simpler approach: for each generated file, I can determine the slug by reading the corresponding report. Since the mindmap files already exist in /tmp/, let me just match them properly.\n\nThe generated_files list has:\n1. report: Kh8tGD5liwo..._report.md → slug: Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报\n2. mind-map: Kh8tGD5liwo..._mindmap.json → same slug\n3. report: NbldZVdusKo..._report.md → slug: Hermes-Agent-与-OpenClaw-深度对比简报\n4. mind-map: NbldZVdusKo..._mindmap.json → same slug\n5. report: krEDel3aGGw..._report.md → slug: GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察\n\nLet me write a cleaner script.",
+      "tool_calls": [
+        {
+          "id": "call_00_noEQf7zpLaBQQA6KFphc6423",
+          "call_id": "call_00_noEQf7zpLaBQQA6KFphc6423",
+          "response_item_id": "fc_00_noEQf7zpLaBQQA6KFphc6423",
+          "type": "function",
+          "function": {
+            "name": "execute_code",
+            "arguments": "{\"code\": \"import json, re, shutil\\nfrom pathlib import Path\\n\\nWIKI_DIR = Path(\\\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki\\\")\\n\\ndef make_slug(title: str) -> str:\\n    slug = []\\n    for ch in title.strip():\\n        if '\\\\u4e00' <= ch <= '\\\\u9fff' or 'a' <= ch <= 'z' or 'A' <= ch <= 'Z' or '0' <= ch <= '9':\\n            slug.append(ch)\\n        else:\\n            slug.append('-')\\n    result = re.sub(r'-+', '-', ''.join(slug)).strip('-')[:40]\\n    return result\\n\\n# Map: source_key -> {type: path}\\n# source_key = video_id (Kh8tGD5liwo etc.)\\n# We can extract it from the filename\\n\\nfiles = [\\n    (\\\"report\\\", \\\"/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_report.md\\\"),\\n    (\\\"mind-map\\\", \\\"/tmp/notebooklm_processor/Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z_mindmap.json\\\"),\\n    (\\\"report\\\", \\\"/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_report.md\\\"),\\n    (\\\"mind-map\\\", \\\"/tmp/notebooklm_processor/NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z_mindmap.json\\\"),\\n    (\\\"report\\\", \\\"/tmp/notebooklm_processor/krEDel3aGGw_01cb3975-1f43-4d93-9c59-1876afa9b3b1_20260509T055336Z_report.md\\\"),\\n]\\n\\n# Group by source_key (everything before _report or _mindmap)\\ngroups = {}  # source_key -> {\\\"report\\\": path, \\\"mind-map\\\": path}\\nfor ftype, fpath in files:\\n    p = Path(fpath)\\n    base = p.stem\\n    if \\\"_report\\\" in base:\\n        key = base.split(\\\"_report\\\")[0]\\n    elif \\\"_mindmap\\\" in base:\\n        key = base.split(\\\"_mindmap\\\")[0]\\n    else:\\n        continue\\n    if key not in groups:\\n        groups[key] = {}\\n    groups[key][ftype] = str(p)\\n\\nprint(f\\\"Found {len(groups)} source groups\\\")\\n\\nresults = []\\nfor key, items in groups.items():\\n    report_path = items.get(\\\"report\\\")\\n    mindmap_path = items.get(\\\"mind-map\\\")\\n    \\n    if report_path:\\n        p = Path(report_path)\\n        content = p.read_text(encoding='utf-8')\\n        first_line = content.split('\\\\n')[0].strip()\\n        title = first_line.lstrip('#').strip()\\n        slug = make_slug(title)\\n        \\n        # Copy report\\n        report_dest = WIKI_DIR / \\\"raw/notebooklm-analysis\\\" / f\\\"{slug}.md\\\"\\n        shutil.copy2(p, report_dest)\\n        print(f\\\"✅ REPORT ({key}): {title}\\\")\\n        print(f\\\"   -> raw/notebooklm-analysis/{slug}.md\\\")\\n        \\n        # Copy mindmap if exists\\n        if mindmap_path and Path(mindmap_path).exists():\\n            mindmap_dest = WIKI_DIR / \\\"raw/notebooklm-mindmaps\\\" / f\\\"{slug}.json\\\"\\n            shutil.copy2(Path(mindmap_path), mindmap_dest)\\n            print(f\\\"✅ MINDMAP ({key}): -> raw/notebooklm-mindmaps/{slug}.json\\\")\\n        else:\\n            print(f\\\"⚠️  No mindmap for {key}\\\")\\n        \\n        results.append({\\\"key\\\": key, \\\"slug\\\": slug, \\\"title\\\": title})\\n\\nprint(\\\"\\\\n=== 文件列表 ===\\\")\\nanalysis_files = sorted(WIKI_DIR.glob(\\\"raw/notebooklm-analysis/*.md\\\"))\\nmindmap_files = sorted(WIKI_DIR.glob(\\\"raw/notebooklm-mindmaps/*.json\\\"))\\nprint(f\\\"Reports ({len(analysis_files)}):\\\")\\nfor f in analysis_files:\\n    print(f\\\"  {f.name}\\\")\\nprint(f\\\"Mindmaps ({len(mindmap_files)}):\\\")\\nfor f in mindmap_files:\\n    print(f\\\"  {f.name}\\\")\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"status\": \"success\", \"output\": \"Found 3 source groups\\n✅ REPORT (Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z): Hermes + Qwen3.6 本地 AI Agent 部署与应用简报\\n   -> raw/notebooklm-analysis/Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.md\\n✅ MINDMAP (Kh8tGD5liwo_11c7e34c-4117-4185-b13a-8f6e8b1604cb_20260509T055236Z): -> raw/notebooklm-mindmaps/Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.json\\n✅ REPORT (NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z): Hermes Agent 与 OpenClaw 深度对比简报\\n   -> raw/notebooklm-analysis/Hermes-Agent-与-OpenClaw-深度对比简报.md\\n✅ MINDMAP (NbldZVdusKo_bef9c0bb-c67d-48a7-a7f6-3f3913686242_20260509T055305Z): -> raw/notebooklm-mindmaps/Hermes-Agent-与-OpenClaw-深度对比简报.json\\n✅ REPORT (krEDel3aGGw_01cb3975-1f43-4d93-9c59-1876afa9b3b1_20260509T055336Z): GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察\\n   -> raw/notebooklm-analysis/GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察.md\\n⚠️  No mindmap for krEDel3aGGw_01cb3975-1f43-4d93-9c59-1876afa9b3b1_20260509T055336Z\\n\\n=== 文件列表 ===\\nReports (3):\\n  GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察.md\\n  Hermes-Agent-与-OpenClaw-深度对比简报.md\\n  Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.md\\nMindmaps (2):\\n  Hermes-Agent-与-OpenClaw-深度对比简报.json\\n  Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.json\\n\", \"tool_calls_made\": 0, \"duration_seconds\": 0.25}",
+      "tool_call_id": "call_00_noEQf7zpLaBQQA6KFphc6423"
+    },
+    {
+      "role": "assistant",
+      "content": "文件复制完成！结果：\n- **3 个报告** ✓\n- **2 个思维导图** ✓（第3个视频 krEDel3aGGw 的脑图生成失败）\n- **状态：partial**\n\n进入 **Phase 3: 提交阶段**。\n\n### 8. 记录结束时间，写入执行日志",
+      "reasoning": "Wait, I need to check the slug for the third file. The title is \"GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察\"\n\nLet me trace through the slug generation:\n- G(keep) P(keep) T(keep) -(→-) 5(keep) .(→-) 5(keep) ' '(→-) I(keep) n(keep) s(keep) t(keep) a(keep) n(keep) t(keep) ' '(→-) 深(keep) 度(keep) 分(keep) 析(keep) 简(keep) 报(keep) ：(→-) 特(keep) 性(keep) ，(→-) 实(keep) 测(keep) ，(→-) 与(keep) 应(keep) 用(keep) 洞(keep) 察(keep)\n\nResult: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nCollapsing dashes: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nBut the script output shows: `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察`\n\nHmm, the `，` (U+FF0C, fullwidth comma) → `-` and `：` (U+FF1A, fullwidth colon) → `-`. So:\n\"GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察\"\n→ after replacement: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nWait, the \"、\" between 特性 and 实测 is a Chinese enumeration comma (U+3001). Let me check - that's replaced with `-` too since it's not in the keep range.\n\nAnd \"与\" is a Chinese character, so it's kept. So the result should be:\n`GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nBut the output shows: `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察`\n\nHmm, there's a subtle difference. It seems `、` was replaced with `-` but let me look more carefully.\n\n\"特性、实测\" - the `、` between them → `-`. So: `特性-实测`\n\nAnd \"实测与应用洞察\" - the `与` is kept (Chinese char).\n\nSo the slug should be: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nBut the output says: `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察`\n\nHmm actually I notice the output says `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察`, which doesn't have a `-` before `与`. That means... hmm. Let me look at the title more carefully.\n\nThe title is: `GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察`\n\nOK wait, there's no `、` between 实测 and 与. It's \"实测与应用洞察\". Let me re-read:\n\"特性、实测与应用洞察\"\n\nSo: 特性、(顿号)实测(没有标点)与(连词)应用洞察\n\nSo the characters are: 特(keep) 性(keep) 、(→-) 实(keep) 测(keep) 与(keep) 应(keep) 用(keep) 洞(keep) 察(keep)\n\nResult: `特性-实测与应用洞察`\n\nOK so the actual slug `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察` is correct! My manual analysis was wrong earlier. Good, the script is correct.\n\nNow let me proceed to Phase 3: commit and push.\n\nSummary of what we have:\n1. ✅ Kh8tGD5liwo - report + mindmap (slug: Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报)\n2. ✅ NbldZVdusKo - report + mindmap (slug: Hermes-Agent-与-OpenClaw-深度对比简报)\n3. ⚠️ krEDel3aGGw - report only, mindmap failed (slug: GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察)\n\nStatus: partial (2/3 successful, 1 failed on mindmap)",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Wait, I need to check the slug for the third file. The title is \"GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察\"\n\nLet me trace through the slug generation:\n- G(keep) P(keep) T(keep) -(→-) 5(keep) .(→-) 5(keep) ' '(→-) I(keep) n(keep) s(keep) t(keep) a(keep) n(keep) t(keep) ' '(→-) 深(keep) 度(keep) 分(keep) 析(keep) 简(keep) 报(keep) ：(→-) 特(keep) 性(keep) ，(→-) 实(keep) 测(keep) ，(→-) 与(keep) 应(keep) 用(keep) 洞(keep) 察(keep)\n\nResult: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nCollapsing dashes: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nBut the script output shows: `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察`\n\nHmm, the `，` (U+FF0C, fullwidth comma) → `-` and `：` (U+FF1A, fullwidth colon) → `-`. So:\n\"GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察\"\n→ after replacement: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nWait, the \"、\" between 特性 and 实测 is a Chinese enumeration comma (U+3001). Let me check - that's replaced with `-` too since it's not in the keep range.\n\nAnd \"与\" is a Chinese character, so it's kept. So the result should be:\n`GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nBut the output shows: `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察`\n\nHmm, there's a subtle difference. It seems `、` was replaced with `-` but let me look more carefully.\n\n\"特性、实测\" - the `、` between them → `-`. So: `特性-实测`\n\nAnd \"实测与应用洞察\" - the `与` is kept (Chinese char).\n\nSo the slug should be: `GPT-5-5-Instant-深度分析简报-特性-实测-与应用洞察`\n\nBut the output says: `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察`\n\nHmm actually I notice the output says `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察`, which doesn't have a `-` before `与`. That means... hmm. Let me look at the title more carefully.\n\nThe title is: `GPT-5.5 Instant 深度分析简报：特性、实测与应用洞察`\n\nOK wait, there's no `、` between 实测 and 与. It's \"实测与应用洞察\". Let me re-read:\n\"特性、实测与应用洞察\"\n\nSo: 特性、(顿号)实测(没有标点)与(连词)应用洞察\n\nSo the characters are: 特(keep) 性(keep) 、(→-) 实(keep) 测(keep) 与(keep) 应(keep) 用(keep) 洞(keep) 察(keep)\n\nResult: `特性-实测与应用洞察`\n\nOK so the actual slug `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察` is correct! My manual analysis was wrong earlier. Good, the script is correct.\n\nNow let me proceed to Phase 3: commit and push.\n\nSummary of what we have:\n1. ✅ Kh8tGD5liwo - report + mindmap (slug: Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报)\n2. ✅ NbldZVdusKo - report + mindmap (slug: Hermes-Agent-与-OpenClaw-深度对比简报)\n3. ⚠️ krEDel3aGGw - report only, mindmap failed (slug: GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察)\n\nStatus: partial (2/3 successful, 1 failed on mindmap)",
+      "tool_calls": [
+        {
+          "id": "call_00_7UgQbniAZQoHCXwE7aZE2530",
+          "call_id": "call_00_7UgQbniAZQoHCXwE7aZE2530",
+          "response_item_id": "fc_00_7UgQbniAZQoHCXwE7aZE2530",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) && echo \\\"END_TIME=$END_TIME\\\"\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"END_TIME=2026-05-09T05:56:19Z\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_7UgQbniAZQoHCXwE7aZE2530"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Now I need to write the execution log to logs/webhook-runs/gh-25593382528-1.md",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now I need to write the execution log to logs/webhook-runs/gh-25593382528-1.md",
+      "tool_calls": [
+        {
+          "id": "call_00_Urd0cSuUrq3fotMgCa6u4719",
+          "call_id": "call_00_Urd0cSuUrq3fotMgCa6u4719",
+          "response_item_id": "fc_00_Urd0cSuUrq3fotMgCa6u4719",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25593382528-1.md\", \"content\": \"# Webhook Run: gh-25593382528-1\\n\\n- **Stage**: B (notebooklm-research)\\n- **Start Time**: 2026-05-09T05:51:54Z\\n- **End Time**: 2026-05-09T05:56:19Z\\n- **Duration**: 265 seconds\\n- **Status**: partial\\n\\n## Videos Processed: 3\\n\\n| # | URL | Status | Files |\\n|---|-----|--------|-------|\\n| 1 | https://youtu.be/Kh8tGD5liwo | ✅ Success | report + mindmap |\\n| 2 | https://www.youtube.com/watch?v=NbldZVdusKo | ✅ Success | report + mindmap |\\n| 3 | https://youtu.be/krEDel3aGGw | ⚠️ Partial | report only (mindmap generation failed) |\\n\\n## Files Generated\\n\\n### Reports (`raw/notebooklm-analysis/`)\\n- `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.md` (Kh8tGD5liwo)\\n- `Hermes-Agent-与-OpenClaw-深度对比简报.md` (NbldZVdusKo)\\n- `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察.md` (krEDel3aGGw)\\n\\n### Mindmaps (`raw/notebooklm-mindmaps/`)\\n- `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.json` (Kh8tGD5liwo)\\n- `Hermes-Agent-与-OpenClaw-深度对比简报.json` (NbldZVdusKo)\\n\\n## Errors\\n- krEDel3aGGw: `RPC GENERATE_MIND_MAP failed after 30.126s` — 脑图生成超时失败，报告已成功生成\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 1128, \"dirs_created\": true}",
+      "tool_call_id": "call_00_Urd0cSuUrq3fotMgCa6u4719"
+    },
+    {
+      "role": "assistant",
+      "content": "### 9. Commit & Push",
+      "reasoning": "Now commit and push.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now commit and push.",
+      "tool_calls": [
+        {
+          "id": "call_00_cRjI0aFOrZKfVTgDqhZe6871",
+          "call_id": "call_00_cRjI0aFOrZKfVTgDqhZe6871",
+          "response_item_id": "fc_00_cRjI0aFOrZKfVTgDqhZe6871",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && git add raw/notebooklm-analysis/ raw/notebooklm-mindmaps/ logs/ && if [ -n \\\"$(git status --porcelain)\\\" ]; then git commit -m \\\"chore: add notebooklm analysis [run:gh-25593382528-1]\\\"; else echo \\\"No changes to commit\\\"; fi && git log --oneline -1\", \"timeout\": 15}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"[main a11634c] chore: add notebooklm analysis [run:gh-25593382528-1]\\n 6 files changed, 542 insertions(+)\\n create mode 100644 logs/webhook-runs/gh-25593382528-1.md\\n create mode 100644 \\\"raw/notebooklm-analysis/GPT-5-5-Instant-\\\\346\\\\267\\\\261\\\\345\\\\272\\\\246\\\\345\\\\210\\\\206\\\\346\\\\236\\\\220\\\\347\\\\256\\\\200\\\\346\\\\212\\\\245-\\\\347\\\\211\\\\271\\\\346\\\\200\\\\247-\\\\345\\\\256\\\\236\\\\346\\\\265\\\\213\\\\344\\\\270\\\\216\\\\345\\\\272\\\\224\\\\347\\\\224\\\\250\\\\346\\\\264\\\\236\\\\345\\\\257\\\\237.md\\\"\\n create mode 100644 \\\"raw/notebooklm-analysis/Hermes-Agent-\\\\344\\\\270\\\\216-OpenClaw-\\\\346\\\\267\\\\261\\\\345\\\\272\\\\246\\\\345\\\\257\\\\271\\\\346\\\\257\\\\224\\\\347\\\\256\\\\200\\\\346\\\\212\\\\245.md\\\"\\n create mode 100644 \\\"raw/notebooklm-analysis/Hermes-Qwen3-6-\\\\346\\\\234\\\\254\\\\345\\\\234\\\\260-AI-Agent-\\\\351\\\\203\\\\250\\\\347\\\\275\\\\262\\\\344\\\\270\\\\216\\\\345\\\\272\\\\224\\\\347\\\\224\\\\250\\\\347\\\\256\\\\200\\\\346\\\\212\\\\245.md\\\"\\n create mode 100644 \\\"raw/notebooklm-mindmaps/Hermes-Agent-\\\\344\\\\270\\\\216-OpenClaw-\\\\346\\\\267\\\\261\\\\345\\\\272\\\\246\\\\345\\\\257\\\\271\\\\346\\\\257\\\\224\\\\347\\\\256\\\\200\\\\346\\\\212\\\\245.json\\\"\\n create mode 100644 \\\"raw/notebooklm-mindmaps/Hermes-Qwen3-6-\\\\346\\\\234\\\\254\\\\345\\\\234\\\\260-AI-Agent-\\\\351\\\\203\\\\250\\\\347\\\\275\\\\262\\\\344\\\\270\\\\216\\\\345\\\\272\\\\224\\\\347\\\\224\\\\250\\\\347\\\\256\\\\200\\\\346\\\\212\\\\245.json\\\"\\na11634c chore: add notebooklm analysis [run:gh-25593382528-1]\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_cRjI0aFOrZKfVTgDqhZe6871"
+    },
+    {
+      "role": "assistant",
+      "content": "### 10. Push（最多重试 3 次）",
+      "reasoning": "Commit successful, 6 files. Now push with retry up to 3 times.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Commit successful, 6 files. Now push with retry up to 3 times.",
+      "tool_calls": [
+        {
+          "id": "call_00_WftD4hislQQKz7haEloc5934",
+          "call_id": "call_00_WftD4hislQQKz7haEloc5934",
+          "response_item_id": "fc_00_WftD4hislQQKz7haEloc5934",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && for i in 1 2 3; do echo \\\"--- Push attempt $i ---\\\"; if git push origin main; then echo \\\"Push successful!\\\"; break; fi; echo \\\"Push failed, pulling latest...\\\"; git pull --ff-only origin main; done && echo \\\"--- Verification ---\\\" && git log --oneline -1 && echo \\\"Remote:\\\" && git rev-parse origin/main\", \"timeout\": 120}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"--- Push attempt 1 ---\\nTo https://github.com/divanoo65/youtube-video-research-wiki.git\\n   1b13698..a11634c  main -> main\\nPush successful!\\n--- Verification ---\\na11634c chore: add notebooklm analysis [run:gh-25593382528-1]\\nRemote:\\na11634c365ca6bf826ec3b6336b4b73463f05707\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_WftD4hislQQKz7haEloc5934"
+    },
+    {
+      "role": "assistant",
+      "content": "---\n\n## ✅ SOP Stage B 执行完成\n\n### 提交摘要\n\n```\na11634c chore: add notebooklm analysis [run:gh-25593382528-1]\n```\n\nPush 成功（1 次尝试），本地与远程一致。\n\n### 处理结果\n\n| 视频 | 状态 | 产出 |\n|------|------|------|\n| 🎬 Kh8tGD5liwo — Hermes + Qwen3.6 本地 AI Agent | ✅ 成功 | 报告 ✓ + 脑图 ✓ |\n| 🎬 NbldZVdusKo — Hermes Agent 与 OpenClaw 深度对比 | ✅ 成功 | 报告 ✓ + 脑图 ✓ |\n| 🎬 krEDel3aGGw — GPT-5.5 Instant 深度分析 | ⚠️ 部分成功 | 报告 ✓ + 脑图 ❌ |\n\n### 提交的文件（6 个）\n\n**`raw/notebooklm-analysis/`**\n- `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.md`\n- `Hermes-Agent-与-OpenClaw-深度对比简报.md`\n- `GPT-5-5-Instant-深度分析简报-特性-实测与应用洞察.md`\n\n**`raw/notebooklm-mindmaps/`**\n- `Hermes-Qwen3-6-本地-AI-Agent-部署与应用简报.json`\n- `Hermes-Agent-与-OpenClaw-深度对比简报.json`\n\n**`logs/`**\n- `webhook-runs/gh-25593382528-1.md`\n\n### 下一步\n仓库已 push，GitHub Actions webhook 将自动触发 **Stage C**（知识图谱构建）。Stage C 会检测分析文件变更，对每个报告增量编译 KG。krEDel3aGGw 缺少脑图不影响其报告的处理。",
+      "reasoning": "Push successful on first attempt. Local HEAD a11634c matches origin/main. Now I need to check if the push will trigger Stage C. According to the skill, Stage B doesn't send Telegram - that's Stage C's responsibility.\n\nLet me update the sop-notebooklm-research skill with any missing steps or pitfalls I discovered. Actually, the process went smoothly. The only issue was the mindmap generation failure for krEDel3aGGw, which is documented as a known potential issue (the processor handles it as partial_success).\n\nLet me update the processor reference doc or skill to note this pattern if not already there. Actually, looking at the skill, it already covers the partial_success scenario properly.\n\nLet me provide a final summary to the user.",
+      "finish_reason": "stop",
+      "reasoning_content": "Push successful on first attempt. Local HEAD a11634c matches origin/main. Now I need to check if the push will trigger Stage C. According to the skill, Stage B doesn't send Telegram - that's Stage C's responsibility.\n\nLet me update the sop-notebooklm-research skill with any missing steps or pitfalls I discovered. Actually, the process went smoothly. The only issue was the mindmap generation failure for krEDel3aGGw, which is documented as a known potential issue (the processor handles it as partial_success).\n\nLet me update the processor reference doc or skill to note this pattern if not already there. Actually, looking at the skill, it already covers the partial_success scenario properly.\n\nLet me provide a final summary to the user."
+    }
+  ]
+}

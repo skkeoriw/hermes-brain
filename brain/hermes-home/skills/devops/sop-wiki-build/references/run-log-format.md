@@ -53,4 +53,5 @@
 - 新增 source: {source_count}个
 - 新增 entity: {entity_count}个
 - 新增 concept: {concept_count}个
-- 总计新增页面: {total_pages}个
+- 新增 comparison: {comparison_count}个
+- 新增 overview: {overview_count}个（若 overview 目录不存在，确认 TheSchema.md 中路径为 `wiki/overview/` 单数格式）

@@ -1,128 +1,132 @@
 ---
 name: sop-wiki-build
-description: "SOP Stage C: 基于 NotebookLM 分析结果进行 llm-wiki 增量知识图谱构建，push 结果并发送 Telegram 通知。"
-version: 1.0.0
+description: "SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。"
+version: 2.0.0
 ---
 
 # SOP Stage C: Wiki Incremental Build
 
-See `references/run-log-format.md` for the standard webhook run log format.
-
 ## 触发条件
 webhook 收到 `stage=wiki-build`
 
-## 执行流程
+---
 
-### 准备
-1. **记录开始时间**：`START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
+## Phase 1: Pre-Execution（准备阶段）
+
+**目标：读取配置，同步仓库，确认有分析文件需要处理**
+
+1. 记录开始时间：`START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
 2. `cd {wiki_local_path}`
-3. **首先读取 `TheSchema.md`**（最高优先级，知识图谱构建的核心规范）。
-4. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts`
-5. 保护性同步：
+3. **首先读取 `TheSchema.md`**（最高优先级，知识图谱构建的唯一规范）。
+4. 保护性同步：
    ```bash
-   git stash push -u -m "sop-stage-c-{run_id}" 2>/dev/null || true
+   git stash push -u -m "sop-c-{run_id}" 2>/dev/null || true
    git fetch origin && git checkout main && git pull --ff-only origin main
-   git stash pop 2>/dev/null || true
+   if ! git stash pop 2>/dev/null; then
+       git reset --hard origin/main && git stash drop 2>/dev/null || true
+   fi
    ```
-6. 检测需要处理的分析文件 — **使用目录扫描而非 git diff**（git diff 对中文文件名的引号处理会导致匹配失败）：
+5. **扫描分析文件**（不依赖 git diff，直接扫目录）：
    ```bash
-   # 扫描 raw/notebooklm-analysis/ 下所有 .md 文件
-   ls raw/notebooklm-analysis/*.md 2>/dev/null | grep -v 'trigger'
+   ls {wiki_local_path}/raw/notebooklm-analysis/*.md 2>/dev/null | grep -v 'trigger'
    ```
-   找出其中在 `wiki/sources/` 目录下**还没有对应 source 页**的文件，这些就是需要处理的新分析文件。
-   
-   判断逻辑：如果 `raw/notebooklm-analysis/*.md`（排除 trigger 文件）的数量 > 0，则继续执行；否则跳过。
+6. **若无分析文件**：写跳过日志，git add + commit + push 日志，停止执行（禁止发 Telegram）。
+7. 读取 `index.md` 和 `log.md`（最近 10 条）了解现有内容，避免重复创建。
+8. 确保目录存在：`mkdir -p wiki/sources wiki/entities wiki/concepts wiki/comparisons wiki/overview wiki/queries logs/webhook-runs`
 
-7. 若 `raw/notebooklm-analysis/` 下没有任何 .md 分析文件：
-   - 写 skip 日志到 `logs/webhook-runs/{run_id}.md`（标题标明 skipped: no_raw_changes）
-   - **使用 `write_file` 工具写入**，禁止使用终端 heredoc
-   - 提交并 push skip 日志：
-     ```bash
-     git add logs/webhook-runs/{run_id}.md
-     git commit -m "chore: skip wiki build - no new notebooklm content [run:{run_id}]"
-     git push origin main
-     ```
-   - **禁止发送 Telegram**
-   - 停止执行（wiki 目录为空且无分析文件则停止）
+---
+
+## Phase 2: Action（知识图谱构建）
+
+**目标：将分析文件转化为结构化 wiki 页面，严格遵循 TheSchema.md**
 
 ### 文件写入约束（必须遵守）
-- **必须用 write_file 工具写入文件**，禁止用 `echo`、`cat <<EOF`、`heredoc` 等 shell 方式。
-- shell 方式会导致 `\n` 变成字面字符串而不是真实换行符，造成文件格式损坏。
+- **必须用 write_file 工具写入所有 wiki 文件**，禁止 `echo`、`heredoc`、`cat <<EOF`。
+- shell 方式导致 `\n` 变成字面字符串，破坏 frontmatter 格式。
 
-### 构建（严格遵循 TheSchema.md）
+### 命名陷阱（常见错误）
 
-9. 读取 `index.md` 和 `log.md` 了解现有内容，避免重复创建。
-10. 确保 wiki 目录结构存在：`mkdir -p wiki/sources wiki/entities wiki/concepts wiki/comparisons wiki/overview wiki/queries`
-11. 对每个新分析报告：
-    a. **Source 页** (`wiki/sources/{中文标题}.md`)：
-      - 必须创建（每个分析报告对应一个 source 页）
-      - 使用 NotebookLM 分析文件的中文标题作为文件名（不含 `{video-id}-` 前缀，除非已有约定）
-      - 视频信息（标题、URL、发布者）
-      - 执行摘要（3-5句）
-      - 核心要点（5-10条）
-      - 关联实体/概念的 `[[wikilinks]]`
-      - frontmatter: type/tags/summary/sources/layer=L1/confidence=high
-    b. **Entity 页** (`wiki/entities/{实体名-slug}.md`)：
-      - 仅当实体页面尚不存在时创建
-      - 人物、产品、组织、AI模型
-      - 每页 ≥ 2 个出链 wikilinks
-      - layer=L1 或 L2（跨视频推断时标注 reasoning）
-      - 英文实体名小写连字符 slug，中文实体名直接中文文件名
-    c. **Concept 页** (`wiki/concepts/{概念名}.md`)：
-      - 仅当概念页面尚不存在时创建
-      - 技术方法、框架、趋势
-      - 每页 ≥ 2 个出链 wikilinks
-      - 包含本库中具体例子
-      - 中文概念名直接使用中文文件名，不翻译
+1. **Entity 文件名必须匹配 wikilink**：如果你在 source 页写 `[[Hermes Agent]]`，则 entity 文件必须命名为 `Hermes Agent.md`。不要用 slug 格式（`hermes-agent.md`），否则会死链。创建所有页面后立即运行链接健康检查（Step 14）即可发现此问题。
 
-### 质量检查（必须通过）
-9. 每个新页面：
-   - frontmatter 完整（type/tags/summary/sources/layer 必填）
-   - ≥ 2 个 wikilinks 出链
-   - source 页 ≥ 300 字，entity/concept 页 ≥ 200 字
-   - sources 指向存在的 raw/ 文件
+2. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。
 
-### 更新索引
-10. 更新 `index.md`（按 type 分类，字母序，带 summary，更新 Last updated 和 Total pages）
-11. 追加 `log.md`（run_id、日期、新增文件列表）
+3. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。
 
-### 提交
-12. 写执行日志到 `logs/webhook-runs/{run_id}.md`
-13. ```bash
+### 对每个分析报告执行：
+
+### 对每个分析报告执行：
+9. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：
+   - frontmatter 必填：`title/type/tags/summary/sources/created/updated/layer/confidence`
+   - 视频元数据（标题、URL）、执行摘要（3-5句）、核心要点（5-10条）
+   - 关联实体 `[[实体名]]`，关联概念 `[[概念名]]`
+   - `sources` 字段指向对应的 `raw/notebooklm-analysis/` 文件
+   - 每个视频**唯一一个** source 页，若已存在则更新
+
+10. 创建/更新 **Entity 页**（`wiki/entities/{实体名}.md`）：
+    - 先查 index.md 确认是否已存在，已存在则更新不新建
+    - 基本定位、核心特征、关系网络（≥2 个 `[[wikilink]]`）、出现的视频来源
+
+11. 创建/更新 **Concept 页**（`wiki/concepts/{概念名}.md`）：
+    - 先查 index.md 确认是否已存在
+    - 定义、本库具体例子、关联概念（≥2 个）、关联实体（≥1 个）
+
+12. **检查 Comparison 触发**：同一视频或不同视频中有直接对比的两个实体 → 创建 `wiki/comparisons/{A}-vs-{B}.md`（对比表格+分析+结论）
+
+13. **检查 Overview 触发**：同主题 source 页 ≥2 个 → 创建或更新 `wiki/overview/{主题}.md`（跨视频综合，L2 推断）
+
+### 链接健康检查：
+14. 扫描所有新建/修改页面的 `[[wikilink]]`，确认目标文件存在。死链处理：立即创建缺失页面，或删除该链接。
+
+### 更新索引：
+15. 更新 `index.md`（按 type 分类，字母序，每条带 summary，更新 Last updated 和 Total pages）
+16. 追加 `log.md`（run_id、日期、新增文件列表）
+
+---
+
+## Phase 3: Post-Execution（提交阶段）⚠️ 强制执行
+
+**目标：无论 Phase 2 是否完整，必须 commit + push + 通知**
+
+> **此阶段独立于 Phase 2，即使 Phase 2 部分失败，也必须执行 Phase 3。**
+
+17. 记录结束时间：`END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
+18. 用 write_file 工具写执行日志到 `{wiki_local_path}/logs/webhook-runs/{run_id}.md`，必须包含：
+    - `start_time` / `end_time`
+    - `new_sources` / `new_entities` / `new_concepts` / `new_comparisons` / `new_overviews`
+    - `status`：success / partial / skipped
+19. **检查并提交所有变更**：
+    ```bash
+    cd {wiki_local_path}
     git add wiki/ index.md log.md logs/
-    git commit -m "chore: update llm wiki graph from notebooklm analysis [run:{run_id}]"
-    git push origin main
+    if [ -n "$(git status --porcelain)" ]; then
+      git commit -m "chore: update llm wiki graph [run:{run_id}]"
+    fi
     ```
-14. **记录结束时间**：`END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
-15. **计算耗时**：`DURATION_SECONDS=$(($(date -u -d "$END_TIME" +%s) - $(date -u -d "$START_TIME" +%s)))`
-
-### Telegram 通知（push 成功后发送）
-16. ```bash
+20. **push，最多重试 3 次**：
+    ```bash
+    for i in 1 2 3; do
+      git push origin main && break
+      git pull --ff-only origin main
+    done
+    ```
+21. 验证 push 成功：`git log --oneline -1` 确认本地 HEAD 与 origin/main 一致。
+22. **发送 Telegram（仅在 push 成功且有实际 wiki 更新时）**：
+    ```bash
     TOKEN=$(printenv {tg_token_env})
-    curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \\
-      -d "chat_id={tg_chat_id}" \\
-      -d "disable_web_page_preview=true" \\
+    curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+      -d "chat_id={tg_chat_id}" \
+      -d "disable_web_page_preview=true" \
       --data-urlencode "text=[YOUTUBE-WIKI-RUN]
-run_id={run_id}
-新增 source: <n>个 - <名称列表>
-新增 entity: <n>个 - <名称列表(≤5)>
-新增 concept: <n>个 - <名称列表(≤5)>
+run_id: {run_id}
+新增 source: <n>个
+新增 entity: <n>个
+新增 concept: <n>个
+新增 comparison: <n>个
 commit: <hash>
-duration_stage_c: ${DURATION_SECONDS}s
+耗时: <duration>s
 log: logs/webhook-runs/{run_id}.md"
     ```
 
-    run-log 中必须包含：
-    - `start_time`: START_TIME 的值
-    - `end_time`: END_TIME 的值（在 push 成功后记录）
-    - `duration_seconds`: DURATION_SECONDS
-
 ## 注意
-- push 失败时重试一次，仍失败则记录错误，**禁止发送 Telegram**。
-- TG 发送失败不影响整体成功状态，但须在 run-log 记录。
-
-## 常见问题与经验教训
-- **文件写入换行问题**：使用 `write_file` 工具时，必须确保内容中使用实际的换行符（`\n`），而不是转义的字面字符串 `\\n`。如果发现生成的文件出现 YAML 解析错误（如 "expected a single document in the stream"），检查 frontmatter 是否包含字面的 `\\n` 字符，需要使用 `write_file` 重写文件并确保换行符正确。
-- **前置文件检查**：在处理现有 wiki 文件时，如果发现 frontmatter 解析错误，可能是由于之前的写入方式导致的换行问题。此时应先读取文件内容，将所有 `\\n` 替换为实际换行符，然后重新写入。
-- **日志文件冲突**：`log.md` 等频繁追加的文件可能出现合并冲突。在保护性同步阶段的 `git stash pop` 后，应检查并解决任何冲突，然后再继续执行。
-- **索引更新**：更新 `index.md` 时，应保持现有格式和排序，避免重复条目。可以先读取现有内容，然后在适当位置插入新条目，最后更新页码统计。
+- push 全部失败 → 记录 `status: push_failed`，**禁止发 Telegram**。
+- TG 发送失败 → 在 run-log 记录，不影响整体成功状态。

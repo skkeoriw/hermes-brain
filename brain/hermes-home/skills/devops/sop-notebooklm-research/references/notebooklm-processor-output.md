@@ -46,16 +46,16 @@ The `notebooklm_processor.py` script outputs a JSON object with the following st
 
 ## Key Points for Stage B
 
-- The `generated_files` array contains all output files.
+- The `generated_files` array contains all output files for this run only.
+- **⚠️ CRITICAL**: Always use the exact paths from `generated_files[].path` when reading files. Do NOT use glob patterns like `/tmp/notebooklm_processor/Kh8tGD5liwo_*_report.md` — the `/tmp/notebooklm_processor/` directory accumulates files from ALL historical runs, and a glob will match stale files from previous invocations.
 - Each item has a `type` field: either `"report"` or `"mind-map"`.
 - The `path` field gives the absolute path to the temporary file.
-- Files should be copied to the repository preserving their original filenames (which already include a unique identifier).
-- The processor ensures filename uniqueness via UUID and timestamp.
+- Files should be copied to the repository, renaming based on the Chinese title (first line `# 标题` of the report).
 
 ## Usage in SOP
 
-In step 8 of the SOP, we iterate over `generated_files` and copy each file to the appropriate directory based on its `type`:
-- `report` → `raw/notebooklm-analysis/`
-- `mind-map` → `raw/notebooklm-mindmaps/`
+In step 8 of the SOP, we call the processor and capture the JSON output. In step 9, we iterate over `generated_files` using the **exact paths** and copy each file to the appropriate directory:
+- `report` → `raw/notebooklm-analysis/{title-slug}.md`
+- `mind-map` → `raw/notebooklm-mindmaps/{title-slug}.json`
 
-No renaming is needed; the processor already generates unique, descriptive filenames.
+The report and mindmap for the same video must use **exactly the same title slug** so Stage C can correlate them.

@@ -1,27 +1,28 @@
 # Slug 生成规范
 
 ## Source 页
-格式：`{video-id}-{短标题-slug}.md`
-- `video-id`：YouTube 视频 ID（如 `NbldZVdusKo`）
-- `短标题-slug`：视频标题的简短英文摘录，转换为小写，空格替换为连字符，移除特殊字符。
-  示例：标题 "Hermes Agent 与 OpenClaw 技术深度对比简报" -> slug `hermes-agent-openclaw-comparison`
-  （可参考现有文件：`NbldZVdusKo-hermes-agent-openclaw-comparison.md`）
+格式：`{中文标题}.md`
+- 直接使用分析文件的语义化中文标题，不加 video_id 前缀。
+- 示例：`Hermes + Qwen 3.6 本地最强 AI Agent 组合部署与应用简报.md`
 
-## Entity 页
-格式：`{实体名-slug}.md`
-- 实体名：英文实体名称，转换为小写，空格替换为连字符。
-  示例：`Nous Research` -> `nous-research`
-- 若实体名已有约定俗成的缩写或变体，优先使用常见形式。
-  示例：`Hermes Agent` -> `hermes-agent`
+## Entity 页 → ⚠️ 关键：文件名必须与 wikilink 名称完全一致
+格式：`{实体名}.md`
+
+**硬性规则**：entity 文件名必须严格匹配你在 source/concept 等页面中使用的 `[[wikilink]]` 名称。
+
+- 如果你在 source 页中写 `[[Hermes Agent]]`，则 entity 文件必须命名为 `Hermes Agent.md`（含空格、大小写敏感）
+- 如果你在 source 页中写 `[[OpenAI]]`，则 entity 文件必须命名为 `OpenAI.md`
+- **不要**使用小写 slug 格式（`hermes-agent.md`、`openai.md`），因为 wikilink 走的是 readable 名称匹配
+- **例外**：如果某个 entity 有约定俗成的 slug 别名（如 `GPT-5.5 Instant`），可直接使用该别名作为文件名，但务必在所有页面中使用一致的 `[[别名]]`
+
+**检查方法**：创建完所有页面后，执行 grep -rho '\[\[[^]]*\]\]' wiki/ --include='*.md' 提取所有 wikilink，验证每个 wikilink 的目标文件都存在。
 
 ## Concept 页
-格式：`{概念-slug}.md`
-- 概念：英文概念名称，转换为小写，空格替换为连字符。
-  示例：`执行循环驱动架构` -> 先翻译为英文 "execution-loop-driven architecture" -> slug `execution-loop-driven-architecture`
-  （但为保持中文可读性，亦可使用拼音或混合命名，需保持唯一性；本项目中文概念页使用中文名称拼音 slug，例如 `执行循环驱动架构` -> `zhi-xing-xun-huan-qu-dong-jia-gou`，实际中文命名请参现有文件。）
-  注：本项目中文概念页实际使用中文名称（如 `执行循环驱动架构.md`），slug 即为文件名（不含 .md），因此中文命名直接使用。
+格式：`{概念名}.md`
+- 概念：中文概念名称，直接使用中文命名。
+- 示例：`执行循环驱动架构.md`、`Token自由.md`
 
 ## 注意
 - slug 必须唯一，避免冲突。
 - 建议先检查对应目录下是否已存在同名文件。
-- 所有 slug 使用小写连字符形式。
+- 所有 wiki 文件使用 write_file 工具写入，禁止 shell heredoc/eval。
