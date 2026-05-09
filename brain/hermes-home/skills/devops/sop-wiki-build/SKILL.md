@@ -223,17 +223,63 @@ webhook 收到 `stage=wiki-build`
 
 ### 5a. JSON 截断 — 即使 1 份报告也可能被截断（2026-05-09）
 DeepSeek deepseek-v4-flash、qwen-plus 等模型在生成长 JSON 时可能中途截断，导致解析失败。
-即使只有 **1 份报告**（期望 9 个页面），实测 JSON 在 ~11700 字符处截断，auto-start 概念内容不全。
+即使只有 **1 份报告**（期望 9 个页面），实测 JSON 在 ~11700 字符处截断。
 
 **症状**：脚本报 `JSONDecodeError: Unterminated string`。
 
-**恢复策略**：
-1. 检查 `logs/webhook-runs/{run_id}.response.txt`，找到完整的 JSON prefix
-2. 手动提取已经生成的完整页面（前 8 页通常完好）
-3. 补全被截断页面的缺失部分（参考原文）
-4. 修复死链（`[[hermes-agent]]` 等已删除页面的引用）
-5. 手动写入 index.md、pipeline-context.json、log.md
-6. `git add -A && git commit && git push`
+**恢复策略（三步法）：**
+
+**Step 1 — 检查 raw response 文件**
+```bash
+ls logs/webhook-runs/{run_id}-r2-raw.txt   # 脚本保存的 raw response
+wc -c logs/webhook-runs/{run_id}-r2-raw.txt
+```
+响应文件以 `{"pages": [...` 开头，包含部分完整的 JSON 页面对象 + 一个截断的末页。
+
+**Step 2 — 用 brace-counting 提取完整页面**
+不要用 `json.loads()` 整体解析（会失败），改用逐对象提取：
+```python
+import json, os
+with open('logs/webhook-runs/{run_id}-r2-raw.txt') as f:
+    raw = f.read()
+# 定位 "pages": [ 之后的内容
+pages_start = raw.index('"pages": [') + len('"pages": [')
+text = raw[pages_start:]
+pages = []
+i = 0
+while i < len(text):
+    while i < len(text) and text[i] in ' \n\r\t,':
+        i += 1
+    if i >= len(text) or text[i] == ']':
+        break
+    if text[i] == '{':
+        depth, start = 0, i
+        while i < len(text):
+            if text[i] == '{': depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0: i += 1; break
+            i += 1
+        try:
+            obj = json.loads(text[start:i])
+            pages.append(obj)
+            filepath = f"{wiki_path}/{obj['path']}"
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            with open(filepath, 'w') as fw: fw.write(obj['content'])
+            print(f"✅ {obj['path']}")
+        except json.JSONDecodeError:
+            print(f"❌ 截断页 at offset {i}（需手动补全）")
+print(f"完成: {len(pages)} 页")
+```
+第 1-5 页通常完好，第 6 页（概念页）常被截断，需手动补全。
+
+**Step 3 — 补全 + 修复死链 + reconcile pipeline-context.json**
+- 参考 raw response 的残余内容 + 原报告 + 脑图，手写截断页的完整内容
+- 修复死链（可能引用不存在的概念/实体页 — 创建之或删除链接）
+- **⚠️ 手动更新 pipeline-context.json**：脚本自动写入的 `pages_created` 可能只统计了成功解析的页数（如 9 而非实际 15），必须手动修正 `pages_created`、`sources`、`entities`、`concepts` 等计数
+- 修复 run-log 命名（Pitfall #7）
+- 运行强制质量检查（见下方）
+- `git add -A && git commit && git push`
 
 **强制质量检查（恢复后必须执行）**：
 ```bash
@@ -467,6 +513,56 @@ git checkout HEAD -- "raw/notebooklm-analysis/不一致的文件.md"
 | **覆盖 index.md** | 全量重写 index.md，不合并已有条目（v1 脚本有合并逻辑） | ✅ 低（仅在首次运行时） |
 
 **何时用 v2**：仅当报告数 ≤2 且 v1 脚本因内容过大截断时（3+ 报告首选 v2，但须注意上述限制）。
+
+### 12. 死链修复时的文件名匹配陷阱 — wikilink 格式 vs 实际文件名
+
+**问题（2026-05-09 实测）**：手动创建缺失页面修复死链时，创建的文件名可能与 wikilink 不匹配，导致"修复"后死链依然存在。
+
+**典型场景**：
+- wikilink 是 `[[Token节省方案]]`（无连字符，纯中文）
+- 你创建了 `Token-节省方案.md`（含连字符，模仿其他文件命名）
+- 检查时显示 ✅ 文件存在，但死链检查器依然报死链
+- 原因：`[[Token节省方案]]` 期望文件名 `Token节省方案.md`，而非 `Token-节省方案.md`
+
+**检查方法**：
+```bash
+# 对每个死链修复，确认 wikilink 文本 == 文件名（不含 .md）
+cd {wiki_local_path}
+for link in $(grep -rho '\[\[[^]]*\]\]' wiki/ --include='*.md' | sed 's/\[\[//;s/\]\]//;s/|.*//' | sort -u); do
+  found=$(find wiki/ -name "${link}.md" 2>/dev/null | head -1)
+  if [ -z "$found" ]; then
+    echo "DEAD: [[${link}]] — 文件名不匹配"
+  fi
+done
+```
+
+**修复**：重命名文件以匹配 wikilink 文本：
+```bash
+mv wiki/concepts/Token-节省方案.md wiki/concepts/Token节省方案.md
+```
+
+**预防**：创建缺失页面时，直接用 wikilink 文本作为文件名（不做规范化），并在 `find wiki/ -name` 确认后再提交。
+
+### 13. pipeline-context.json 页数不准确 — 恢复后须手动修正
+
+**问题（2026-05-09 实测）**：JSON 截断恢复后，脚本自动写入的 pipeline-context.json 中 `pages_created` 只统计了成功解析的页数（如 9），但实际总页数（含恢复页）可能更多（如 15）。
+
+**症状**：pipeline-context.json 中 `stage_c.pages_created` 远低于 `find wiki/ -type f -name '*.md' | wc -l`。
+
+**修复**：恢复完成后，手动读取并更新 pipeline-context.json：
+```python
+import json
+with open('raw/pipeline-context.json') as f:
+    ctx = json.load(f)
+ctx['stage_c']['pages_created'] = 15  # 实际页数
+ctx['stage_c']['sources'] = 2
+ctx['stage_c']['entities'] = 6
+ctx['stage_c']['concepts'] = 6
+ctx['stage_c']['note'] = 'JSON truncated, recovered from raw response'
+with open('raw/pipeline-context.json', 'w') as f:
+    json.dump(ctx, f, indent=2, ensure_ascii=False)
+```
+同样需要修正 log.md、index.md 和 run-log 中的计数。
 
 ### 11. index.md 中的死链 — 质量验证的盲区
 

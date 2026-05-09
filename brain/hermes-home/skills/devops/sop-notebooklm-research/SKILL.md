@@ -142,7 +142,12 @@ webhook 收到 `stage=notebooklm-research`
 
 11b. **写入 pipeline-context.json**（供后续阶段读取）：
     - 路径：`{wiki_local_path}/raw/pipeline-context.json`
-    - 读取已有内容（如果存在）并追加 stage_b 节点，使用 write_file 工具：
+    - **关键决策：合并 vs 覆写取决于 pipeline_id 是否匹配**
+      - 如果文件已存在且 `pipeline_id` **与当前 pipeline 相同**（同一 pipeline 的多 agent 并发场景）：读取已有内容，**追加**当前 stage_b 节点（保留其他 stage 的节点），用 `write_file` 写入合并后的完整 JSON
+      - 如果文件不存在，或 `pipeline_id` **与当前不同**（新的 webhook trigger，不同 pipeline 运行）：**直接覆写**，用当前 pipeline 的信息创建全新的 pipeline-context.json
+    - 简单判断方式：`read_file` 检查已有内容，解析 `pipeline_id`，对比当前 `pipe-{sha前7位}`。合并场景下保留旧 stage 节点；覆写场景下直接创建新文件
+    - 注意：每次 webhook 触发都是新的 pipeline（不同 pipeline_id），所以**大多数情况下是覆写而非合并**。合并只在同一 pipeline 的多 agent 并发场景下发生
+    - 模板：
     ```json
     {
       "pipeline_id": "pipe-{sha前7位}",
@@ -205,10 +210,15 @@ processor 将文件输出到 `/tmp/notebooklm_processor/`，该目录会**累积
 
 **正确做法**：必须从 processor 返回的 JSON 中提取 `generated_files[].path` 的确切路径来读写文件，**不要用 glob 通配符**。
 
-### 2. 分析目录遗留旧文件
-如果前序 Stage B 运行未正常提交（如 push 失败后中断），`raw/notebooklm-analysis/` 和 `raw/notebooklm-mindmaps/` 中会留下属于之前 run 的文件。`git add` 时会一并提交。
+### 2. 分析目录遗留旧文件 + 捎带提交现象
+如果前序 Stage B 运行未正常提交（如 push 失败后中断），`raw/notebooklm-analysis/` 和 `raw/notebooklm-mindmaps/` 中会留下属于之前 run 的未跟踪文件。当前 run 执行 `git add raw/notebooklm-analysis/` 时会**自然地将它们一并提交**（出现"8 files created"而非预期"3 files"的现象）。
 
-**解法**：Step 7 中已加入 `rm -f` 清理步骤。如果手动处理，务必先清理旧文件再复制新文件。
+**不要惊慌**——这是预期行为，Stage C 通过 `before-sha/sha` diff 准确过滤本次新增文件，旧文件不会被重复处理。提交中的额外文件是**装饰性 bloat，非功能性 bug**。
+
+**正确做法（与 Step 7 一致）**：
+- **不要**删除旧文件——并发场景下删除会导致另一个并发 Stage B 的输出被误删（竞态条件）
+- 始终用 `git add raw/notebooklm-analysis/ raw/notebooklm-mindmaps/ raw/pipeline-context.json logs/` 精确指定路径
+- 不需要在 commit 前额外清理
 
 ### 3. 中文路径引号转义
 `git diff --name-only` 需要加 `-c core.quotepath=false`，否则包含中文字符的文件名会被引号包裹导致提取失败。**Step 4 已处理此问题**，如果在其他地方用 `git diff` 处理中文路径也需注意。
@@ -241,15 +251,17 @@ processor 返回的 JSON 中 `generated_files[].path` 声明的后缀是 `.json`
 
 **根本原因**：NotebookLM API 返回的 mindmap 格式随版本变化，processor 输出中的 `path` 后缀不一定反映磁盘真实内容。
 
-### 9. pipeline-context.json 多 agent 并发覆写风险
-当 Hermes 在 multi-agent 模式下运行时（多个 subagent 同时执行不同阶段），`pipeline-context.json` 可能被多个 agent 同时写入。`write_file` 工具的简单覆写会丢弃其他 agent 写入的数据。
+### 9. pipeline-context.json 多 agent 并发覆写风险  
+当 Hermes 在 multi-agent 模式下运行时（多个 subagent 同时执行同一 pipeline 的不同阶段），`pipeline-context.json` 可能被多个 agent 同时写入。`write_file` 工具的简单覆写会丢弃其他 agent 写入的数据。
 
 **表现**：`write_file` 返回 warning `"pipeline-context.json was modified by sibling subagent ..."`。git diff 显示大量 deletions（如 `296 deletions`），说明旧 stage 的数据被覆盖了。
 
 **正确做法**：
 - 写入前先用 `read_file` 读取已有内容
-- 用 Python 合并新旧数据（添加 stage_b 节点，保留其他 stage 的节点）
-- 再用 `write_file` 写入合并后的完整 JSON
+- **检查 `pipeline_id` 是否与当前 pipeline 一致**：
+  - **pipeline_id 匹配**（同一 pipeline 的多 agent）：用 Python 合并新旧数据（添加 stage_b 节点，保留其他 stage 的节点）
+  - **pipeline_id 不匹配或文件不存在**（不同 pipeline 的 webhook 触发）：直接覆写，创建新文件
+- 再用 `write_file` 写入合并后的完整 JSON（或新 JSON）
 - 在 git add 时确认 `raw/pipeline-context.json` 出现在变更列表中且无意外删除
 
 ### 10. git stash push -u 无法捕获所有本地状态（残留变更污染提交）

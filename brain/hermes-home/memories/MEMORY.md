@@ -12,6 +12,6 @@ Updated sop-notebooklm-research skill to reflect actual notebooklm_processor.py 
 §
 Updated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.
 §
-Successfully executed SOP Stage B for youtube-video-research-wiki: processed 3 YouTube links, generated reports and mindmaps, committed and pushed changes. Updated the skill to include timing logs and enhanced log requirements.
+2026-05-09: 修复 sop-notebooklm-research skill 的 Pitfall #2。原版错误引用 `rm -f` 清理旧文件，与 Step 7"不要删除"矛盾。修正为：遗留旧文件被捎带提交是预期行为（装饰性 bloat），Stage C 通过 diff 过滤；不删除以避免并发竞态。
 §
 Reviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.
