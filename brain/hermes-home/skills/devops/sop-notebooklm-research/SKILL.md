@@ -81,7 +81,19 @@ webhook 收到 `stage=notebooklm-research`
      - mindmap → `{wiki_local_path}/raw/notebooklm-mindmaps/{中文标题}.json`
    - report 和 mindmap 使用**完全相同的标题 slug**（便于 Stage C 关联）
    ⚠️ **典型错误**：中文全角冒号 `：`（U+FF1A）不是汉字，必须替换为 `-`。例如 `Hermes Agent 与 OpenClaw：深度对比` → `Hermes-Agent-与-OpenClaw-深度对比`
-10. 记录处理结果（每个 URL 的状态、生成的文件路径）。
+
+10. **重命名完成后，更新报告 frontmatter 里的 `mindmap_file` 字段**为实际的中文文件名：
+    - 用 Python 或 sed 替换报告文件开头 `---` 块里的 `mindmap_file: xxx` 为 `mindmap_file: {中文标题}.json`
+    - 示例（Python）：
+      ```python
+      import re
+      with open(report_dest, 'r') as f: content = f.read()
+      content = re.sub(r'^mindmap_file:.*$', f'mindmap_file: {slug}.json', content, flags=re.MULTILINE)
+      with open(report_dest, 'w') as f: f.write(content)
+      ```
+    - 这确保 Stage C 读取 `mindmap_file` 时得到的是实际磁盘文件名，而不是原始临时文件名
+
+11. 记录处理结果（每个 URL 的状态、生成的文件路径、最终文件名）。
 
 ---
 

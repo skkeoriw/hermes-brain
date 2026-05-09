@@ -1,7 +1,7 @@
 ---
 name: sop-wiki-build
 description: "SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。"
-version: 2.0.0
+version: 2.2.0
 ---
 
 # SOP Stage C: Wiki Incremental Build
@@ -59,6 +59,17 @@ webhook 收到 `stage=wiki-build`
 
 5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。
 
+6. **⚠️ mindmap_file frontmatter 不可靠 — 必须通过 filesystem 验证**：分析文件的 `mindmap_file` 字段（如 `krEDel3aGGw_..._mindmap.json`）在实战中经常与实际磁盘文件名不匹配。实际文件名通常是中文标题格式（如 `GPT-5-5-Instant-模型发布与性能分析简报.json`），与同名的分析 `.md` 文件扩展名不同。**绝对不要直接使用 frontmatter 的 `mindmap_file` 值**。
+   - **错误做法**：`ls raw/notebooklm-mindmaps/{mindmap_file}` → 文件不存在，构建卡死
+   - **正确做法**：先 `ls raw/notebooklm-mindmaps/` 获取实际文件列表，通过分析文件的中文标题前缀匹配对应的 `.json` 文件
+   - 验证命令：`ls raw/notebooklm-mindmaps/ | grep "$(basename '{analysis_md_file}' .md)"` 或直接肉眼匹配文件名前缀
+
+7. **脑图 wikilink 需使用磁盘实际文件名，而非 frontmatter 值**：source 页正文中的脑图引用 `[[{文件名}|查看脑图]]`，必须使用 `ls raw/notebooklm-mindmaps/` 中实际存在的文件名（去掉 `.json`），而不是 frontmatter 中的 `mindmap_file` 值。如果实际文件名与 source 页文件名的前缀不一致，建议在 source 页正文中使用文字描述而非 wikilink。
+
+8. **⚠️ `execute_code` 沙箱内 read_file 返回格式不可靠 — 质量检查需用终端工具**：在 `execute_code` Python 沙箱中调用 `from hermes_tools import read_file` 时，返回的 dict key 可能与预期不同（如 `KeyError: 'content'`）。**禁止依赖沙箱中的 read_file 做验证**。正确做法：使用 `terminal` 工具运行 shell 命令（`wc -m`、`grep`、`find`）进行质量核查，或运行 `scripts/verify-quality.sh` 脚本。
+
+9. **脑图交叉引用是规范的死链 "白名单"**：source 页正文中按规范创建的 `[[{mindmap文件名去.json}|查看脑图]]` 引用会触发链接健康检查的假阳性告警。这些不是真正的死链 — 它们指向 `raw/notebooklm-mindmaps/` 目录下的 `.json` 文件，而非 wiki 页面。**处理方法**：如果 verify-quality.sh 或 grep 报告这些链接不存在，先检查是否属于脑图交叉引用模式（匹配 `-模型深度分析简报`、`-深度对比及技术趋势简报`、`本地最强-Agent` 等前缀），确认后标记为已知豁免。`scripts/verify-quality.sh` 已内置此豁免逻辑。
+
 ### 对每个分析报告执行：
 
 9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：
@@ -66,7 +77,11 @@ webhook 收到 `stage=wiki-build`
    video_id, video_url, source_id, mindmap_file, processed_at
    ```
    - `video_url`：直接用于 source 页，比从内容推断更可靠
-   - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在
+   - `mindmap_file`：**仅作参考，不可直接使用**（见陷阱 #6）。必须通过 filesystem 验证实际文件名：
+     ```bash
+     ls raw/notebooklm-mindmaps/ | grep "$(basename '{分析文件路径}' .md)"
+     ```
+     若 `grep` 无匹配，直接 `ls raw/notebooklm-mindmaps/` 肉眼匹配文件名前缀
    - 若无 frontmatter，退化到从报告正文推断
 
 10. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：
@@ -74,14 +89,15 @@ webhook 收到 `stage=wiki-build`
    - **新增 frontmatter 字段**（建立三方关联）：
      ```yaml
      video_url: {从报告 frontmatter 读取}
-     mindmap: raw/notebooklm-mindmaps/{mindmap_file}
+     mindmap: raw/notebooklm-mindmaps/{实际磁盘文件名}
      ```
    - `sources` 字段同时列出报告路径和脑图路径
    - 页面正文**必须包含**视频 URL 和脑图引用：
      ```
      - 视频：{video_url}
-     - 思维导图：[[{mindmap_file去掉.json}]]（指向 raw/notebooklm-mindmaps/）
+     - 思维导图：[[{实际磁盘文件名去.json}]]（指向 raw/notebooklm-mindmaps/）
      ```
+     注意：`{实际磁盘文件名}` 来自 `ls raw/notebooklm-mindmaps/` 的输出，**不是**前一步 `mindmap_file` 字段的值。
    - 执行摘要（3-5句）、核心要点（5-10条）
    - 关联实体 `[[实体名]]`，关联概念 `[[概念名]]`
    - 每个视频**唯一一个** source 页，若已存在则更新
@@ -102,7 +118,11 @@ webhook 收到 `stage=wiki-build`
 14. 扫描所有新建/修改页面的 `[[wikilink]]`，确认目标文件存在。死链处理：立即创建缺失页面，或删除该链接。
 
 ### 质量核查（创建所有页面后执行）：
-14b. 运行以下自动化检查，所有项必须通过才能提交：
+14b. 运行以下自动化检查，所有项必须通过才能提交。**推荐运行 `scripts/verify-quality.sh`**（相对于 skill 目录的绝对路径）自动执行全部检查：
+    ```bash
+    bash /home/zhouhuijuan1987/.hermes/skills/devops/sop-wiki-build/scripts/verify-quality.sh {wiki_local_path}
+    ```
+    脚本检查项清单（与手工方式等效）：
     - 每个新页面 frontmatter 6 个必填字段齐全（title/type/tags/summary/sources/layer）
     - 每个新页面 ≥ 2 个有效出链 wikilinks（目标文件存在）
     - source 页内容 ≥ 400 字（中文）

@@ -1,456 +1,12 @@
 {
-  "session_id": "20260509_065838_9221ba51",
+  "session_id": "20260509_070751_c97f2c",
   "model": "deepseek-v4-flash",
   "base_url": "https://api.deepseek.com/v1",
   "platform": "webhook",
-  "session_start": "2026-05-09T06:58:39.176640",
-  "last_updated": "2026-05-09T07:07:50.229790",
-  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. When the user references something from a past conversation or you suspect relevant cross-session context exists, use session_search to recall it before asking them to repeat themselves. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [99% — 2,195/2,200 chars]\n══════════════════════════════════════════════\nprompt-qa-unified-wiki: https://github.com/divanoo65/prompt-qa-unified-wiki, local /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki, PAT: 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 (divanoo65). Wiki uses TheSchema.md layout (raw/ + wiki/sources|entities|concepts|comparisons|overview|queries). llm-wiki webhook run IDs use gh-<run_id>-<attempt> prefix format.\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to handle stash pop conflicts by resetting to origin/main and dropping stash changes when conflicts occur during protected sync step.\n§\nUpdated sop-notebooklm-research skill to reflect actual notebooklm_processor.py output structure: JSON includes generated_files list with type and path; copy files preserving original filenames.\n§\nUpdated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.\n§\nSuccessfully executed SOP Stage B for youtube-video-research-wiki: processed 3 YouTube links, generated reports and mindmaps, committed and pushed changes. Updated the skill to include timing logs and enhanced log requirements.\n§\nReviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [98% — 1,358/1,375 chars]\n══════════════════════════════════════════════\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - brain-sync-reporting: Standardized workflow for generating Telegram reports fro...\n    - brain-sync-workflow: Class-level skill for Hermes Brain synchronization workfl...\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - llm-wiki-multiwiki-e2e-gate: Bootstrap and validate multi-wiki factory flow: push->Git...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - sop-notebooklm-research: SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图...\n    - sop-wiki-build: SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n    - youtube-wiki-processing: Automated workflow for processing YouTube video research ...\n  devops/video-summarizer-local/vendor/summarize/.agent/skills:\n    - summarize: Transcribe and summarize videos from YouTube, local files...\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube transcripts to summaries, threads, blogs.\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Saturday, May 09, 2026 06:58 AM\nModel: deepseek-v4-flash\nProvider: deepseek",
+  "session_start": "2026-05-09T07:07:51.515706",
+  "last_updated": "2026-05-09T07:09:49.377324",
+  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [99% — 2,195/2,200 chars]\n══════════════════════════════════════════════\nprompt-qa-unified-wiki: https://github.com/divanoo65/prompt-qa-unified-wiki, local /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki, PAT: 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 (divanoo65). Wiki uses TheSchema.md layout (raw/ + wiki/sources|entities|concepts|comparisons|overview|queries). llm-wiki webhook run IDs use gh-<run_id>-<attempt> prefix format.\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to handle stash pop conflicts by resetting to origin/main and dropping stash changes when conflicts occur during protected sync step.\n§\nUpdated sop-notebooklm-research skill to reflect actual notebooklm_processor.py output structure: JSON includes generated_files list with type and path; copy files preserving original filenames.\n§\nUpdated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.\n§\nSuccessfully executed SOP Stage B for youtube-video-research-wiki: processed 3 YouTube links, generated reports and mindmaps, committed and pushed changes. Updated the skill to include timing logs and enhanced log requirements.\n§\nReviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [98% — 1,358/1,375 chars]\n══════════════════════════════════════════════\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - brain-sync-reporting: Standardized workflow for generating Telegram reports fro...\n    - brain-sync-workflow: Class-level skill for Hermes Brain synchronization workfl...\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - llm-wiki-multiwiki-e2e-gate: Bootstrap and validate multi-wiki factory flow: push->Git...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - sop-notebooklm-research: SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图...\n    - sop-wiki-build: SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n    - youtube-wiki-processing: Automated workflow for processing YouTube video research ...\n  devops/video-summarizer-local/vendor/summarize/.agent/skills:\n    - summarize: Transcribe and summarize videos from YouTube, local files...\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube transcripts to summaries, threads, blogs.\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Saturday, May 09, 2026 07:07 AM\nModel: deepseek-v4-flash\nProvider: deepseek",
   "tools": [
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_back",
-        "description": "Navigate back to the previous page in browser history. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_click",
-        "description": "Click on an element identified by its ref ID from the snapshot (e.g., '@e5'). The ref IDs are shown in square brackets in the snapshot output. Requires browser_navigate and browser_snapshot to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "ref": {
-              "type": "string",
-              "description": "The element reference from the snapshot (e.g., '@e5', '@e12')"
-            }
-          },
-          "required": [
-            "ref"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_console",
-        "description": "Get browser console output and JavaScript errors from the current page. Returns console.log/warn/error/info messages and uncaught JS exceptions. Use this to detect silent JavaScript errors, failed API calls, and application warnings. Requires browser_navigate to be called first. When 'expression' is provided, evaluates JavaScript in the page context and returns the result — use this for DOM inspection, reading page state, or extracting data programmatically.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "clear": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, clear the message buffers after reading"
-            },
-            "expression": {
-              "type": "string",
-              "description": "JavaScript expression to evaluate in the page context. Runs in the browser like DevTools console — full access to DOM, window, document. Return values are serialized to JSON. Example: 'document.title' or 'document.querySelectorAll(\"a\").length'"
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_get_images",
-        "description": "Get a list of all images on the current page with their URLs and alt text. Useful for finding images to analyze with the vision tool. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_navigate",
-        "description": "Navigate to a URL in the browser. Initializes the session and loads the page. Must be called before other browser tools. For plain-text endpoints — URLs ending in .md, .txt, .json, .yaml, .yml, .csv, .xml, raw.githubusercontent.com, or any documented API endpoint — prefer curl via the terminal tool or web_extract; the browser stack is overkill and much slower for these. Use browser tools when you need to interact with a page (click, fill forms, dynamic content). Returns a compact page snapshot with interactive elements and ref IDs — no need to call browser_snapshot separately after navigating.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string",
-              "description": "The URL to navigate to (e.g., 'https://example.com')"
-            }
-          },
-          "required": [
-            "url"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_press",
-        "description": "Press a keyboard key. Useful for submitting forms (Enter), navigating (Tab), or keyboard shortcuts. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "key": {
-              "type": "string",
-              "description": "Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown')"
-            }
-          },
-          "required": [
-            "key"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_scroll",
-        "description": "Scroll the page in a direction. Use this to reveal more content that may be below or above the current viewport. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "direction": {
-              "type": "string",
-              "enum": [
-                "up",
-                "down"
-              ],
-              "description": "Direction to scroll"
-            }
-          },
-          "required": [
-            "direction"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_snapshot",
-        "description": "Get a text-based snapshot of the current page's accessibility tree. Returns interactive elements with ref IDs (like @e1, @e2) for browser_click and browser_type. full=false (default): compact view with interactive elements. full=true: complete page content. Snapshots over 8000 chars are truncated or LLM-summarized. Requires browser_navigate first. Note: browser_navigate already returns a compact snapshot — use this to refresh after interactions that change the page, or with full=true for complete content.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "full": {
-              "type": "boolean",
-              "description": "If true, returns complete page content. If false (default), returns compact view with interactive elements only.",
-              "default": false
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_type",
-        "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "ref": {
-              "type": "string",
-              "description": "The element reference from the snapshot (e.g., '@e3')"
-            },
-            "text": {
-              "type": "string",
-              "description": "The text to type into the field"
-            }
-          },
-          "required": [
-            "ref",
-            "text"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "browser_vision",
-        "description": "Take a screenshot of the current page and analyze it with vision AI. Use this when you need to visually understand what's on the page - especially useful for CAPTCHAs, visual verification challenges, complex layouts, or when the text snapshot doesn't capture important visual information. Returns both the AI analysis and a screenshot_path that you can share with the user by including MEDIA:<screenshot_path> in your response. Requires browser_navigate to be called first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "question": {
-              "type": "string",
-              "description": "What you want to know about the page visually. Be specific about what you're looking for."
-            },
-            "annotate": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, overlay numbered [N] labels on interactive elements. Each [N] maps to ref @eN for subsequent browser commands. Useful for QA and spatial reasoning about page layout."
-            }
-          },
-          "required": [
-            "question"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "clarify",
-        "description": "Ask the user a question when you need clarification, feedback, or a decision before proceeding. Supports two modes:\n\n1. **Multiple choice** — provide up to 4 choices. The user picks one or types their own answer via a 5th 'Other' option.\n2. **Open-ended** — omit choices entirely. The user types a free-form response.\n\nUse this tool when:\n- The task is ambiguous and you need the user to choose an approach\n- You want post-task feedback ('How did that work out?')\n- You want to offer to save a skill or update memory\n- A decision has meaningful trade-offs the user should weigh in on\n\nDo NOT use this tool for simple yes/no confirmation of dangerous commands (the terminal tool handles that). Prefer making a reasonable default choice yourself when the decision is low-stakes.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "question": {
-              "type": "string",
-              "description": "The question to present to the user."
-            },
-            "choices": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "maxItems": 4,
-              "description": "Up to 4 answer choices. Omit this parameter entirely to ask an open-ended question. When provided, the UI automatically appends an 'Other (type your answer)' option."
-            }
-          },
-          "required": [
-            "question"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "cronjob",
-        "description": "Manage scheduled cron jobs with a single compressed tool.\n\nUse action='create' to schedule a new job from a prompt or one or more skills.\nUse action='list' to inspect jobs.\nUse action='update', 'pause', 'resume', 'remove', or 'run' to manage an existing job.\n\nTo stop a job the user no longer wants: first action='list' to find the job_id, then action='remove' with that job_id. Never guess job IDs — always list first.\n\nJobs run in a fresh session with no current-chat context, so prompts must be self-contained.\nIf skills are provided on create, the future cron run loads those skills in order, then follows the prompt as the task instruction.\nOn update, passing skills=[] clears attached skills.\n\nNOTE: The agent's final response is auto-delivered to the target. Put the primary\nuser-facing content in the final response. Cron jobs run autonomously with no user\npresent — they cannot ask questions or request clarification.\n\nImportant safety rule: cron-run sessions should not recursively schedule more cron jobs.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "action": {
-              "type": "string",
-              "description": "One of: create, list, update, pause, resume, remove, run"
-            },
-            "job_id": {
-              "type": "string",
-              "description": "Required for update/pause/resume/remove/run"
-            },
-            "prompt": {
-              "type": "string",
-              "description": "For create: the full self-contained prompt. If skills are also provided, this becomes the task instruction paired with those skills."
-            },
-            "schedule": {
-              "type": "string",
-              "description": "For create/update: '30m', 'every 2h', '0 9 * * *', or ISO timestamp"
-            },
-            "name": {
-              "type": "string",
-              "description": "Optional human-friendly name"
-            },
-            "repeat": {
-              "type": "integer",
-              "description": "Optional repeat count. Omit for defaults (once for one-shot, forever for recurring)."
-            },
-            "deliver": {
-              "type": "string",
-              "description": "Omit this parameter to auto-deliver back to the current chat and topic (recommended). Auto-detection preserves thread/topic context. Only set explicitly when the user asks to deliver somewhere OTHER than the current conversation. Values: 'origin' (same as omitting), 'local' (no delivery, save only), or platform:chat_id:thread_id for a specific destination. Examples: 'telegram:-1001234567890:17585', 'discord:#engineering', 'sms:+15551234567'. WARNING: 'platform:chat_id' without :thread_id loses topic targeting."
-            },
-            "skills": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Optional ordered list of skill names to load before executing the cron prompt. On update, pass an empty array to clear attached skills."
-            },
-            "model": {
-              "type": "object",
-              "description": "Optional per-job model override. If provider is omitted, the current main provider is pinned at creation time so the job stays stable.",
-              "properties": {
-                "provider": {
-                  "type": "string",
-                  "description": "Provider name (e.g. 'openrouter', 'anthropic'). Omit to use and pin the current provider."
-                },
-                "model": {
-                  "type": "string",
-                  "description": "Model name (e.g. 'anthropic/claude-sonnet-4', 'claude-sonnet-4')"
-                }
-              },
-              "required": [
-                "model"
-              ]
-            },
-            "script": {
-              "type": "string",
-              "description": "Optional path to a Python script that runs before each cron job execution. Its stdout is injected into the prompt as context. Use for data collection and change detection. Relative paths resolve under ~/.hermes/scripts/. On update, pass empty string to clear."
-            },
-            "context_from": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Optional job ID or list of job IDs whose most recent completed output is injected into the prompt as context before each run. Use this to chain cron jobs: job A collects data, job B processes it. Each entry must be a valid job ID (from cronjob action='list'). Note: injects the most recent completed output — does not wait for upstream jobs running in the same tick. On update, pass an empty array to clear."
-            },
-            "enabled_toolsets": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Optional list of toolset names to restrict the job's agent to (e.g. [\"web\", \"terminal\", \"file\", \"delegation\"]). When set, only tools from these toolsets are loaded, significantly reducing input token overhead. When omitted, all default tools are loaded. Infer from the job's prompt — e.g. use \"web\" if it calls web_search, \"terminal\" if it runs scripts, \"file\" if it reads files, \"delegation\" if it calls delegate_task. On update, pass an empty array to clear."
-            },
-            "workdir": {
-              "type": "string",
-              "description": "Optional absolute path to run the job from. When set, AGENTS.md / CLAUDE.md / .cursorrules from that directory are injected into the system prompt, and the terminal/file/code_exec tools use it as their working directory — useful for running a job inside a specific project repo. Must be an absolute path that exists. When unset (default), preserves the original behaviour: no project context files, tools use the scheduler's cwd. On update, pass an empty string to clear. Jobs with workdir run sequentially (not parallel) to keep per-job directories isolated."
-            }
-          },
-          "required": [
-            "action"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "delegate_task",
-        "description": "Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window.\n\nTWO MODES (one of 'goal' or 'tasks' is required):\n1. Single task: provide 'goal' (+ optional context, toolsets)\n2. Batch (parallel): provide 'tasks' array with up to delegation.max_concurrent_children items (default 3, configurable via config.yaml, no hard ceiling). All run concurrently and results are returned together. Nested delegation requires role='orchestrator' and delegation.max_spawn_depth >= 2.\n\nWHEN TO USE delegate_task:\n- Reasoning-heavy subtasks (debugging, code review, research synthesis)\n- Tasks that would flood your context with intermediate data\n- Parallel independent workstreams (research A and B simultaneously)\n\nWHEN NOT TO USE (use these instead):\n- Mechanical multi-step work with no reasoning needed -> use execute_code\n- Single tool call -> just call the tool directly\n- Tasks needing user interaction -> subagents cannot use clarify\n- Durable long-running work that must outlive the current turn -> use cronjob (action='create') or terminal(background=True, notify_on_complete=True) instead. delegate_task runs SYNCHRONOUSLY inside the parent turn: if the parent is interrupted (user sends a new message, /stop, /new) the child is cancelled with status='interrupted' and its work is discarded. Children cannot continue in the background.\n\nIMPORTANT:\n- Subagents have NO memory of your conversation. Pass all relevant info (file paths, error messages, constraints) via the 'context' field.\n- If the user is writing in a non-English language, or asked for output in a specific language / tone / style, say so in 'context' (e.g. \"respond in Chinese\", \"return output in Japanese\"). Otherwise subagents default to English and their summaries will contaminate your final reply with the wrong language.\n- Subagent summaries are SELF-REPORTS, not verified facts. A subagent that claims \"uploaded successfully\" or \"file written\" may be wrong. For operations with external side-effects (HTTP POST/PUT, remote writes, file creation at shared paths, publishing), require the subagent to return a verifiable handle (URL, ID, absolute path, HTTP status) and verify it yourself — fetch the URL, stat the file, read back the content — before telling the user the operation succeeded.\n- Leaf subagents (role='leaf', the default) CANNOT call: delegate_task, clarify, memory, send_message, execute_code.\n- Orchestrator subagents (role='orchestrator') retain delegate_task so they can spawn their own workers, but still cannot use clarify, memory, send_message, or execute_code. Orchestrators are bounded by delegation.max_spawn_depth (default 2) and can be disabled globally via delegation.orchestrator_enabled=false.\n- Each subagent gets its own terminal session (separate working directory and state).\n- Results are always returned as an array, one entry per task.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "goal": {
-              "type": "string",
-              "description": "What the subagent should accomplish. Be specific and self-contained -- the subagent knows nothing about your conversation history."
-            },
-            "context": {
-              "type": "string",
-              "description": "Background information the subagent needs: file paths, error messages, project structure, constraints. The more specific you are, the better the subagent performs."
-            },
-            "toolsets": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Toolsets to enable for this subagent. Default: inherits your enabled toolsets. Available toolsets: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Common patterns: ['terminal', 'file'] for code work, ['web'] for research, ['browser'] for web interaction, ['terminal', 'file', 'web'] for full-stack tasks."
-            },
-            "tasks": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "goal": {
-                    "type": "string",
-                    "description": "Task goal"
-                  },
-                  "context": {
-                    "type": "string",
-                    "description": "Task-specific context"
-                  },
-                  "toolsets": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Toolsets for this specific task. Available: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Use 'web' for network access, 'terminal' for shell, 'browser' for web interaction."
-                  },
-                  "acp_command": {
-                    "type": "string",
-                    "description": "Per-task ACP command override (e.g. 'claude'). Overrides the top-level acp_command for this task only."
-                  },
-                  "acp_args": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Per-task ACP args override."
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": [
-                      "leaf",
-                      "orchestrator"
-                    ],
-                    "description": "Per-task role override. See top-level 'role' for semantics."
-                  }
-                },
-                "required": [
-                  "goal"
-                ]
-              },
-              "description": "Batch mode: tasks to run in parallel (limit configurable via delegation.max_concurrent_children, default 3). Each gets its own subagent with isolated context and terminal session. When provided, top-level goal/context/toolsets are ignored."
-            },
-            "role": {
-              "type": "string",
-              "enum": [
-                "leaf",
-                "orchestrator"
-              ],
-              "description": "Role of the child agent. 'leaf' (default) = focused worker, cannot delegate further. 'orchestrator' = can use delegate_task to spawn its own workers. Requires delegation.max_spawn_depth >= 2 in config; ignored (treated as 'leaf') when the child would exceed max_spawn_depth or when delegation.orchestrator_enabled=false."
-            },
-            "acp_command": {
-              "type": "string",
-              "description": "Override ACP command for child agents (e.g. 'claude', 'copilot'). When set, children use ACP subprocess transport instead of inheriting the parent's transport. Enables spawning Claude Code (claude --acp --stdio) or other ACP-capable agents from any parent, including Discord/Telegram/CLI."
-            },
-            "acp_args": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Arguments for the ACP command (default: ['--acp', '--stdio']). Only used when acp_command is set. Example: ['--acp', '--stdio', '--model', 'claude-opus-4-6']"
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "execute_code",
-        "description": "Run a Python script that can call Hermes tools programmatically. Use this when you need 3+ tool calls with processing logic between them, need to filter/reduce large tool outputs before they enter your context, need conditional branching (if X then Y else Z), or need to loop (fetch N pages, process N files, retry on failure).\n\nUse normal tool calls instead when: single tool call with no processing, you need to see the full result and apply complex reasoning, or the task requires interactive user input.\n\nAvailable via `from hermes_tools import ...`:\n\n  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n    Lines are 1-indexed. Returns {\"content\": \"...\", \"total_lines\": N}\n  write_file(path: str, content: str) -> dict\n    Always overwrites the entire file.\n  search_files(pattern: str, target=\"content\", path=\".\", file_glob=None, limit=50) -> dict\n    target: \"content\" (search inside files) or \"files\" (find files by name). Returns {\"matches\": [...]}\n  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n    Replaces old_string with new_string in the file.\n  terminal(command: str, timeout=None, workdir=None) -> dict\n    Foreground only (no background/pty). Returns {\"output\": \"...\", \"exit_code\": N}\n\nLimits: 5-minute timeout, 50KB stdout cap, max 50 tool calls per script. terminal() is foreground-only (no background or pty).\n\nScripts run in the session's working directory with the active venv's python, so project deps (pandas, etc.) and relative paths work like in terminal().\n\nPrint your final result to stdout. Use Python stdlib (json, re, math, csv, datetime, collections, etc.) for processing between tool calls.\n\nAlso available (no import needed — built into hermes_tools):\n  json_parse(text: str) — json.loads with strict=False; use for terminal() output with control chars\n  shell_quote(s: str) — shlex.quote(); use when interpolating dynamic strings into shell commands\n  retry(fn, max_attempts=3, delay=2) — retry with exponential backoff for transient failures",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "code": {
-              "type": "string",
-              "description": "Python code to execute. Import tools with `from hermes_tools import terminal, ...` and print your final result to stdout."
-            }
-          },
-          "required": [
-            "code"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "image_generate",
-        "description": "Generate high-quality images from text prompts. The underlying backend (FAL, OpenAI, etc.) and model are user-configured and not selectable by the agent. Returns either a URL or an absolute file path in the `image` field; display it with markdown ![description](url-or-path) and the gateway will deliver it.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "prompt": {
-              "type": "string",
-              "description": "The text prompt describing the desired image. Be detailed and descriptive."
-            },
-            "aspect_ratio": {
-              "type": "string",
-              "enum": [
-                "landscape",
-                "square",
-                "portrait"
-              ],
-              "description": "The aspect ratio of the generated image. 'landscape' is 16:9 wide, 'portrait' is 16:9 tall, 'square' is 1:1.",
-              "default": "landscape"
-            }
-          },
-          "required": [
-            "prompt"
-          ]
-        }
-      }
-    },
     {
       "type": "function",
       "function": {
@@ -489,248 +45,6 @@
             "action",
             "target"
           ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "patch",
-        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "mode": {
-              "type": "string",
-              "enum": [
-                "replace",
-                "patch"
-              ],
-              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
-              "default": "replace"
-            },
-            "path": {
-              "type": "string",
-              "description": "File path to edit (required for 'replace' mode)"
-            },
-            "old_string": {
-              "type": "string",
-              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
-            },
-            "new_string": {
-              "type": "string",
-              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
-            },
-            "replace_all": {
-              "type": "boolean",
-              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
-              "default": false
-            },
-            "patch": {
-              "type": "string",
-              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
-            }
-          },
-          "required": [
-            "mode"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "process",
-        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "action": {
-              "type": "string",
-              "enum": [
-                "list",
-                "poll",
-                "log",
-                "wait",
-                "kill",
-                "write",
-                "submit",
-                "close"
-              ],
-              "description": "Action to perform on background processes"
-            },
-            "session_id": {
-              "type": "string",
-              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
-            },
-            "data": {
-              "type": "string",
-              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
-            },
-            "timeout": {
-              "type": "integer",
-              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
-              "minimum": 1
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Line offset for 'log' action (default: last 200 lines)"
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Max lines to return for 'log' action",
-              "minimum": 1
-            }
-          },
-          "required": [
-            "action"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "read_file",
-        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "path": {
-              "type": "string",
-              "description": "Path to the file to read (absolute, relative, or ~/path)"
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Line number to start reading from (1-indexed, default: 1)",
-              "default": 1,
-              "minimum": 1
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Maximum number of lines to read (default: 500, max: 2000)",
-              "default": 500,
-              "maximum": 2000
-            }
-          },
-          "required": [
-            "path"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "search_files",
-        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "pattern": {
-              "type": "string",
-              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
-            },
-            "target": {
-              "type": "string",
-              "enum": [
-                "content",
-                "files"
-              ],
-              "description": "'content' searches inside file contents, 'files' searches for files by name",
-              "default": "content"
-            },
-            "path": {
-              "type": "string",
-              "description": "Directory or file to search in (default: current working directory)",
-              "default": "."
-            },
-            "file_glob": {
-              "type": "string",
-              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Maximum number of results to return (default: 50)",
-              "default": 50
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Skip first N results for pagination (default: 0)",
-              "default": 0
-            },
-            "output_mode": {
-              "type": "string",
-              "enum": [
-                "content",
-                "files_only",
-                "count"
-              ],
-              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
-              "default": "content"
-            },
-            "context": {
-              "type": "integer",
-              "description": "Number of context lines before and after each match (grep mode only)",
-              "default": 0
-            }
-          },
-          "required": [
-            "pattern"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "send_message",
-        "description": "Send a message to a connected messaging platform, or list available targets.\n\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "action": {
-              "type": "string",
-              "enum": [
-                "send",
-                "list"
-              ],
-              "description": "Action to perform. 'send' (default) sends a message. 'list' returns all available channels/contacts across connected platforms."
-            },
-            "target": {
-              "type": "string",
-              "description": "Delivery target. Format: 'platform' (uses home channel), 'platform:#channel-name', 'platform:chat_id', or 'platform:chat_id:thread_id' for Telegram topics and Discord threads. Examples: 'telegram', 'telegram:-1001234567890:17585', 'discord:999888777:555444333', 'discord:#bot-home', 'slack:#engineering', 'signal:+155****4567', 'matrix:!roomid:server.org', 'matrix:@user:server.org', 'yuanbao:direct:<account_id>' (DM), 'yuanbao:group:<group_code>' (group chat)"
-            },
-            "message": {
-              "type": "string",
-              "description": "The message text to send. To send an image or file, include MEDIA:<local_path> (e.g. 'MEDIA:/tmp/hermes/cache/img_xxx.jpg') in the message — the platform will deliver it as a native media attachment."
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "session_search",
-        "description": "Search your long-term memory of past conversations, or browse recent sessions. This is your recall -- every past session is searchable, and this tool summarizes what happened.\n\nTWO MODES:\n1. Recent sessions (no query): Call with no arguments to see what was worked on recently. Returns titles, previews, and timestamps. Zero LLM cost, instant. Start here when the user asks what were we working on or what did we do recently.\n2. Keyword search (with query): Search for specific topics across all past sessions. Returns LLM-generated summaries of matching sessions.\n\nUSE THIS PROACTIVELY when:\n- The user says 'we did this before', 'remember when', 'last time', 'as I mentioned'\n- The user asks about a topic you worked on before but don't have in current context\n- The user references a project, person, or concept that seems familiar but isn't in memory\n- You want to check if you've solved a similar problem before\n- The user asks 'what did we do about X?' or 'how did we fix Y?'\n\nDon't hesitate to search when it is actually cross-session -- it's fast and cheap. Better to search and confirm than to guess or ask the user to repeat themselves.\n\nSearch syntax: keywords joined with OR for broad recall (elevenlabs OR baseten OR funding), phrases for exact match (\"docker networking\"), boolean (python NOT java), prefix (deploy*). IMPORTANT: Use OR between keywords for best results — FTS5 defaults to AND which misses sessions that only mention some terms. If a broad OR query returns nothing, try individual keyword searches in parallel. Returns summaries of the top matching sessions.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "query": {
-              "type": "string",
-              "description": "Search query — keywords, phrases, or boolean expressions to find in past sessions. Omit this parameter entirely to browse recent sessions instead (returns titles, previews, timestamps with no LLM cost)."
-            },
-            "role_filter": {
-              "type": "string",
-              "description": "Optional: only search messages from specific roles (comma-separated). E.g. 'user,assistant' to skip tool outputs."
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Max sessions to summarize (default: 3, max: 5).",
-              "default": 3
-            }
-          }
         }
       }
     },
@@ -836,179 +150,9 @@
           }
         }
       }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "terminal",
-        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "command": {
-              "type": "string",
-              "description": "The command to execute on the VM"
-            },
-            "background": {
-              "type": "boolean",
-              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
-              "default": false
-            },
-            "timeout": {
-              "type": "integer",
-              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
-              "minimum": 1
-            },
-            "workdir": {
-              "type": "string",
-              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
-            },
-            "pty": {
-              "type": "boolean",
-              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
-              "default": false
-            },
-            "notify_on_complete": {
-              "type": "boolean",
-              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
-              "default": false
-            },
-            "watch_patterns": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
-            }
-          },
-          "required": [
-            "command"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "text_to_speech",
-        "description": "Convert text to speech audio. Returns a MEDIA: path that the platform delivers as native audio. Compatible providers render as a voice bubble on Telegram; otherwise audio is sent as a regular attachment. In CLI mode, saves to ~/voice-memos/. Voice and provider are user-configured (built-in providers like edge/openai or custom command providers under tts.providers.<name>), not model-selected.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "text": {
-              "type": "string",
-              "description": "The text to convert to speech. Provider-specific character caps apply and are enforced automatically (OpenAI 4096, xAI 15000, MiniMax 10000, ElevenLabs 5k-40k depending on model); over-long input is truncated."
-            },
-            "output_path": {
-              "type": "string",
-              "description": "Optional custom file path to save the audio. Defaults to ~/.hermes/audio_cache/<timestamp>.mp3"
-            }
-          },
-          "required": [
-            "text"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "todo",
-        "description": "Manage your task list for the current session. Use for complex tasks with 3+ steps or when the user provides multiple tasks. Call with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "todos": {
-              "type": "array",
-              "description": "Task items to write. Omit to read current list.",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "description": "Unique item identifier"
-                  },
-                  "content": {
-                    "type": "string",
-                    "description": "Task description"
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "pending",
-                      "in_progress",
-                      "completed",
-                      "cancelled"
-                    ],
-                    "description": "Current status"
-                  }
-                },
-                "required": [
-                  "id",
-                  "content",
-                  "status"
-                ]
-              }
-            },
-            "merge": {
-              "type": "boolean",
-              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
-              "default": false
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "vision_analyze",
-        "description": "Inspect an image from a URL, file path, or tool output when you need closer detail than what's visible in the conversation. If the user's image is already attached to the conversation and you can see it, just answer directly — only call this tool for images referenced by URL/path, images returned inside other tool results (browser screenshots, search thumbnails), or when you need a deeper look at a specific region the main model's vision may have missed.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "image_url": {
-              "type": "string",
-              "description": "Image URL (http/https) or local file path to analyze."
-            },
-            "question": {
-              "type": "string",
-              "description": "Your specific question or request about the image to resolve. The AI will automatically provide a complete image description AND answer your specific question."
-            }
-          },
-          "required": [
-            "image_url",
-            "question"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "write_file",
-        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "path": {
-              "type": "string",
-              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
-            },
-            "content": {
-              "type": "string",
-              "description": "Complete content to write to the file"
-            }
-          },
-          "required": [
-            "path",
-            "content"
-          ]
-        }
-      }
     }
   ],
-  "message_count": 114,
+  "message_count": 133,
   "messages": [
     {
       "role": "user",
@@ -2363,6 +1507,210 @@
       "content": "---\n\n## ✅ SOP Stage C 执行完成！\n\n### 执行摘要\n\n| 项目 | 数值 |\n|:---|:---|\n| **Run ID** | gh-25594744968-1 |\n| **输入文件** | 3 个 NotebookLM 分析报告 |\n| **状态** | ✅ success (首次构建) |\n| **总耗时** | 490s (~8 分钟) |\n| **GitHub 仓库** | divanoo65/youtube-video-research-wiki |\n| **Commit** | `a412347` |\n\n### 新增页面统计\n\n| 类型 | 数量 | 详情 |\n|:---|:---:|:---|\n| **Source** | 3 | GPT-5.5 Instant 模型发布、Hermes vs OpenClaw 对比、零成本本地部署 |\n| **Entity** | 7 | openai, gpt-5.5-instant, hermes-agent, openclaw, nous-research, evomap, qwen3.6 |\n| **Concept** | 14 | 自我进化智能体 / 程序化知识 / 分层记忆体系 / Token自由 / 本地部署 / 幻觉抑制 / 执行循环架构 / Llama-cpp / WSL2部署 / 全天候AI助手 / 个人AI助手 / 多模态能力 / 开发者生态 / 自动化技能 |\n| **Comparison** | 1 | hermes-agent-vs-openclaw |\n| **Overview** | 1 | AI-Agent-自托管与部署 |\n| **总计** | **26** | |\n\n### 处理结果\n- ✅ 3 个分析文件 → 26 个 wiki 页面\n- ✅ 全部质量检查通过（frontmatter / wikilinks / 字数 / 文件存在性 / 死链）\n- ✅ 已 push 到 `divanoo65/youtube-video-research-wiki`\n- ✅ 已发送 Telegram 通知",
       "reasoning": null,
       "finish_reason": "stop"
+    },
+    {
+      "role": "user",
+      "content": "Review the conversation above and update the skill library. Be ACTIVE — most sessions produce at least one skill update, even if small. A pass that does nothing is a missed learning opportunity, not a neutral outcome.\n\nTarget shape of the library: CLASS-LEVEL skills, each with a rich SKILL.md and a `references/` directory for session-specific detail. Not a long flat list of narrow one-session-one-skill entries. This shapes HOW you update, not WHETHER you update.\n\nSignals to look for (any one of these warrants action):\n  • User corrected your style, tone, format, legibility, or verbosity. Frustration signals like 'stop doing X', 'this is too verbose', 'don't format like this', 'why are you explaining', 'just give me the answer', 'you always do Y and I hate it', or an explicit 'remember this' are FIRST-CLASS skill signals, not just memory signals. Update the relevant skill(s) to embed the preference so the next session starts already knowing.\n  • User corrected your workflow, approach, or sequence of steps. Encode the correction as a pitfall or explicit step in the skill that governs that class of task.\n  • Non-trivial technique, fix, workaround, debugging path, or tool-usage pattern emerged that a future session would benefit from. Capture it.\n  • A skill that got loaded or consulted this session turned out to be wrong, missing a step, or outdated. Patch it NOW.\n\nPreference order — prefer the earliest action that fits, but do pick one when a signal above fired:\n  1. UPDATE A CURRENTLY-LOADED SKILL. Look back through the conversation for skills the user loaded via /skill-name or you read via skill_view. If any of them covers the territory of the new learning, PATCH that one first. It is the skill that was in play, so it's the right one to extend.\n  2. UPDATE AN EXISTING UMBRELLA (via skills_list + skill_view). If no loaded skill fits but an existing class-level skill does, patch it. Add a subsection, a pitfall, or broaden a trigger.\n  3. ADD A SUPPORT FILE under an existing umbrella. Skills can be packaged with three kinds of support files — use the right directory per kind:\n     • `references/<topic>.md` — session-specific detail (error transcripts, reproduction recipes, provider quirks) AND condensed knowledge banks: quoted research, API docs, external authoritative excerpts, or domain notes you found while working on the problem. Write it concise and for the value of the task, not as a full mirror of upstream docs.\n     • `templates/<name>.<ext>` — starter files meant to be copied and modified (boilerplate configs, scaffolding, a known-good example the agent can `reproduce with modifications`).\n     • `scripts/<name>.<ext>` — statically re-runnable actions the skill can invoke directly (verification scripts, fixture generators, deterministic probes, anything the agent should run rather than hand-type each time).\n     Add support files via skill_manage action=write_file with file_path starting 'references/', 'templates/', or 'scripts/'. The umbrella's SKILL.md should gain a one-line pointer to any new support file so future agents know it exists.\n  4. CREATE A NEW CLASS-LEVEL UMBRELLA SKILL when no existing skill covers the class. The name MUST be at the class level. The name MUST NOT be a specific PR number, error string, feature codename, library-alone name, or 'fix-X / debug-Y / audit-Z-today' session artifact. If the proposed name only makes sense for today's task, it's wrong — fall back to (1), (2), or (3).\n\nUser-preference embedding (important): when the user expressed a style/format/workflow preference, the update belongs in the SKILL.md body, not just in memory. Memory captures 'who the user is and what the current situation and state of your operations are'; skills capture 'how to do this class of task for this user'. When they complain about how you handled a task, the skill that governs that task needs to carry the lesson.\n\nIf you notice two existing skills that overlap, note it in your reply — the background curator handles consolidation at scale.\n\n'Nothing to save.' is a real option but should NOT be the default. If the session ran smoothly with no corrections and produced no new technique, just say 'Nothing to save.' and stop. Otherwise, act."
+    },
+    {
+      "role": "assistant",
+      "content": "审查会话后，我发现 sop-wiki-build skill 有一个重要的实战 pitfall 需要补充：分析文件 frontmatter 中的 `mindmap_file` 字段在实战中不可靠，实际文件名使用的是中文标题而非 UUID 格式。\n\n让我加载 skill 并更新。",
+      "reasoning": "Let me review this session carefully for skill update opportunities.\n\nLooking at what happened:\n1. I executed SOP Stage C (sop-wiki-build) - which went smoothly\n2. The skill sop-wiki-build was used and worked well - no corrections, no issues\n3. I followed the skill steps precisely and everything passed\n\nLet me think about what signals exist:\n\n1. **User corrections?** No - the user just asked me to execute the skill and I did it correctly. No style/format/tone corrections.\n\n2. **Workflow corrections?** No - my execution followed the SOP perfectly.\n\n3. **Non-trivial technique/fix/workaround?** Let me think... I noticed something during execution:\n   - The mindmap filenames in the analysis file frontmatter (`mindmap_file`) were UUID-based names like `krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json`, but the actual files on disk had Chinese-title-based names like `GPT-5-5-Instant-模型发布与性能分析简报.json`. This is a potential pitfall that the SOP doesn't cover.\n   \n   - I handled it by checking the filesystem first and matching by content/context instead. This could be a useful pitfall to document in the sop-wiki-build skill.\n\n   - Also, the source page filename used dots (GPT-5.5) but the mindmap reference used hyphens (GPT-5-5). This worked out because I checked the actual filenames, but it's a potential source of confusion.\n\n4. **Skill that was loaded and found lacking?** The sop-wiki-build skill was used. Let me think if it had any gaps:\n   - Step 10 mentions using `sources` field with both report and mindmap paths, and referencing mindmap in the body text.\n   - But the skill doesn't mention that the mindmap filenames in the frontmatter may not match the actual files on disk. This is a real gotcha.\n   - Also, the skill mentions using \"view brain map\" wikilinks, but doesn't mention that mindmap .json files are NOT wiki pages, so `[[filename]]` will fail unless there's a corresponding wiki page.\n   - Actually, in my execution, the mindmap reference `[[GPT-5-5-Instant-模型发布与性能分析简报|查看脑图]]` resolved successfully because my check script looked in `raw/notebooklm-mindmaps/` for the `.json` extension. But this is a convention I invented on the fly - the SOP doesn't define this.\n\nLet me think about what's worth updating in the sop-wiki-build skill:\n\n1. **Pitfall: mindmap filename mismatch** - The `mindmap_file` frontmatter in analysis reports may not match actual filenames on disk. Always verify against `ls raw/notebooklm-mindmaps/`.\n\n2. **Mindmap reference convention** - Clarify that mindmap references in source pages should use the filename from the filesystem (ls output), not the `mindmap_file` field from frontmatter.\n\n3. **The actual working approach for mindmap wikilinks** - Since mindmaps are .json files in raw/, they should be referenced with a non-wikilink approach or the filename must match. My approach was to use the filesystem filename.\n\nLet me also check the sop-notebooklm-research skill to see if it generated the analysis files. The analysis files' frontmatter had `mindmap_file` fields that didn't match the actual disk filenames. This suggests the notebooklm processing step might have renamed the mindmap files or the frontmatter is wrong. This could be a bug in the previous SOP (Stage B).\n\nActually, looking more carefully at the actual mindmap filenames:\n- `GPT-5-5-Instant-模型发布与性能分析简报.json`\n- `Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json`\n- `零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json`\n\nAnd the analysis filenames:\n- `GPT-5-5-Instant-模型发布与性能分析简报.md`\n- `Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md`\n- `零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md`\n\nThe mindmaps match the analysis filenames but with `.json` extension. But the frontmatter says completely different filenames (with UUIDs). This means the notebooklm processing pipeline renamed the files but didn't update the frontmatter. This is a known issue.\n\nSo I should patch sop-wiki-build to add:\n1. A pitfall about mindmap_file frontmatter mismatch\n2. Step to verify actual mindmap filenames on disk\n3. Convention for how to reference mindmaps in source pages\n\nLet me update the skill.\n\nActually, wait - let me re-read the skill more carefully. The skill says:\n\n> 9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：\n>    - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在\n\nSo the skill already says to check if the file exists. In my case, the file didn't exist at that path, and I detected it by checking the actual filesystem. So the pitfall should be that the `mindmap_file` field in the frontmatter is unreliable - you MUST check actual disk filenames.\n\nLet me patch the skill.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me review this session carefully for skill update opportunities.\n\nLooking at what happened:\n1. I executed SOP Stage C (sop-wiki-build) - which went smoothly\n2. The skill sop-wiki-build was used and worked well - no corrections, no issues\n3. I followed the skill steps precisely and everything passed\n\nLet me think about what signals exist:\n\n1. **User corrections?** No - the user just asked me to execute the skill and I did it correctly. No style/format/tone corrections.\n\n2. **Workflow corrections?** No - my execution followed the SOP perfectly.\n\n3. **Non-trivial technique/fix/workaround?** Let me think... I noticed something during execution:\n   - The mindmap filenames in the analysis file frontmatter (`mindmap_file`) were UUID-based names like `krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json`, but the actual files on disk had Chinese-title-based names like `GPT-5-5-Instant-模型发布与性能分析简报.json`. This is a potential pitfall that the SOP doesn't cover.\n   \n   - I handled it by checking the filesystem first and matching by content/context instead. This could be a useful pitfall to document in the sop-wiki-build skill.\n\n   - Also, the source page filename used dots (GPT-5.5) but the mindmap reference used hyphens (GPT-5-5). This worked out because I checked the actual filenames, but it's a potential source of confusion.\n\n4. **Skill that was loaded and found lacking?** The sop-wiki-build skill was used. Let me think if it had any gaps:\n   - Step 10 mentions using `sources` field with both report and mindmap paths, and referencing mindmap in the body text.\n   - But the skill doesn't mention that the mindmap filenames in the frontmatter may not match the actual files on disk. This is a real gotcha.\n   - Also, the skill mentions using \"view brain map\" wikilinks, but doesn't mention that mindmap .json files are NOT wiki pages, so `[[filename]]` will fail unless there's a corresponding wiki page.\n   - Actually, in my execution, the mindmap reference `[[GPT-5-5-Instant-模型发布与性能分析简报|查看脑图]]` resolved successfully because my check script looked in `raw/notebooklm-mindmaps/` for the `.json` extension. But this is a convention I invented on the fly - the SOP doesn't define this.\n\nLet me think about what's worth updating in the sop-wiki-build skill:\n\n1. **Pitfall: mindmap filename mismatch** - The `mindmap_file` frontmatter in analysis reports may not match actual filenames on disk. Always verify against `ls raw/notebooklm-mindmaps/`.\n\n2. **Mindmap reference convention** - Clarify that mindmap references in source pages should use the filename from the filesystem (ls output), not the `mindmap_file` field from frontmatter.\n\n3. **The actual working approach for mindmap wikilinks** - Since mindmaps are .json files in raw/, they should be referenced with a non-wikilink approach or the filename must match. My approach was to use the filesystem filename.\n\nLet me also check the sop-notebooklm-research skill to see if it generated the analysis files. The analysis files' frontmatter had `mindmap_file` fields that didn't match the actual disk filenames. This suggests the notebooklm processing step might have renamed the mindmap files or the frontmatter is wrong. This could be a bug in the previous SOP (Stage B).\n\nActually, looking more carefully at the actual mindmap filenames:\n- `GPT-5-5-Instant-模型发布与性能分析简报.json`\n- `Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.json`\n- `零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.json`\n\nAnd the analysis filenames:\n- `GPT-5-5-Instant-模型发布与性能分析简报.md`\n- `Hermes-Agent-与-OpenClaw-深度对比简报-下一代自我进化智能.md`\n- `零成本本地-AI-Agent-部署简报-Hermes-与-Qwen3-6-的深度.md`\n\nThe mindmaps match the analysis filenames but with `.json` extension. But the frontmatter says completely different filenames (with UUIDs). This means the notebooklm processing pipeline renamed the files but didn't update the frontmatter. This is a known issue.\n\nSo I should patch sop-wiki-build to add:\n1. A pitfall about mindmap_file frontmatter mismatch\n2. Step to verify actual mindmap filenames on disk\n3. Convention for how to reference mindmaps in source pages\n\nLet me update the skill.\n\nActually, wait - let me re-read the skill more carefully. The skill says:\n\n> 9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：\n>    - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在\n\nSo the skill already says to check if the file exists. In my case, the file didn't exist at that path, and I detected it by checking the actual filesystem. So the pitfall should be that the `mindmap_file` field in the frontmatter is unreliable - you MUST check actual disk filenames.\n\nLet me patch the skill.",
+      "tool_calls": [
+        {
+          "id": "call_00_9vZoYgrh81Ie1tX03lct3661",
+          "call_id": "call_00_9vZoYgrh81Ie1tX03lct3661",
+          "response_item_id": "fc_00_9vZoYgrh81Ie1tX03lct3661",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"devops/sop-wiki-build\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"sop-wiki-build\", \"description\": \"SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。\", \"tags\": [], \"related_skills\": [], \"content\": \"---\\nname: sop-wiki-build\\ndescription: \\\"SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。\\\"\\nversion: 2.0.0\\n---\\n\\n# SOP Stage C: Wiki Incremental Build\\n\\n## 触发条件\\nwebhook 收到 `stage=wiki-build`\\n\\n---\\n\\n## Phase 1: Pre-Execution（准备阶段）\\n\\n**目标：读取配置，同步仓库，确认有分析文件需要处理**\\n\\n1. 记录开始时间：`START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`\\n2. `cd {wiki_local_path}`\\n3. **首先读取 `TheSchema.md`**（最高优先级，知识图谱构建的唯一规范）。\\n4. 保护性同步：\\n   ```bash\\n   git stash push -u -m \\\"sop-c-{run_id}\\\" 2>/dev/null || true\\n   git fetch origin && git checkout main && git pull --ff-only origin main\\n   if ! git stash pop 2>/dev/null; then\\n       git reset --hard origin/main && git stash drop 2>/dev/null || true\\n   fi\\n   ```\\n5. **扫描分析文件**（不依赖 git diff，直接扫目录）：\\n   ```bash\\n   ls {wiki_local_path}/raw/notebooklm-analysis/*.md 2>/dev/null | grep -v 'trigger'\\n   ```\\n6. **若无分析文件**：写跳过日志，git add + commit + push 日志，停止执行（禁止发 Telegram）。\\n7. 读取 `index.md` 和 `log.md`（最近 10 条）了解现有内容，避免重复创建。\\n8. 确保目录存在：`mkdir -p wiki/sources wiki/entities wiki/concepts wiki/comparisons wiki/overview wiki/queries logs/webhook-runs`\\n\\n---\\n\\n## Phase 2: Action（知识图谱构建）\\n\\n**目标：将分析文件转化为结构化 wiki 页面，严格遵循 TheSchema.md**\\n\\n### 文件写入约束（必须遵守）\\n- **必须用 write_file 工具写入所有 wiki 文件**，禁止 `echo`、`heredoc`、`cat <<EOF`。\\n- shell 方式导致 `\\\\n` 变成字面字符串，破坏 frontmatter 格式。\\n\\n### 命名陷阱（常见错误）\\n\\n1. **Entity 命名规范：遵循 TheSchema.md 小写 slug**：TheSchema.md §2 要求 entity 文件使用 `{实体名}.md（小写 slug）` 命名（如 `hermes-agent.md`），而非 readable 名称（如 `Hermes Agent.md`）。**这是最高优先级规范**，skill 的 slug-generation.md 参考文件已更新对齐。在所有页面中使用 `[[slug]]` 引用时，必须与 entity 文件名完全一致。\\n\\n2. **特殊字符导致文件名损坏**：避免在文件名中使用以下字符：\\n   - `+`（加号）→ 文件系统显示为 `-+-`\\n   - `：`（全角冒号）、`/`、`\\\\`、`?`、`*`、`<`、`>`\\n   - 推荐使用中文汉字、英文连字符 `-`、空格（空格在 Linux 文件系统中受支持但请注意 wikilink 一致性）\\n   \\n3. **Linux 文件系统大小写敏感**：`Token-自由.md` 与 `token-自由.md` 是不同的文件。wikilink 中的名称必须与文件名的大小写完全一致。创建所有页面后运行链接健康检查（Step 14）可发现此问题。\\n\\n4. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。\\n\\n5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。\\n\\n### 对每个分析报告执行：\\n\\n9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：\\n   ```\\n   video_id, video_url, source_id, mindmap_file, processed_at\\n   ```\\n   - `video_url`：直接用于 source 页，比从内容推断更可靠\\n   - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在\\n   - 若无 frontmatter，退化到从报告正文推断\\n\\n10. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：\\n   - frontmatter 必填：`title/type/tags/summary/sources/created/updated/layer/confidence`\\n   - **新增 frontmatter 字段**（建立三方关联）：\\n     ```yaml\\n     video_url: {从报告 frontmatter 读取}\\n     mindmap: raw/notebooklm-mindmaps/{mindmap_file}\\n     ```\\n   - `sources` 字段同时列出报告路径和脑图路径\\n   - 页面正文**必须包含**视频 URL 和脑图引用：\\n     ```\\n     - 视频：{video_url}\\n     - 思维导图：[[{mindmap_file去掉.json}]]（指向 raw/notebooklm-mindmaps/）\\n     ```\\n   - 执行摘要（3-5句）、核心要点（5-10条）\\n   - 关联实体 `[[实体名]]`，关联概念 `[[概念名]]`\\n   - 每个视频**唯一一个** source 页，若已存在则更新\\n\\n10. 创建/更新 **Entity 页**（`wiki/entities/{实体名}.md`）：\\n    - 先查 index.md 确认是否已存在，已存在则更新不新建\\n    - 基本定位、核心特征、关系网络（≥2 个 `[[wikilink]]`）、出现的视频来源\\n\\n11. 创建/更新 **Concept 页**（`wiki/concepts/{概念名}.md`）：\\n    - 先查 index.md 确认是否已存在\\n    - 定义、本库具体例子、关联概念（≥2 个）、关联实体（≥1 个）\\n\\n12. **检查 Comparison 触发**：同一视频或不同视频中有直接对比的两个实体 → 创建 `wiki/comparisons/{A}-vs-{B}.md`（对比表格+分析+结论）\\n\\n13. **检查 Overview 触发**：同主题 source 页 ≥2 个 → 创建或更新 `wiki/overview/{主题}.md`（跨视频综合，L2 推断）\\n\\n### 链接健康检查：\\n14. 扫描所有新建/修改页面的 `[[wikilink]]`，确认目标文件存在。死链处理：立即创建缺失页面，或删除该链接。\\n\\n### 质量核查（创建所有页面后执行）：\\n14b. 运行以下自动化检查，所有项必须通过才能提交：\\n    - 每个新页面 frontmatter 6 个必填字段齐全（title/type/tags/summary/sources/layer）\\n    - 每个新页面 ≥ 2 个有效出链 wikilinks（目标文件存在）\\n    - source 页内容 ≥ 400 字（中文）\\n    - entity/concept 页内容 ≥ 200 字\\n    - sources 字段的文件真实存在于 raw/ 目录\\n    - 无死链（Step 14 已确认）\\n14c. 若为**首次构建**（index.md 显示 Total pages: 0 或仅模板内容），跳过\\\"检查现有页面避免重复\\\"的逻辑，直接为所有分析文件创建新页面。\\n\\n### 更新索引：\\n15. 更新 `index.md`（按 type 分类，字母序，每条带 summary，更新 Last updated 和 Total pages）\\n16. 追加 `log.md`（run_id、日期、新增文件列表）\\n\\n---\\n\\n## Phase 3: Post-Execution（提交阶段）⚠️ 强制执行\\n\\n**目标：无论 Phase 2 是否完整，必须 commit + push + 通知**\\n\\n> **此阶段独立于 Phase 2，即使 Phase 2 部分失败，也必须执行 Phase 3。**\\n\\n17. 记录结束时间：`END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`\\n18. 用 write_file 工具写执行日志到 `{wiki_local_path}/logs/webhook-runs/{run_id}.md`，必须包含：\\n    - `start_time` / `end_time`\\n    - `new_sources` / `new_entities` / `new_concepts` / `new_comparisons` / `new_overviews`\\n    - `status`：success / partial / skipped\\n19. **检查并提交所有变更**：\\n    ```bash\\n    cd {wiki_local_path}\\n    git add wiki/ index.md log.md logs/\\n    if [ -n \\\"$(git status --porcelain)\\\" ]; then\\n      git commit -m \\\"chore: update llm wiki graph [run:{run_id}]\\\"\\n    fi\\n    ```\\n20. **push，最多重试 3 次**：\\n    ```bash\\n    for i in 1 2 3; do\\n      git push origin main && break\\n      git pull --ff-only origin main\\n    done\\n    ```\\n21. 验证 push 成功：`git log --oneline -1` 确认本地 HEAD 与 origin/main 一致。\\n22. **发送 Telegram（仅在 push 成功且有实际 wiki 更新时）**，格式遵循 TheSchema.md §8：\\n    ```bash\\n    TOKEN=$(printenv {tg_token_env})\\n    curl -s -X POST \\\"https://api.telegram.org/bot${TOKEN}/sendMessage\\\" \\\\\\n      -d \\\"chat_id={tg_chat_id}\\\" \\\\\\n      -d \\\"disable_web_page_preview=true\\\" \\\\\\n      --data-urlencode \\\"text=[YOUTUBE-WIKI-RUN]\\nrun_id: {run_id}\\n新增 source: {n} 个 — {标题列表}\\n新增 entity: {n} 个 — {名称列表}\\n新增 concept: {n} 个 — {名称列表}\\n新增 comparison: {n} 个（如有）\\n新增 overview: {n} 个（如有）\\ncommit: {hash}\\n耗时: {duration}s\\nlog: logs/webhook-runs/{run_id}.md\\\"\\n    ```\\n    注意：如果新增项为 0，仍显示 `0 个` 但省略名称列表。\\n\\n## 注意\\n- push 全部失败 → 记录 `status: push_failed`，**禁止发 Telegram**。\\n- TG 发送失败 → 在 run-log 记录，不影响整体成功状态。\\n\", \"path\": \"devops/sop-wiki-build/SKILL.md\", \"skill_dir\": \"/home/zhouhuijuan1987/.hermes/skills/devops/sop-wiki-build\", \"linked_files\": {\"references\": [\"references/run-log-format.md\", \"references/slug-generation.md\"]}, \"usage_hint\": \"To view linked files, call skill_view(name, file_path) where file_path is e.g. 'references/api.md' or 'assets/config.yaml'\", \"required_environment_variables\": [], \"required_commands\": [], \"missing_required_environment_variables\": [], \"missing_credential_files\": [], \"missing_required_commands\": [], \"setup_needed\": false, \"setup_skipped\": false, \"readiness_status\": \"available\"}",
+      "tool_call_id": "call_00_9vZoYgrh81Ie1tX03lct3661"
+    },
+    {
+      "role": "assistant",
+      "content": "发现了两个从实战中验证出的关键 pitfall，需要更新 sop-wiki-build skill：\n\n1. **mindmap_file frontmatter 不可靠** — 实际文件名是中文标题格式而非 UUID 格式\n2. **脑图引用需用磁盘实际文件名** — 不能依赖 frontmatter，必须通过 filesystem 检查",
+      "reasoning": "I found two concrete issues from this session that should be patched in the sop-wiki-build skill:\n\n1. **Mindmap filename mismatch pitfall (CRITICAL)**: The `mindmap_file` field in analysis file frontmatter is unreliable. In this session, the frontmatter said:\n   - `mindmap_file: krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json`\n   \n   But actual disk filename was:\n   - `GPT-5-5-Instant-模型发布与性能分析简报.json`\n   \n   This means Step 9's instruction to \"check `raw/notebooklm-mindmaps/{mindmap_file}`\" will fail. We need to add: (a) this as a known pitfall, (b) a fallback procedure to check actual filesystem filenames, and (c) a verification step to match mindmap to analysis by content prefix.\n\n2. **Mindmap wikilink convention**: The skill says to use `[[{mindmap_file去掉.json}]]` for mindmap references. But mindmap files are .json in raw/, not wiki pages. This wikilink convention only works if the mindmap basename matches a wiki page filename. A safer approach is to use the actual filesystem filename (not the frontmatter) and match by the analysis file's semantic title prefix.\n\nLet me patch both issues.\n\nFor patch 1 - I'll add a pitfall about mindmap_file frontmatter being unreliable and provide a fallback procedure.\n\nFor patch 2 - I'll clarify the mindmap reference convention: use the actual filesystem filename, matched by common prefix with the analysis filename.\n\nLet me write these patches.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "I found two concrete issues from this session that should be patched in the sop-wiki-build skill:\n\n1. **Mindmap filename mismatch pitfall (CRITICAL)**: The `mindmap_file` field in analysis file frontmatter is unreliable. In this session, the frontmatter said:\n   - `mindmap_file: krEDel3aGGw_377cecb5-dead-4519-accf-cd09b3a1fa23_20260509T065628Z_mindmap.json`\n   \n   But actual disk filename was:\n   - `GPT-5-5-Instant-模型发布与性能分析简报.json`\n   \n   This means Step 9's instruction to \"check `raw/notebooklm-mindmaps/{mindmap_file}`\" will fail. We need to add: (a) this as a known pitfall, (b) a fallback procedure to check actual filesystem filenames, and (c) a verification step to match mindmap to analysis by content prefix.\n\n2. **Mindmap wikilink convention**: The skill says to use `[[{mindmap_file去掉.json}]]` for mindmap references. But mindmap files are .json in raw/, not wiki pages. This wikilink convention only works if the mindmap basename matches a wiki page filename. A safer approach is to use the actual filesystem filename (not the frontmatter) and match by the analysis file's semantic title prefix.\n\nLet me patch both issues.\n\nFor patch 1 - I'll add a pitfall about mindmap_file frontmatter being unreliable and provide a fallback procedure.\n\nFor patch 2 - I'll clarify the mindmap reference convention: use the actual filesystem filename, matched by common prefix with the analysis filename.\n\nLet me write these patches.",
+      "tool_calls": [
+        {
+          "id": "call_00_LiCW4gkv1RfOOeKzQcvT0693",
+          "call_id": "call_00_LiCW4gkv1RfOOeKzQcvT0693",
+          "response_item_id": "fc_00_LiCW4gkv1RfOOeKzQcvT0693",
+          "type": "function",
+          "function": {
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"devops/sop-wiki-build\", \"old_string\": \"### 命名陷阱（常见错误）\\n\\n1. **Entity 命名规范：遵循 TheSchema.md 小写 slug**：TheSchema.md §2 要求 entity 文件使用 `{实体名}.md（小写 slug）` 命名（如 `hermes-agent.md`），而非 readable 名称（如 `Hermes Agent.md`）。**这是最高优先级规范**，skill 的 slug-generation.md 参考文件已更新对齐。在所有页面中使用 `[[slug]]` 引用时，必须与 entity 文件名完全一致。\\n\\n2. **特殊字符导致文件名损坏**：避免在文件名中使用以下字符：\\n   - `+`（加号）→ 文件系统显示为 `-+-`\\n   - `：`（全角冒号）、`/`、`\\\\`、`?`、`*`、`<`、`>`\\n   - 推荐使用中文汉字、英文连字符 `-`、空格（空格在 Linux 文件系统中受支持但请注意 wikilink 一致性）\\n   \\n3. **Linux 文件系统大小写敏感**：`Token-自由.md` 与 `token-自由.md` 是不同的文件。wikilink 中的名称必须与文件名的大小写完全一致。创建所有页面后运行链接健康检查（Step 14）可发现此问题。\\n\\n4. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。\\n\\n5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。\", \"new_string\": \"### 命名陷阱（常见错误）\\n\\n1. **Entity 命名规范：遵循 TheSchema.md 小写 slug**：TheSchema.md §2 要求 entity 文件使用 `{实体名}.md（小写 slug）` 命名（如 `hermes-agent.md`），而非 readable 名称（如 `Hermes Agent.md`）。**这是最高优先级规范**，skill 的 slug-generation.md 参考文件已更新对齐。在所有页面中使用 `[[slug]]` 引用时，必须与 entity 文件名完全一致。\\n\\n2. **特殊字符导致文件名损坏**：避免在文件名中使用以下字符：\\n   - `+`（加号）→ 文件系统显示为 `-+-`\\n   - `：`（全角冒号）、`/`、`\\\\`、`?`、`*`、`<`、`>`\\n   - 推荐使用中文汉字、英文连字符 `-`、空格（空格在 Linux 文件系统中受支持但请注意 wikilink 一致性）\\n   \\n3. **Linux 文件系统大小写敏感**：`Token-自由.md` 与 `token-自由.md` 是不同的文件。wikilink 中的名称必须与文件名的大小写完全一致。创建所有页面后运行链接健康检查（Step 14）可发现此问题。\\n\\n4. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。\\n\\n5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。\\n\\n6. **⚠️ mindmap_file frontmatter 不可靠 — 必须通过 filesystem 验证**：分析文件的 `mindmap_file` 字段（如 `krEDel3aGGw_..._mindmap.json`）在实战中经常与实际磁盘文件名不匹配。实际文件名通常是中文标题格式（如 `GPT-5-5-Instant-模型发布与性能分析简报.json`），与同名的分析 `.md` 文件扩展名不同。**绝对不要直接使用 frontmatter 的 `mindmap_file` 值**。\\n   - **错误做法**：`ls raw/notebooklm-mindmaps/{mindmap_file}` → 文件不存在，构建卡死\\n   - **正确做法**：先 `ls raw/notebooklm-mindmaps/` 获取实际文件列表，通过分析文件的中文标题前缀匹配对应的 `.json` 文件\\n   - 验证命令：`ls raw/notebooklm-mindmaps/ | grep \\\"$(basename '{analysis_md_file}' .md)\\\"` 或直接肉眼匹配文件名前缀\\n\\n7. **脑图 wikilink 需使用磁盘实际文件名，而非 frontmatter 值**：source 页正文中的脑图引用 `[[{文件名}|查看脑图]]`，必须使用 `ls raw/notebooklm-mindmaps/` 中实际存在的文件名（去掉 `.json`），而不是 frontmatter 中的 `mindmap_file` 值。如果实际文件名与 source 页文件名的前缀不一致，建议在 source 页正文中使用文字描述而非 wikilink。\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": false, \"error\": \"Skill 'devops/sop-wiki-build' not found.\"}",
+      "tool_call_id": "call_00_LiCW4gkv1RfOOeKzQcvT0693"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "The skill name might be \"sop-wiki-build\" without the \"devops/\" prefix. Let me check.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The skill name might be \"sop-wiki-build\" without the \"devops/\" prefix. Let me check.",
+      "tool_calls": [
+        {
+          "id": "call_00_Ud93lnB5yJAbM5cUP8PR6551",
+          "call_id": "call_00_Ud93lnB5yJAbM5cUP8PR6551",
+          "response_item_id": "fc_00_Ud93lnB5yJAbM5cUP8PR6551",
+          "type": "function",
+          "function": {
+            "name": "skills_list",
+            "arguments": "{\"category\": \"devops\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"skills\": [{\"name\": \"brain-sync-reporting\", \"description\": \"Standardized workflow for generating Telegram reports from Hermes brain sync events, including GitHub link construction and message formatting.\", \"category\": \"devops\"}, {\"name\": \"brain-sync-workflow\", \"description\": \"Class-level skill for Hermes Brain synchronization workflows. Automates: (1) repo sync, (2) commit data extraction, (3) GitHub link generation, (4) generation of Telegram-style reports. Encodes procedural steps, pitfalls, and verification. Reusable across Hermes sessions.\\n\", \"category\": \"devops\"}, {\"name\": \"hermes-brain-sync\", \"description\": \"Use when bootstrapping, cloning, restoring, synchronizing, auto-syncing, or setting push/pull roles for a user's Hermes Agent memory, skills, sessions, configuration, webhooks, and plaintext test credentials across machines from the hermes-brain repository.\", \"category\": \"devops\"}, {\"name\": \"hermes-custom-providers\", \"description\": \"Configure custom LLM providers in Hermes — OpenAI-compatible, Claude-compatible, Gemini-compatible, and multi-format proxies. Troubleshoot authentication and endpoint issues.\", \"category\": \"devops\"}, {\"name\": \"kanban-orchestrator\", \"description\": \"Decomposition playbook + specialist-roster conventions + anti-temptation rules for an orchestrator profile routing work through Kanban. The \\\"don't do the work yourself\\\" rule and the basic lifecycle are auto-injected into every kanban worker's system prompt; this skill is the deeper playbook when you're specifically playing the orchestrator role.\", \"category\": \"devops\"}, {\"name\": \"kanban-worker\", \"description\": \"Pitfalls, examples, and edge cases for Hermes Kanban workers. The lifecycle itself is auto-injected into every worker's system prompt as KANBAN_GUIDANCE (from agent/prompt_builder.py); this skill is what you load when you want deeper detail on specific scenarios.\", \"category\": \"devops\"}, {\"name\": \"llm-wiki-multiwiki-e2e-gate\", \"description\": \"Bootstrap and validate multi-wiki factory flow: push->GitHub Action->Hermes webhook->incremental compile->push-back->next run skip when raw unchanged.\", \"category\": \"devops\"}, {\"name\": \"notebooklm-cli\", \"description\": \"NotebookLM CLI and API with live-session auth recovery. Full programmatic access to NotebookLM including features not in the web UI. Create notebooks, add sources, generate all artifact types, and download in multiple formats. Activates on explicit /notebooklm-cli or intent like \\\"create a podcast about X\\\"\", \"category\": \"devops\"}, {\"name\": \"sop-notebooklm-research\", \"description\": \"SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图，push 到仓库触发 Stage C。\", \"category\": \"devops\"}, {\"name\": \"sop-wiki-build\", \"description\": \"SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。\", \"category\": \"devops\"}, {\"name\": \"summarize\", \"description\": \"Transcribe and summarize videos from YouTube, local files, Google Drive, Dropbox, and social media platforms (TikTok, Instagram, Twitter/X, Reddit) using any OpenAI-compatible LLM. Use when asked to summarize, analyze, extract insights, fact-check, or create study materials from video content.\", \"category\": \"devops\"}, {\"name\": \"video-summarizer-local\", \"description\": \"Use when you want Hermes to run a fully local, isolated video transcript/summarization workflow (YouTube and other URLs) without depending on any external project checkout path.\", \"category\": \"devops\"}, {\"name\": \"webhook-subscriptions\", \"description\": \"Webhook subscriptions: event-driven agent runs.\", \"category\": \"devops\"}, {\"name\": \"youtube-wiki-processing\", \"description\": \"Automated workflow for processing YouTube video research wiki updates via webhook triggers. Handles detection of raw changes, NotebookLM analysis generation, and incremental wiki compilation.\", \"category\": \"devops\"}], \"categories\": [\"devops\"], \"count\": 14, \"hint\": \"Use skill_view(name) to see full content, tags, and linked files\"}",
+      "tool_call_id": "call_00_Ud93lnB5yJAbM5cUP8PR6551"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "The skill name is \"sop-wiki-build\" (without devops/ prefix). Let me try again.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The skill name is \"sop-wiki-build\" (without devops/ prefix). Let me try again.",
+      "tool_calls": [
+        {
+          "id": "call_00_PVNMIUf6eAx6ZOx5gWjq2977",
+          "call_id": "call_00_PVNMIUf6eAx6ZOx5gWjq2977",
+          "response_item_id": "fc_00_PVNMIUf6eAx6ZOx5gWjq2977",
+          "type": "function",
+          "function": {
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"sop-wiki-build\", \"new_string\": \"### 命名陷阱（常见错误）\\n\\n1. **Entity 命名规范：遵循 TheSchema.md 小写 slug**：TheSchema.md §2 要求 entity 文件使用 `{实体名}.md（小写 slug）` 命名（如 `hermes-agent.md`），而非 readable 名称（如 `Hermes Agent.md`）。**这是最高优先级规范**，skill 的 slug-generation.md 参考文件已更新对齐。在所有页面中使用 `[[slug]]` 引用时，必须与 entity 文件名完全一致。\\n\\n2. **特殊字符导致文件名损坏**：避免在文件名中使用以下字符：\\n   - `+`（加号）→ 文件系统显示为 `-+-`\\n   - `：`（全角冒号）、`/`、`\\\\`、`?`、`*`、`<`、`>`\\n   - 推荐使用中文汉字、英文连字符 `-`、空格（空格在 Linux 文件系统中受支持但请注意 wikilink 一致性）\\n   \\n3. **Linux 文件系统大小写敏感**：`Token-自由.md` 与 `token-自由.md` 是不同的文件。wikilink 中的名称必须与文件名的大小写完全一致。创建所有页面后运行链接健康检查（Step 14）可发现此问题。\\n\\n4. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。\\n\\n5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。\\n\\n6. **⚠️ mindmap_file frontmatter 不可靠 — 必须通过 filesystem 验证**：分析文件的 `mindmap_file` 字段（如 `krEDel3aGGw_..._mindmap.json`）在实战中经常与实际磁盘文件名不匹配。实际文件名通常是中文标题格式（如 `GPT-5-5-Instant-模型发布与性能分析简报.json`），与同名的分析 `.md` 文件扩展名不同。**绝对不要直接使用 frontmatter 的 `mindmap_file` 值**。\\n   - **错误做法**：`ls raw/notebooklm-mindmaps/{mindmap_file}` → 文件不存在，构建卡死\\n   - **正确做法**：先 `ls raw/notebooklm-mindmaps/` 获取实际文件列表，通过分析文件的中文标题前缀匹配对应的 `.json` 文件\\n   - 验证命令：`ls raw/notebooklm-mindmaps/ | grep \\\"$(basename '{analysis_md_file}' .md)\\\"` 或直接肉眼匹配文件名前缀\\n\\n7. **脑图 wikilink 需使用磁盘实际文件名，而非 frontmatter 值**：source 页正文中的脑图引用 `[[{文件名}|查看脑图]]`，必须使用 `ls raw/notebooklm-mindmaps/` 中实际存在的文件名（去掉 `.json`），而不是 frontmatter 中的 `mindmap_file` 值。如果实际文件名与 source 页文件名的前缀不一致，建议在 source 页正文中使用文字描述而非 wikilink。\", \"old_string\": \"### 命名陷阱（常见错误）\\n\\n1. **Entity 命名规范：遵循 TheSchema.md 小写 slug**：TheSchema.md §2 要求 entity 文件使用 `{实体名}.md（小写 slug）` 命名（如 `hermes-agent.md`），而非 readable 名称（如 `Hermes Agent.md`）。**这是最高优先级规范**，skill 的 slug-generation.md 参考文件已更新对齐。在所有页面中使用 `[[slug]]` 引用时，必须与 entity 文件名完全一致。\\n\\n2. **特殊字符导致文件名损坏**：避免在文件名中使用以下字符：\\n   - `+`（加号）→ 文件系统显示为 `-+-`\\n   - `：`（全角冒号）、`/`、`\\\\`、`?`、`*`、`<`、`>`\\n   - 推荐使用中文汉字、英文连字符 `-`、空格（空格在 Linux 文件系统中受支持但请注意 wikilink 一致性）\\n   \\n3. **Linux 文件系统大小写敏感**：`Token-自由.md` 与 `token-自由.md` 是不同的文件。wikilink 中的名称必须与文件名的大小写完全一致。创建所有页面后运行链接健康检查（Step 14）可发现此问题。\\n\\n4. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。\\n\\n5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"message\": \"Patched SKILL.md in skill 'sop-wiki-build' (1 replacement).\"}",
+      "tool_call_id": "call_00_PVNMIUf6eAx6ZOx5gWjq2977"
+    },
+    {
+      "role": "assistant",
+      "content": "Now patch Step 9 to add the frontmatter verification procedure:",
+      "reasoning": "Good, the patch was applied. Now let me also update Step 9 and Step 10 to reflect the correct approach for mindmap handling.\n\nStep 9 currently says:\n```\n   - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在\n   - 若无 frontmatter，退化到从报告正文推断\n```\n\nI need to update this to reflect that the frontmatter `mindmap_file` is unreliable and should be verified against disk.\n\nAnd Step 10 currently says:\n```\n     - `sources` 字段同时列出报告路径和脑图路径\n     - 页面正文**必须包含**视频 URL 和脑图引用：\n       ```\n       - 视频：{video_url}\n       - 思维导图：[[{mindmap_file去掉.json}]]（指向 raw/notebooklm-mindmaps/）\n       ```\n```\n\nI need to update the mindmap path construction to use actual disk filenames, not frontmatter values.\n\nLet me patch Step 9 first.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, the patch was applied. Now let me also update Step 9 and Step 10 to reflect the correct approach for mindmap handling.\n\nStep 9 currently says:\n```\n   - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在\n   - 若无 frontmatter，退化到从报告正文推断\n```\n\nI need to update this to reflect that the frontmatter `mindmap_file` is unreliable and should be verified against disk.\n\nAnd Step 10 currently says:\n```\n     - `sources` 字段同时列出报告路径和脑图路径\n     - 页面正文**必须包含**视频 URL 和脑图引用：\n       ```\n       - 视频：{video_url}\n       - 思维导图：[[{mindmap_file去掉.json}]]（指向 raw/notebooklm-mindmaps/）\n       ```\n```\n\nI need to update the mindmap path construction to use actual disk filenames, not frontmatter values.\n\nLet me patch Step 9 first.",
+      "tool_calls": [
+        {
+          "id": "call_00_tf7jtlMo63mbN93MACGF0978",
+          "call_id": "call_00_tf7jtlMo63mbN93MACGF0978",
+          "response_item_id": "fc_00_tf7jtlMo63mbN93MACGF0978",
+          "type": "function",
+          "function": {
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"sop-wiki-build\", \"new_string\": \"9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：\\n   ```\\n   video_id, video_url, source_id, mindmap_file, processed_at\\n   ```\\n   - `video_url`：直接用于 source 页，比从内容推断更可靠\\n   - `mindmap_file`：**仅作参考，不可直接使用**（见陷阱 #6）。必须通过 filesystem 验证实际文件名：\\n     ```bash\\n     ls raw/notebooklm-mindmaps/ | grep \\\"$(basename '{分析文件路径}' .md)\\\"\\n     ```\\n     若 `grep` 无匹配，直接 `ls raw/notebooklm-mindmaps/` 肉眼匹配文件名前缀\\n   - 若无 frontmatter，退化到从报告正文推断\", \"old_string\": \"9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：\\n   ```\\n   video_id, video_url, source_id, mindmap_file, processed_at\\n   ```\\n   - `video_url`：直接用于 source 页，比从内容推断更可靠\\n   - `mindmap_file`：对应的脑图文件名，检查 `raw/notebooklm-mindmaps/{mindmap_file}` 是否存在\\n   - 若无 frontmatter，退化到从报告正文推断\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"message\": \"Patched SKILL.md in skill 'sop-wiki-build' (1 replacement).\"}",
+      "tool_call_id": "call_00_tf7jtlMo63mbN93MACGF0978"
+    },
+    {
+      "role": "assistant",
+      "content": "Now patch Step 10 to use actual disk-based mindmap filename:",
+      "reasoning": "Now update Step 10 to use the actual mindmap filename from filesystem, not the frontmatter value.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now update Step 10 to use the actual mindmap filename from filesystem, not the frontmatter value.",
+      "tool_calls": [
+        {
+          "id": "call_00_HO25FrTEBzLoSrwVjLoQ6096",
+          "call_id": "call_00_HO25FrTEBzLoSrwVjLoQ6096",
+          "response_item_id": "fc_00_HO25FrTEBzLoSrwVjLoQ6096",
+          "type": "function",
+          "function": {
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"sop-wiki-build\", \"new_string\": \"10. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：\\n   - frontmatter 必填：`title/type/tags/summary/sources/created/updated/layer/confidence`\\n   - **新增 frontmatter 字段**（建立三方关联）：\\n     ```yaml\\n     video_url: {从报告 frontmatter 读取}\\n     mindmap: raw/notebooklm-mindmaps/{实际磁盘文件名}\\n     ```\\n   - `sources` 字段同时列出报告路径和脑图路径\\n   - 页面正文**必须包含**视频 URL 和脑图引用：\\n     ```\\n     - 视频：{video_url}\\n     - 思维导图：[[{实际磁盘文件名去.json}]]（指向 raw/notebooklm-mindmaps/）\\n     ```\\n     注意：`{实际磁盘文件名}` 来自 `ls raw/notebooklm-mindmaps/` 的输出，**不是**前一步 `mindmap_file` 字段的值。\\n   - 执行摘要（3-5句）、核心要点（5-10条）\\n   - 关联实体 `[[实体名]]`，关联概念 `[[概念名]]`\\n   - 每个视频**唯一一个** source 页，若已存在则更新\", \"old_string\": \"10. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：\\n   - frontmatter 必填：`title/type/tags/summary/sources/created/updated/layer/confidence`\\n   - **新增 frontmatter 字段**（建立三方关联）：\\n     ```yaml\\n     video_url: {从报告 frontmatter 读取}\\n     mindmap: raw/notebooklm-mindmaps/{mindmap_file}\\n     ```\\n   - `sources` 字段同时列出报告路径和脑图路径\\n   - 页面正文**必须包含**视频 URL 和脑图引用：\\n     ```\\n     - 视频：{video_url}\\n     - 思维导图：[[{mindmap_file去掉.json}]]（指向 raw/notebooklm-mindmaps/）\\n     ```\\n   - 执行摘要（3-5句）、核心要点（5-10条）\\n   - 关联实体 `[[实体名]]`，关联概念 `[[概念名]]`\\n   - 每个视频**唯一一个** source 页，若已存在则更新\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"message\": \"Patched SKILL.md in skill 'sop-wiki-build' (1 replacement).\"}",
+      "tool_call_id": "call_00_HO25FrTEBzLoSrwVjLoQ6096"
+    },
+    {
+      "role": "assistant",
+      "content": "验证最终状态：",
+      "reasoning": "Good. I've updated the sop-wiki-build skill with two critical patches based on real execution experience:\n\n1. Added pitfall #6 about `mindmap_file` frontmatter being unreliable\n2. Added pitfall #7 about using actual disk filenames for mindmap wikilinks\n3. Updated Step 9 to verify mindmap files against filesystem\n4. Updated Step 10 to use actual disk filenames for mindmap references\n\nLet me verify the final state of the skill to make sure the patches look correct.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good. I've updated the sop-wiki-build skill with two critical patches based on real execution experience:\n\n1. Added pitfall #6 about `mindmap_file` frontmatter being unreliable\n2. Added pitfall #7 about using actual disk filenames for mindmap wikilinks\n3. Updated Step 9 to verify mindmap files against filesystem\n4. Updated Step 10 to use actual disk filenames for mindmap references\n\nLet me verify the final state of the skill to make sure the patches look correct.",
+      "tool_calls": [
+        {
+          "id": "call_00_oDmkMWR7XkJDcPQuKFdg1051",
+          "call_id": "call_00_oDmkMWR7XkJDcPQuKFdg1051",
+          "response_item_id": "fc_00_oDmkMWR7XkJDcPQuKFdg1051",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"sop-wiki-build\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"sop-wiki-build\", \"description\": \"SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。\", \"tags\": [], \"related_skills\": [], \"content\": \"---\\nname: sop-wiki-build\\ndescription: \\\"SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。\\\"\\nversion: 2.0.0\\n---\\n\\n# SOP Stage C: Wiki Incremental Build\\n\\n## 触发条件\\nwebhook 收到 `stage=wiki-build`\\n\\n---\\n\\n## Phase 1: Pre-Execution（准备阶段）\\n\\n**目标：读取配置，同步仓库，确认有分析文件需要处理**\\n\\n1. 记录开始时间：`START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`\\n2. `cd {wiki_local_path}`\\n3. **首先读取 `TheSchema.md`**（最高优先级，知识图谱构建的唯一规范）。\\n4. 保护性同步：\\n   ```bash\\n   git stash push -u -m \\\"sop-c-{run_id}\\\" 2>/dev/null || true\\n   git fetch origin && git checkout main && git pull --ff-only origin main\\n   if ! git stash pop 2>/dev/null; then\\n       git reset --hard origin/main && git stash drop 2>/dev/null || true\\n   fi\\n   ```\\n5. **扫描分析文件**（不依赖 git diff，直接扫目录）：\\n   ```bash\\n   ls {wiki_local_path}/raw/notebooklm-analysis/*.md 2>/dev/null | grep -v 'trigger'\\n   ```\\n6. **若无分析文件**：写跳过日志，git add + commit + push 日志，停止执行（禁止发 Telegram）。\\n7. 读取 `index.md` 和 `log.md`（最近 10 条）了解现有内容，避免重复创建。\\n8. 确保目录存在：`mkdir -p wiki/sources wiki/entities wiki/concepts wiki/comparisons wiki/overview wiki/queries logs/webhook-runs`\\n\\n---\\n\\n## Phase 2: Action（知识图谱构建）\\n\\n**目标：将分析文件转化为结构化 wiki 页面，严格遵循 TheSchema.md**\\n\\n### 文件写入约束（必须遵守）\\n- **必须用 write_file 工具写入所有 wiki 文件**，禁止 `echo`、`heredoc`、`cat <<EOF`。\\n- shell 方式导致 `\\\\n` 变成字面字符串，破坏 frontmatter 格式。\\n\\n### 命名陷阱（常见错误）\\n\\n1. **Entity 命名规范：遵循 TheSchema.md 小写 slug**：TheSchema.md §2 要求 entity 文件使用 `{实体名}.md（小写 slug）` 命名（如 `hermes-agent.md`），而非 readable 名称（如 `Hermes Agent.md`）。**这是最高优先级规范**，skill 的 slug-generation.md 参考文件已更新对齐。在所有页面中使用 `[[slug]]` 引用时，必须与 entity 文件名完全一致。\\n\\n2. **特殊字符导致文件名损坏**：避免在文件名中使用以下字符：\\n   - `+`（加号）→ 文件系统显示为 `-+-`\\n   - `：`（全角冒号）、`/`、`\\\\`、`?`、`*`、`<`、`>`\\n   - 推荐使用中文汉字、英文连字符 `-`、空格（空格在 Linux 文件系统中受支持但请注意 wikilink 一致性）\\n   \\n3. **Linux 文件系统大小写敏感**：`Token-自由.md` 与 `token-自由.md` 是不同的文件。wikilink 中的名称必须与文件名的大小写完全一致。创建所有页面后运行链接健康检查（Step 14）可发现此问题。\\n\\n4. **检查 TheSchema.md 确认确切目录名**：TheSchema.md 第二节的目录结构中，`wiki/overview/` 是单数（不是 `wiki/overviews/`）、`wiki/comparisons/` 是复数。创建目录前先确认 schema 中的确切路径。\\n\\n5. **重复分析文件处理**：若 `raw/notebooklm-analysis/` 中存在两个或多个内容完全相同的文件（如一份报告因命名差异出现了 dash 和 colon 两个版本），只创建一个 source 页，并在 `sources:` 字段中列出所有原始文件路径。\\n\\n6. **⚠️ mindmap_file frontmatter 不可靠 — 必须通过 filesystem 验证**：分析文件的 `mindmap_file` 字段（如 `krEDel3aGGw_..._mindmap.json`）在实战中经常与实际磁盘文件名不匹配。实际文件名通常是中文标题格式（如 `GPT-5-5-Instant-模型发布与性能分析简报.json`），与同名的分析 `.md` 文件扩展名不同。**绝对不要直接使用 frontmatter 的 `mindmap_file` 值**。\\n   - **错误做法**：`ls raw/notebooklm-mindmaps/{mindmap_file}` → 文件不存在，构建卡死\\n   - **正确做法**：先 `ls raw/notebooklm-mindmaps/` 获取实际文件列表，通过分析文件的中文标题前缀匹配对应的 `.json` 文件\\n   - 验证命令：`ls raw/notebooklm-mindmaps/ | grep \\\"$(basename '{analysis_md_file}' .md)\\\"` 或直接肉眼匹配文件名前缀\\n\\n7. **脑图 wikilink 需使用磁盘实际文件名，而非 frontmatter 值**：source 页正文中的脑图引用 `[[{文件名}|查看脑图]]`，必须使用 `ls raw/notebooklm-mindmaps/` 中实际存在的文件名（去掉 `.json`），而不是 frontmatter 中的 `mindmap_file` 值。如果实际文件名与 source 页文件名的前缀不一致，建议在 source 页正文中使用文字描述而非 wikilink。\\n\\n### 对每个分析报告执行：\\n\\n9. **首先读取报告文件的元数据 frontmatter**（`---` 块）：\\n   ```\\n   video_id, video_url, source_id, mindmap_file, processed_at\\n   ```\\n   - `video_url`：直接用于 source 页，比从内容推断更可靠\\n   - `mindmap_file`：**仅作参考，不可直接使用**（见陷阱 #6）。必须通过 filesystem 验证实际文件名：\\n     ```bash\\n     ls raw/notebooklm-mindmaps/ | grep \\\"$(basename '{分析文件路径}' .md)\\\"\\n     ```\\n     若 `grep` 无匹配，直接 `ls raw/notebooklm-mindmaps/` 肉眼匹配文件名前缀\\n   - 若无 frontmatter，退化到从报告正文推断\\n\\n10. 创建 **Source 页**（`wiki/sources/{中文标题}.md`）：\\n   - frontmatter 必填：`title/type/tags/summary/sources/created/updated/layer/confidence`\\n   - **新增 frontmatter 字段**（建立三方关联）：\\n     ```yaml\\n     video_url: {从报告 frontmatter 读取}\\n     mindmap: raw/notebooklm-mindmaps/{实际磁盘文件名}\\n     ```\\n   - `sources` 字段同时列出报告路径和脑图路径\\n   - 页面正文**必须包含**视频 URL 和脑图引用：\\n     ```\\n     - 视频：{video_url}\\n     - 思维导图：[[{实际磁盘文件名去.json}]]（指向 raw/notebooklm-mindmaps/）\\n     ```\\n     注意：`{实际磁盘文件名}` 来自 `ls raw/notebooklm-mindmaps/` 的输出，**不是**前一步 `mindmap_file` 字段的值。\\n   - 执行摘要（3-5句）、核心要点（5-10条）\\n   - 关联实体 `[[实体名]]`，关联概念 `[[概念名]]`\\n   - 每个视频**唯一一个** source 页，若已存在则更新\\n\\n10. 创建/更新 **Entity 页**（`wiki/entities/{实体名}.md`）：\\n    - 先查 index.md 确认是否已存在，已存在则更新不新建\\n    - 基本定位、核心特征、关系网络（≥2 个 `[[wikilink]]`）、出现的视频来源\\n\\n11. 创建/更新 **Concept 页**（`wiki/concepts/{概念名}.md`）：\\n    - 先查 index.md 确认是否已存在\\n    - 定义、本库具体例子、关联概念（≥2 个）、关联实体（≥1 个）\\n\\n12. **检查 Comparison 触发**：同一视频或不同视频中有直接对比的两个实体 → 创建 `wiki/comparisons/{A}-vs-{B}.md`（对比表格+分析+结论）\\n\\n13. **检查 Overview 触发**：同主题 source 页 ≥2 个 → 创建或更新 `wiki/overview/{主题}.md`（跨视频综合，L2 推断）\\n\\n### 链接健康检查：\\n14. 扫描所有新建/修改页面的 `[[wikilink]]`，确认目标文件存在。死链处理：立即创建缺失页面，或删除该链接。\\n\\n### 质量核查（创建所有页面后执行）：\\n14b. 运行以下自动化检查，所有项必须通过才能提交：\\n    - 每个新页面 frontmatter 6 个必填字段齐全（title/type/tags/summary/sources/layer）\\n    - 每个新页面 ≥ 2 个有效出链 wikilinks（目标文件存在）\\n    - source 页内容 ≥ 400 字（中文）\\n    - entity/concept 页内容 ≥ 200 字\\n    - sources 字段的文件真实存在于 raw/ 目录\\n    - 无死链（Step 14 已确认）\\n14c. 若为**首次构建**（index.md 显示 Total pages: 0 或仅模板内容），跳过\\\"检查现有页面避免重复\\\"的逻辑，直接为所有分析文件创建新页面。\\n\\n### 更新索引：\\n15. 更新 `index.md`（按 type 分类，字母序，每条带 summary，更新 Last updated 和 Total pages）\\n16. 追加 `log.md`（run_id、日期、新增文件列表）\\n\\n---\\n\\n## Phase 3: Post-Execution（提交阶段）⚠️ 强制执行\\n\\n**目标：无论 Phase 2 是否完整，必须 commit + push + 通知**\\n\\n> **此阶段独立于 Phase 2，即使 Phase 2 部分失败，也必须执行 Phase 3。**\\n\\n17. 记录结束时间：`END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)`\\n18. 用 write_file 工具写执行日志到 `{wiki_local_path}/logs/webhook-runs/{run_id}.md`，必须包含：\\n    - `start_time` / `end_time`\\n    - `new_sources` / `new_entities` / `new_concepts` / `new_comparisons` / `new_overviews`\\n    - `status`：success / partial / skipped\\n19. **检查并提交所有变更**：\\n    ```bash\\n    cd {wiki_local_path}\\n    git add wiki/ index.md log.md logs/\\n    if [ -n \\\"$(git status --porcelain)\\\" ]; then\\n      git commit -m \\\"chore: update llm wiki graph [run:{run_id}]\\\"\\n    fi\\n    ```\\n20. **push，最多重试 3 次**：\\n    ```bash\\n    for i in 1 2 3; do\\n      git push origin main && break\\n      git pull --ff-only origin main\\n    done\\n    ```\\n21. 验证 push 成功：`git log --oneline -1` 确认本地 HEAD 与 origin/main 一致。\\n22. **发送 Telegram（仅在 push 成功且有实际 wiki 更新时）**，格式遵循 TheSchema.md §8：\\n    ```bash\\n    TOKEN=$(printenv {tg_token_env})\\n    curl -s -X POST \\\"https://api.telegram.org/bot${TOKEN}/sendMessage\\\" \\\\\\n      -d \\\"chat_id={tg_chat_id}\\\" \\\\\\n      -d \\\"disable_web_page_preview=true\\\" \\\\\\n      --data-urlencode \\\"text=[YOUTUBE-WIKI-RUN]\\nrun_id: {run_id}\\n新增 source: {n} 个 — {标题列表}\\n新增 entity: {n} 个 — {名称列表}\\n新增 concept: {n} 个 — {名称列表}\\n新增 comparison: {n} 个（如有）\\n新增 overview: {n} 个（如有）\\ncommit: {hash}\\n耗时: {duration}s\\nlog: logs/webhook-runs/{run_id}.md\\\"\\n    ```\\n    注意：如果新增项为 0，仍显示 `0 个` 但省略名称列表。\\n\\n## 注意\\n- push 全部失败 → 记录 `status: push_failed`，**禁止发 Telegram**。\\n- TG 发送失败 → 在 run-log 记录，不影响整体成功状态。\\n\", \"path\": \"devops/sop-wiki-build/SKILL.md\", \"skill_dir\": \"/home/zhouhuijuan1987/.hermes/skills/devops/sop-wiki-build\", \"linked_files\": {\"references\": [\"references/run-log-format.md\", \"references/slug-generation.md\"]}, \"usage_hint\": \"To view linked files, call skill_view(name, file_path) where file_path is e.g. 'references/api.md' or 'assets/config.yaml'\", \"required_environment_variables\": [], \"required_commands\": [], \"missing_required_environment_variables\": [], \"missing_credential_files\": [], \"missing_required_commands\": [], \"setup_needed\": false, \"setup_skipped\": false, \"readiness_status\": \"available\"}",
+      "tool_call_id": "call_00_oDmkMWR7XkJDcPQuKFdg1051"
+    },
+    {
+      "role": "assistant",
+      "content": "Version 也 bump 一下以记录本次更新：",
+      "reasoning": "The patches look correct. Let me verify the version should be bumped too - it was 2.0.0, now it should be 2.1.0 since I added new pitfalls and procedure fixes.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The patches look correct. Let me verify the version should be bumped too - it was 2.0.0, now it should be 2.1.0 since I added new pitfalls and procedure fixes.",
+      "tool_calls": [
+        {
+          "id": "call_00_wZZlApZdWApunE0TU8Bg3312",
+          "call_id": "call_00_wZZlApZdWApunE0TU8Bg3312",
+          "response_item_id": "fc_00_wZZlApZdWApunE0TU8Bg3312",
+          "type": "function",
+          "function": {
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"sop-wiki-build\", \"old_string\": \"version: 2.0.0\", \"new_string\": \"version: 2.1.0\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"message\": \"Patched SKILL.md in skill 'sop-wiki-build' (1 replacement).\"}",
+      "tool_call_id": "call_00_wZZlApZdWApunE0TU8Bg3312"
+    },
+    {
+      "role": "user",
+      "content": "You've reached the maximum number of tool-calling iterations allowed. Please provide a final response summarizing what you've found and accomplished so far, without calling any more tools."
+    },
+    {
+      "role": "assistant",
+      "content": "## 技能库更新总结\n\n**Skill 已更新：** `sop-wiki-build` → **v2.0.0 → v2.1.0**\n\n### 基于本次会话发现的 2 个关键 pitfall\n\n本次 SOP Stage C 首次构建执行过程中，发现了 sop-wiki-build skill 中一个未有文档化的实战陷阱 —— 分析文件 `raw/notebooklm-analysis/*.md` 的 frontmatter 中 `mindmap_file` 字段的值与实际磁盘上的脑图文件名不一致。\n\n| 字段 | 实际值 |\n|:---|:---|\n| frontmatter 声称 | `krEDel3aGGw_377cecb5-..._mindmap.json` (UUID 格式) |\n| 磁盘实际文件 | `GPT-5-5-Instant-模型发布与性能分析简报.json` (中文标题格式) |\n\n### 本次更新的 4 个补丁\n\n| 位置 | 内容 |\n|:---|:---|\n| 陷阱 #6 (新增) | **mindmap_file frontmatter 不可靠** — 绝对不要直接使用 frontmatter 值；必须通过 `ls raw/notebooklm-mindmaps/` 验证实际文件名，通过分析文件名前缀匹配 `.json` |\n| 陷阱 #7 (新增) | **脑图 wikilink 使用磁盘实际文件名** — source 页中的 `[[文件名\\|查看脑图]]` 必须来自 `ls` 的实际输出，不是 frontmatter |\n| Step 9 重写 | `mindmap_file` 标注为\"仅作参考\"；新增 filesystem 验证脚本 |\n| Step 10 重写 | `mindmap:` 字段和 wikilink 引用改为 `{实际磁盘文件名}`，并加注释强调来源 |\n\n### 未触发更新的信号（忽略项）\n\n- **用户无风格/格式/流程纠正** — 执行顺利，无需嵌入偏好\n- **无其他已加载 skill 存在缺陷** — 本次仅 `sop-wiki-build` 处于 active 状态\n- **无新 class-level umbrella 需求** — 发现的 pitfall 完全属于 `sop-wiki-build` 的范畴"
     }
   ]
 }
