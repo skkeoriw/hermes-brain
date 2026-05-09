@@ -1,7 +1,7 @@
 ---
 name: sop-notebooklm-research
 description: "SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图，push 到仓库触发 Stage C。"
-version: 2.0.0
+version: 2.1.0
 ---
 
 # SOP Stage B: NotebookLM Research
@@ -47,7 +47,8 @@ webhook 收到 `stage=notebooklm-research`
    ```bash
    mkdir -p {wiki_local_path}/raw/notebooklm-analysis {wiki_local_path}/raw/notebooklm-mindmaps logs/webhook-runs
    # 清理本次运行之前的旧文件，只保留本次新生成的文件
-   rm -f {wiki_local_path}/raw/notebooklm-analysis/*.md {wiki_local_path}/raw/notebooklm-mindmaps/*.json 2>/dev/null || true
+   # ⚠️ 脑图文件可能同时以 .json 或 .canvas 格式存在，必须清理两种后缀
+   rm -f {wiki_local_path}/raw/notebooklm-analysis/*.md {wiki_local_path}/raw/notebooklm-mindmaps/*.json {wiki_local_path}/raw/notebooklm-mindmaps/*.canvas 2>/dev/null || true
    ```
 8. 调用 processor（**固定路径，不可更改**）：
    ```bash
@@ -62,6 +63,22 @@ webhook 收到 `stage=notebooklm-research`
    - 1：部分成功（`status: partial_success`）— 继续执行 Phase 3
    - 2：全部失败（`status: failed`）— 仍然执行 Phase 3 记录失败日志
 9. 对每个生成文件，按以下规则**重命名后**复制到仓库：
+   - ⚠️ **文件操作必须在 terminal 中执行，不得使用 execute_code 工具**：Hermes 的 `execute_code` 工具（Python execute_code）文件系统与真实终端隔离——通过 `shutil.copy2()`、`open().write()` 等操作创建的文件不会持久化到磁盘。所有文件读写、复制、重命名、frontmatter 修改必须通过 terminal 命令完成（如 `python3 << 'PYEOF'` 或多行 bash）。
+   - **推荐做法**：用 heredoc 方式嵌入 Python 脚本到 terminal 执行：
+     ```bash
+     python3 << 'PYEOF'
+     import shutil, re, json, os
+     # 你的 Python 代码...
+     PYEOF
+     ```
+   - ⚠️ **文件格式检查**：`generated_files[].path` 中的后缀可能不准确（实测 processor 返回 `.json` 但磁盘上实际文件为 `.canvas`）。复制前用 `ls` 验证文件是否存在，如果不存在则搜索实际文件：
+     ```bash
+     # 验证路径是否有效，无效则搜索实际文件（使用 video_id 前缀）
+     if [ ! -f "/tmp/notebooklm_processor/${EXACT_FILENAME}" ]; then
+       ls /tmp/notebooklm_processor/${VIDEO_ID}_*_mindmap.* 2>/dev/null
+     fi
+     ```
+     找到实际文件后，无论原后缀是什么，目标名统一用 `.json`（因为 canvas 格式本身就是合法 JSON，适合 Stage C 解析）。
    - **读取标题前需跳过 YAML frontmatter**：report 文件以 YAML frontmatter（`---`）开头，`# 标题` 位于 frontmatter 之后的第 1 行。以下命令可正确提取标题：
      ```bash
      grep -m1 '^# ' /tmp/notebooklm_processor/xxxxx_report.md | sed 's/^# //'
@@ -194,3 +211,36 @@ NotebookLM 生成的 report 文件包含 YAML frontmatter（`---` ... `---`）�
 RPC `GENERATE_MIND_MAP` 有时会因 NotebookLM 侧限流或超时而失败（尤其是连续处理多个视频时）。processor 返回 `partial_success`（exit 1），报告仍成功生成。
 
 **正确处理**：不要重试或终止。带着已有文件继续 Phase 3，日志记录 `partial`。Stage C 会处理缺失脑图的视频（仅对报告建 KG，跳过脑图解构）。
+
+### 8. 脑图文件后缀：`.json` vs `.canvas` 格式不匹配
+processor 返回的 JSON 中 `generated_files[].path` 声明的后缀是 `.json`，但 NotebookLM 实际输出的脑图文件后缀是 `.canvas`（Obsidian Canvas 格式，本质是合法 JSON）。直接按 JSON 路径 `cp` 会因文件不存在而失败（exit code 1）。
+
+**正确做法**：
+- 用 `ls video_id_*_mindmap.*` 找到磁盘上的实际文件
+- 用实际文件做源路径，目标名统一保存为 `.json`（Stage C 读取 `mindmap_file` 字段时得到的是 `.json`）
+- 复制完成后用 `python3 -c "import json; json.load(open('dest'))"` 验证 JSON 合法性
+
+**根本原因**：NotebookLM API 返回的 mindmap 格式随版本变化，processor 输出中的 `path` 后缀不一定反映磁盘真实内容。
+
+### 9. pipeline-context.json 多 agent 并发覆写风险
+当 Hermes 在 multi-agent 模式下运行时（多个 subagent 同时执行不同阶段），`pipeline-context.json` 可能被多个 agent 同时写入。`write_file` 工具的简单覆写会丢弃其他 agent 写入的数据。
+
+**表现**：`write_file` 返回 warning `"pipeline-context.json was modified by sibling subagent ..."`。git diff 显示大量 deletions（如 `296 deletions`），说明旧 stage 的数据被覆盖了。
+
+**正确做法**：
+- 写入前先用 `read_file` 读取已有内容
+- 用 Python 合并新旧数据（添加 stage_b 节点，保留其他 stage 的节点）
+- 再用 `write_file` 写入合并后的完整 JSON
+- 在 git add 时确认 `raw/pipeline-context.json` 出现在变更列表中且无意外删除
+
+### 10. execute_code 与 terminal 的文件系统行为差异
+**⚠️ 环境差异警告**：不同 Hermes 部署环境下，`execute_code` 文件系统行为可能不同。以下指导基于已观察到的两种模式：
+
+**模式 A（当前环境已验证）**：`execute_code` 的 Python 文件操作（`shutil.copy2()`、`open().write()`、`re.sub()` + write）**可以正常持久化到磁盘**，在 `git status` 和 `ls` 中可见。此环境下两种方式均可使用。
+
+**模式 B（其他环境/历史版本）**：`execute_code` 使用沙盒文件系统，文件操作不落盘。必须通过 terminal 工具执行所有文件操作。
+
+**避坑指南**：
+1. **优先使用 terminal heredoc**：`python3 << 'PYEOF'` 方式在所有环境下都可靠，是推荐做法
+2. **使用前验证**：如果不确定当前环境的行为模式，先做一个小测试——在 `execute_code` 中写一个临时文件，然后用 terminal 的 `ls` 检查是否存在
+3. **始终可用的安全工具**：`write_file` 工具在所有环境下都能可靠持久化（如 pipeline-context.json 和日志文件）

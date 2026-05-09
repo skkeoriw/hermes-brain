@@ -212,6 +212,83 @@ class NotebookLMProcessor:
 
         row["report_path"] = str(report_path)
         row["mindmap_path"] = str(mindmap_path)
+
+        # 转换为 Obsidian Canvas 格式
+        try:
+            import uuid as _uuid
+            with open(mindmap_path, 'r', encoding='utf-8') as f:
+                mm = json.load(f)
+
+            # 将 notebooklm mindmap JSON 转为 Obsidian Canvas
+            canvas_nodes = []
+            canvas_edges = []
+
+            # NotebookLM mindmap 通常有 title 和 nodes/children 结构
+            # 递归提取节点
+            def extract_nodes(node, parent_id=None, x=0, y=0, depth=0):
+                node_id = str(_uuid.uuid4())[:8]
+                label = node.get('title') or node.get('label') or node.get('text') or str(node)
+                canvas_nodes.append({
+                    "id": node_id,
+                    "type": "text",
+                    "text": label,
+                    "x": x,
+                    "y": y,
+                    "width": 200,
+                    "height": 60
+                })
+                if parent_id:
+                    canvas_edges.append({
+                        "id": str(_uuid.uuid4())[:8],
+                        "fromNode": parent_id,
+                        "toNode": node_id
+                    })
+                children = node.get('children') or node.get('nodes') or []
+                for i, child in enumerate(children):
+                    extract_nodes(child, node_id, x + 250, y + i * 80, depth + 1)
+                return node_id
+
+            def clean_text(text):
+                """Extract clean label from node text, handles Python dict strings."""
+                if isinstance(text, dict):
+                    return text.get('name') or text.get('label') or text.get('title') or str(text)
+                if isinstance(text, str) and text.startswith("{"):
+                    try:
+                        import ast as _ast
+                        d = _ast.literal_eval(text)
+                        if isinstance(d, dict):
+                            return d.get('name') or d.get('label') or d.get('title') or text
+                    except Exception:
+                        pass
+                return text or "节点"
+
+            # 从顶层开始提取
+            if isinstance(mm, dict):
+                if 'nodes' in mm and 'edges' in mm:
+                    # 已经是图结构，清理 text 字段
+                    canvas_nodes = [
+                        {**n, "text": clean_text(n.get("text", ""))}
+                        for n in mm['nodes']
+                    ]
+                    canvas_edges = mm.get('edges', [])
+                else:
+                    extract_nodes(mm, x=0, y=0)
+            elif isinstance(mm, list):
+                for i, item in enumerate(mm):
+                    extract_nodes(item, x=0, y=i*100)
+
+            canvas = {"nodes": canvas_nodes, "edges": canvas_edges}
+
+            # 直接覆盖写入 .json 文件（Canvas 格式是合法 JSON，扩展名保持 .json）
+            # Stage B 统一使用 .json 扩展名，Stage C 和 Obsidian 均可解析 Canvas JSON
+            with open(mindmap_path, 'w', encoding='utf-8') as f:
+                json.dump(canvas, f, ensure_ascii=False, indent=2)
+            # mindmap_path 不变，仍为 .json
+
+        except Exception as e:
+            self.results["errors"].append(f"Canvas conversion failed for {vid}: {e}")
+            # 保留原 json 文件
+
         row["success"] = True
 
         # 注入元数据 frontmatter — 让 report 文件自携带关联信息
@@ -220,6 +297,7 @@ class NotebookLMProcessor:
             with open(report_path, "r", encoding="utf-8") as f:
                 content = f.read()
             if not content.startswith("---"):
+                # mindmap_path 可能已更新为 .canvas 路径
                 fm = (
                     f"---\n"
                     f"video_id: {vid}\n"

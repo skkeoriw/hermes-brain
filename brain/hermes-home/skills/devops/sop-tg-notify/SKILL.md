@@ -95,3 +95,5 @@ run: {run_id}
 ## 注意
 - TG 发送失败：记录错误，不影响整体，仍然执行 git 归档。
 - pipeline-context.json 不存在：退化到读 run-log 文件。
+- **退化再退化（双重缺失）：** pipeline-context.json 和 run-logs 都为空/不存在时，从 `raw/youtube-links/` 直接读取视频链接，通过 YouTube oembed API (`https://www.youtube.com/oembed?url=...&format=json`) 获取标题。此时编排"未完整执行"状态通知，标注 Stage B/C 未执行，发送 Telegram 告知当前进展。
+- 归档阶段：pipeline-context.json 不存在时，仍应创建最小归档文件 `logs/pipeline-runs/pipe-{run_id}.json`，记录 run_id、各 stage 状态和 tg 通知结果。

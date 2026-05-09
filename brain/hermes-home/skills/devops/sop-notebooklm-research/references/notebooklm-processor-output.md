@@ -44,12 +44,30 @@ The `notebooklm_processor.py` script outputs a JSON object with the following st
 }
 ```
 
+## ⚠️ Known Quirk: `.canvas` vs `.json` Discrepancy
+
+**Observation (2026-05-09)**: The `generated_files[].path` for mindmaps always says `.json`, but the actual file on disk may be a `.canvas` file instead. For example:
+
+| Field | Value |
+|-------|-------|
+| `generated_files[].path` (reported) | `/tmp/.../Kh8tGD5liwo_..._mindmap.**json**` |
+| On-disk file (actual) | `/tmp/.../Kh8tGD5liwo_..._mindmap.**canvas**` |
+
+This causes `cp` to fail (exit 1) if you naively use the path from the JSON output.
+
+**Root cause**: NotebookLM's API returns mindmaps as Obsidian Canvas (`.canvas`) format. The processor's `generated_files` metadata hardcodes the `.json` extension regardless of what the API returns.
+
+**Workaround**: Before copying a mindmap file:
+1. Try the path from `generated_files[].path` first
+2. If it doesn't exist, use `ls /tmp/notebooklm_processor/${VIDEO_ID}_*_mindmap.*` to find the actual file
+3. Copy to destination with `.json` extension (canvas files are valid JSON)
+
 ## Key Points for Stage B
 
 - The `generated_files` array contains all output files for this run only.
 - **⚠️ CRITICAL**: Always use the exact paths from `generated_files[].path` when reading files. Do NOT use glob patterns like `/tmp/notebooklm_processor/Kh8tGD5liwo_*_report.md` — the `/tmp/notebooklm_processor/` directory accumulates files from ALL historical runs, and a glob will match stale files from previous invocations.
 - Each item has a `type` field: either `"report"` or `"mind-map"`.
-- The `path` field gives the absolute path to the temporary file.
+- The `path` field gives the absolute path to the temporary file (but see quirk above — the actual file may have a different extension).
 - Files should be copied to the repository, renaming based on the Chinese title (first line `# 标题` of the report).
 
 ## Usage in SOP
