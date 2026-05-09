@@ -1,7 +1,7 @@
 ---
 name: sop-wiki-build
 description: "SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。"
-version: 2.8.0
+version: 2.9.0
 ---
 
 # SOP Stage C: Wiki Incremental Build
@@ -126,9 +126,9 @@ webhook 收到 `stage=wiki-build`
       echo "$DOUBLE"
     fi
 
-    # 14b — 检查死链
+    # 14b — 检查死链（注意：wikilink 可能带路径前缀如 [[sources/xxx]]）
     for link in $(grep -rho '\[\[[^]]*\]\]' wiki/ --include='*.md' | sed 's/\[\[//;s/\]\]//;s/|.*//' | sort -u); do
-      found=$(find wiki/ -type f -name "${link}.md" 2>/dev/null | head -1)
+      found=$(find wiki/ -path "*/${link}.md" 2>/dev/null | head -1)
       if [ -z "$found" ]; then
         echo "DEAD LINK: [[${link}]]"
       fi
@@ -258,3 +258,16 @@ Stage C 脚本 `sop_wiki_builder.py` 提交了含文件名截断（`openclou.md`
 - 并发 Stage B 的 `git add -A` 会捕获工作目录的所有变更，包含你的本地修复 → 自动传播到远端
 - 相当于"顺便帮你提交了修复"，省去一次单独 commit
 - 这不是 bug，而是 git 的预期行为，但前提是工作目录的乱状态是"干净的修复"而非"半成品"
+
+### 9. verify-quality.sh 假阳性 — 带路径前缀的 wikilink
+
+`verify-quality.sh` 的 Check 5（死链检测）在 version 2.8.0 之前使用 `find -name`，无法匹配带路径前缀的 wikilink（如 `[[sources/Codex-Chrome-插件功能特性与实测深度简报]]`），导致假阳性。
+
+**症状**：验证报告显示死链 `[[sources/xxx]]`，但文件实际存在于 `wiki/sources/xxx.md`。
+
+**确认方法**：用 Python 脚本进行精确扫描（Pitfall 5a 的 Python 脚本支持路径前缀，是更准确的死链检测方式）：
+```bash
+python3 -c "import re,glob; e={f.replace('wiki/','').rsplit('.md',1)[0].lower() for f in glob.glob('wiki/**/*.md',recursive=True)}; d=0; [print(f'DEAD: {f}: [[{l.strip()}]]') or (d:=d+1) for f in glob.glob('wiki/**/*.md',recursive=True) for l in re.findall(r'\[\[([^\]]+?)(?:\|[^\]]+)?\]\]',open(f).read()) if not any(l.strip().lower()==s or l.strip().lower()==s.split('/')[-1] for s in e)]; print('OK' if d==0 else f'{d} DEAD')"
+```
+
+**已修复**：version 2.9.0 已将 `find -name` 改为 `find -path`，消除了此假阳性。

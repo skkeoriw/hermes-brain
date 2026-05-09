@@ -56,7 +56,9 @@ Procedure (canonical steps)
 Pitfalls & gotchas
 - If HEAD~1 does not exist (fresh repo), guard against empty diffs.
 - If origin URL parsing fails, skip GitHub links or fall back to a best-effort URL.
-- If the auto_sync.sh takes long, consider running in background with notify-on-complete to return results.
+- **Fallback script runtime**: The full `hermes_brain_sync_fallback.sh` pipeline can take 7–10 minutes due to: (1) `auto_sync.sh` jitter sleep (random 0–300s), (2) AI model fallback chain (45s timeout × up to 5 models). Always run in background (`background: true`) with a 600s+ timeout. Do NOT run inline in a cron job's main execution path — the cron session will timeout before the script finishes.
+- **Fallback script entry point**: The cron job runs `hermes_brain_sync_fallback.sh`, NOT `auto_sync.sh` directly. The fallback script wraps auto_sync + AI model fallback + diff fallback + Telegram send. If all AI models fail, it automatically falls back to a simple diff-based report — no manual intervention needed.
+- **Jitter sleep**: `auto_sync.sh` includes a random jitter sleep (0–300s) to prevent thundering herd when multiple machines sync. Expect this delay. A second run in the same cron cycle will find the repo already up-to-date from the first run.
 - If brain-sync TG notifications should not interfere with wiki/webhook TG notifications, decouple delivery paths:
   - Keep wiki/webhook flow unchanged.
   - Set brain-sync cron delivery to local/non-Telegram at scheduler level.
@@ -137,7 +139,9 @@ Procedure (canonical steps)
 Pitfalls & gotchas
 - If HEAD~1 does not exist (fresh repo), guard against empty diffs.
 - If origin URL parsing fails, skip GitHub links or fall back to a best-effort URL.
-- If the auto_sync.sh takes long, consider running in background with notify-on-complete to return results.
+- **Fallback script runtime**: The full `hermes_brain_sync_fallback.sh` pipeline can take 7–10 minutes due to: (1) `auto_sync.sh` jitter sleep (random 0–300s), (2) AI model fallback chain (45s timeout × up to 5 models). Always run in background (`background: true`) with a 600s+ timeout. Do NOT run inline in a cron job's main execution path — the cron session will timeout before the script finishes.
+- **Fallback script entry point**: The cron job runs `hermes_brain_sync_fallback.sh`, NOT `auto_sync.sh` directly. The fallback script wraps auto_sync + AI model fallback + diff fallback + Telegram send. If all AI models fail, it automatically falls back to a simple diff-based report — no manual intervention needed.
+- **Jitter sleep**: `auto_sync.sh` includes a random jitter sleep (0–300s) to prevent thundering herd when multiple machines sync. Expect this delay. A second run in the same cron cycle will find the repo already up-to-date from the first run.
 - If brain-sync TG notifications should not interfere with wiki/webhook TG notifications, decouple delivery paths:
   - Keep wiki/webhook flow unchanged.
   - Set brain-sync cron delivery to local/non-Telegram at scheduler level.

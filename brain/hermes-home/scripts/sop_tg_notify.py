@@ -79,7 +79,9 @@ def main():
             encoded = s['file'].replace(" ", "%20")
             nav_lines += f"  · {s['title'][:25]}...\n    {args.repo_url}/blob/main/wiki/sources/{encoded}.md\n"
 
-    msg = f"""[YOUTUBE-WIKI-RUN] 🎬
+    task_id = stage_c.get("task_id") or (f"T-{args.run_id.split('-')[-1]}" if '-' in args.run_id else f"T-{args.run_id}")
+
+    msg = f"""[YOUTUBE-WIKI] #{task_id}
 
 📹 本次处理 {len(sources)} 条视频：
 {video_lines}
@@ -89,10 +91,6 @@ def main():
   Stage C (知识图谱):   {stage_c.get('duration_s', '?')}s
   全程合计:             {total_dur}s
 
-🔢 LLM 调用：
-  Stage B: {stage_b.get('api_calls', '?')} 次
-  Stage C: {stage_c.get('api_calls', '1')} 次 ← 方案A一次生成
-
 📊 知识图谱产出：
   Source: {stage_c.get('sources', 0)}  Entity: {stage_c.get('entities', 0)}
   Concept: {stage_c.get('concepts', 0)}  Comparison: {stage_c.get('comparisons', 0)}  Overview: {stage_c.get('overviews', 0)}
@@ -100,7 +98,7 @@ def main():
 
 🔗 快捷导航：
 {nav_lines if nav_lines else '  (未配置仓库 URL)'}
-run: {args.run_id}"""
+run_id: {args.run_id}"""
 
     # 发送 Telegram
     success = send_telegram(token, args.tg_chat_id, msg)

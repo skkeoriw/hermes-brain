@@ -164,7 +164,9 @@ while IFS= read -r target; do
     *"本地最强-Agent"*) continue;;
   esac
   
-  FOUND=$(find "$WIKI_PATH/wiki" -name "${target}.md" -print -quit 2>/dev/null || true)
+  # Path-prefixed wikilinks (e.g. [[sources/xxx]] → wiki/sources/xxx.md) use the prefix
+  # as part of the wiki/ subdirectory. Use -path to match the full relative path.
+  FOUND=$(find "$WIKI_PATH/wiki" -path "*/${target}.md" -print -quit 2>/dev/null || true)
   if [ -z "$FOUND" ]; then
     echo "  ❌ Dead link: [[${target}]] → no .md file found in wiki/"
     CHECK5_FAILED=true

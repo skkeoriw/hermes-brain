@@ -108,6 +108,27 @@ def build_report_prompt(schema: str, report: dict, index_content: str) -> str:
 """
 
 
+def extract_video_id(report_content: str) -> str:
+    """从报告 frontmatter 提取 video_id"""
+    for line in report_content.split('\n'):
+        stripped = line.strip()
+        if stripped.startswith('video_id:'):
+            return stripped.split(':', 1)[1].strip()
+    return ""
+
+
+def inject_task_id(content: str, task_id: str) -> str:
+    """在 frontmatter 末尾注入 run_id 字段（如已存在则跳过）"""
+    if 'run_id:' in content:
+        return content
+    if content.startswith('---'):
+        parts = content.split('---', 2)
+        if len(parts) >= 3:
+            parts[1] = parts[1].rstrip() + f'\nrun_id: {task_id}\n'
+            return '---'.join(parts)
+    return content
+
+
 def parse_json(text: str) -> dict:
     text = re.sub(r'^```json\s*', '', text.strip(), flags=re.MULTILINE)
     text = re.sub(r'^```\s*$', '', text.strip(), flags=re.MULTILINE)
@@ -137,7 +158,40 @@ def git_run(args, cwd):
     return subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True)
 
 
-def update_index(wiki_path, entries, total_pages, start_time):
+def _parse_index_entries(idx_text: str) -> dict:
+    """从现有 index.md 解析各节的条目列表"""
+    sections = {"Sources": [], "Entities": [], "Concepts": [], "Comparisons": [], "Overview": []}
+    current = None
+    for line in idx_text.splitlines():
+        if line.startswith("## "):
+            current = line[3:].strip()
+        elif line.startswith("- [[") and current in sections:
+            sections[current].append(line)
+    return sections
+
+
+def _entry_slug(entry: str) -> str:
+    """从 '- [[slug|title]] — ...' 中提取 slug（小写）"""
+    m = re.search(r'\[\[([^\]|]+)', entry)
+    return m.group(1).lower() if m else ""
+
+
+def update_index(wiki_path, entries, _unused, start_time):
+    """合并新条目到现有 index，不覆盖历史记录"""
+    idx_file = wiki_path / "index.md"
+    existing = _parse_index_entries(idx_file.read_text(encoding="utf-8") if idx_file.exists() else "")
+
+    for section, new_items in entries.items():
+        if section not in existing:
+            continue
+        existing_slugs = {_entry_slug(e) for e in existing[section]}
+        for item in new_items:
+            if _entry_slug(item) not in existing_slugs:
+                existing[section].append(item)
+                existing_slugs.add(_entry_slug(item))
+
+    total_pages = len(list((wiki_path / "wiki").rglob("*.md"))) if (wiki_path / "wiki").exists() else 0
+
     idx = f"""# Wiki Index
 
 > YouTube 视频研究知识图谱。所有 wiki 页面按类型分类索引。
@@ -145,22 +199,22 @@ def update_index(wiki_path, entries, total_pages, start_time):
 
 ## Sources
 """
-    for e in entries.get("Sources", []):
+    for e in existing.get("Sources", []):
         idx += e + "\n"
     idx += "\n## Entities\n"
-    for e in entries.get("Entities", []):
+    for e in existing.get("Entities", []):
         idx += e + "\n"
     idx += "\n## Concepts\n"
-    for e in entries.get("Concepts", []):
+    for e in existing.get("Concepts", []):
         idx += e + "\n"
     idx += "\n## Comparisons\n"
-    for e in entries.get("Comparisons", []):
+    for e in existing.get("Comparisons", []):
         idx += e + "\n"
     idx += "\n## Overview\n"
-    for e in entries.get("Overview", []):
+    for e in existing.get("Overview", []):
         idx += e + "\n"
     idx += "\n## Queries\n"
-    (wiki_path / "index.md").write_text(idx, encoding="utf-8")
+    idx_file.write_text(idx, encoding="utf-8")
 
 
 def main():
@@ -176,6 +230,17 @@ def main():
     start_time = datetime.utcnow()
 
     print(f"[wiki-builder] Starting run {run_id}")
+
+    # 构造 task_id：从第一个报告的 video_id 取，格式 T-{video_id}
+    task_id = None
+    for rf in sorted((wiki_path / "raw/notebooklm-analysis").glob("*.md")):
+        vid = extract_video_id(read_file(rf))
+        if vid:
+            task_id = f"T-{vid}"
+            break
+    if not task_id:
+        task_id = f"T-{run_id}"
+    print(f"[wiki-builder] task_id: {task_id}")
 
     schema = read_file(wiki_path / "TheSchema.md")
 
@@ -247,9 +312,10 @@ def main():
 
         for page in result.get("pages", []):
             clean_path = page["path"].rstrip(".md") + ".md"
+            clean_path = clean_path.replace(" ", "-")
             fp = wiki_path / clean_path
             fp.parent.mkdir(parents=True, exist_ok=True)
-            fp.write_text(page["content"], encoding="utf-8")
+            fp.write_text(inject_task_id(page["content"], task_id), encoding="utf-8")
             all_written.append(clean_path)
             print(f"[wiki-builder]   -> {clean_path}")
 
@@ -272,6 +338,7 @@ def main():
             pass
     ctx["stage_c"] = {
         "run_id": run_id,
+        "task_id": task_id,
         "start_time": start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "end_time": end_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "duration_s": duration,
@@ -286,7 +353,8 @@ def main():
     ctx_file.write_text(json.dumps(ctx, ensure_ascii=False, indent=2))
 
     # 写 run-log
-    (wiki_path / f"logs/webhook-runs/{run_id}.md").write_text(f"""---
+    (wiki_path / f"logs/webhook-runs/{task_id}.md").write_text(f"""---
+task_id: {task_id}
 run_id: {run_id}
 stage: stage_c
 start_time: {start_time.strftime('%Y-%m-%dT%H:%M:%SZ')}
@@ -306,7 +374,7 @@ Reports: {len(report_files)} | Pages: {len(all_written)} | Time: {duration}s
     git_run(["-c", "core.quotepath=false", "add",
              "wiki/", "index.md", "log.md", "logs/", "raw/pipeline-context.json"], wiki_path)
     if git_run(["status", "--porcelain"], wiki_path).stdout.strip():
-        git_run(["commit", "-m", f"chore: update llm wiki graph [run:{run_id}]"], wiki_path)
+        git_run(["commit", "-m", f"chore: update wiki graph [{task_id}]"], wiki_path)
         for _ in range(3):
             if git_run(["push", "origin", "main"], wiki_path).returncode == 0:
                 break
