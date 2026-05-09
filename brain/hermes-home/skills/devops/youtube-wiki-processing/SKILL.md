@@ -18,8 +18,17 @@ Automated workflow for processing YouTube video research wiki updates via webhoo
 2. **Branch A – No raw changes** → skip processing
 3. **Branch B – YouTube links added/changed** → Run NotebookLM analysis on new videos
 4. **Branch C – NotebookLM artifacts added** → Incremental wiki compilation and push
+5. **Branch D – Pipeline complete** → Send Telegram notification
 
-## Detailed Steps
+## Detailed Steps per Branch
+
+每个分支由独立的 SOP skill 定义，下面的步骤是概要。完整细节（含陷阱、脚本示例、退出码约定）参见对应 SOP skill：
+
+| 分支 | SOP Skill | 描述 |
+|------|-----------|------|
+| B | `sop-notebooklm-research` | NotebookLM 生成报告+脑图 |
+| C | `sop-wiki-build` | 增量知识图谱编译 |
+| D | `sop-tg-notify` | Telegram 通知 |
 
 ### Step 1: Detect Changes
 ```bash
@@ -46,10 +55,10 @@ git diff --name-only <before>..<sha> -- 'raw/*.md' 'raw/**/*.md' > /tmp/changed_
 5. Move output files:
    - Reports → `raw/notebooklm-analysis/`
    - Mindmaps → `raw/notebooklm-mindmaps/`
-6. Git commit and push:
+6. Git commit and push (⚠️ precision-add: use specific paths, NOT `git add -A`):
    ```bash
-   git add -A
-   git commit -m "chore: add notebooklm analysis from {{url_count}} videos"
+   git add raw/notebooklm-analysis/ raw/notebooklm-mindmaps/ raw/pipeline-context.json logs/
+   git commit -m "chore: add notebooklm analysis from {{url_count}} videos [run:{run_id}]"
    git push origin main
    ```
 7. Log completion: `第一步成功，等待第二步自动触发`

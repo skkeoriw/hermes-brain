@@ -252,7 +252,29 @@ processor 返回的 JSON 中 `generated_files[].path` 声明的后缀是 `.json`
 - 再用 `write_file` 写入合并后的完整 JSON
 - 在 git add 时确认 `raw/pipeline-context.json` 出现在变更列表中且无意外删除
 
-### 10. execute_code 与 terminal 的文件系统行为差异
+### 10. git stash push -u 无法捕获所有本地状态（残留变更污染提交）
+`git stash push -u -m "sop-b-{run_id}"` 通常能 stash 工作区和暂存区变更，但以下组合会逃逸 stash，导致它们留在工作目录并在后续 commit 中被误提交：
+
+- **index 中的删除（` D` 状态）** + **同名新未跟踪文件（`??` 状态）** — 这本质上是文件重命名操作（git 显示 rename），stash 无法正确将其归入"uncommitted changes"
+- **仅 index 有记录的变更** — 如果文件已被 `git rm` 但尚未 commit，stash 的 `-u` 模式仅覆盖未跟踪文件目录，不覆盖 index-only 变更
+
+**表现**：stash 输出 `No local changes to save`，但 `git status` 仍显示 ` D` 和 `??` 项。后续 commit 会将它们一并提交。
+
+**解法**：
+1. 在 stash 之前记录一份变更快照：`git status --porcelain > /tmp/sop-b-pre-stash-{run_id}.txt`
+2. stash pop 后对比：区分预期变更与遗留变更
+3. **关键做法**：始终用 `git add raw/notebooklm-analysis/ raw/notebooklm-mindmaps/ raw/pipeline-context.json logs/` 精确指定要提交的路径，**不要使用 `git add -A` 或 `git add .`**
+4. 如果发现无关变更被意外 add 了，用 `git checkout -- <无关文件>` 丢弃工作区变更，用 `git reset HEAD <无关文件>` 取消暂存
+
+### 11. pipeline-context.json 首次创建（文件不存在）
+当首次执行 Stage B 时 `raw/pipeline-context.json` 尚不存在。`read_file` 可能返回空内容或 `File not found` 错误。
+
+**正确做法**：
+- `read_file` 返回空或文件不存在 → 直接创建新的 pipeline-context.json（`write_file` 创建新文件是安全的）
+- 不要尝试解析空内容 → 避免 JSON 解析错误
+- 不需要预先用 `read_file` 验证文件存在性；如 skill 所述，直接用 `write_file` 写入
+
+### 12. execute_code 与 terminal 的文件系统行为差异
 **⚠️ 环境差异警告**：不同 Hermes 部署环境下，`execute_code` 文件系统行为可能不同。以下指导基于已观察到的两种模式：
 
 **模式 A（当前环境已验证）**：`execute_code` 的 Python 文件操作（`shutil.copy2()`、`open().write()`、`re.sub()` + write）**可以正常持久化到磁盘**，在 `git status` 和 `ls` 中可见。此环境下两种方式均可使用。

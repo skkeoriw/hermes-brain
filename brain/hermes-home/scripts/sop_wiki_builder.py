@@ -1,65 +1,68 @@
 #!/usr/bin/env python3
 """
-SOP Stage C: Wiki Builder - Single LLM call approach
-替代 Hermes Agent 的多次调用，用一次 DeepSeek API 生成所有 wiki 页面
+SOP Stage C: Wiki Builder v2
+- 每份报告独立一次 API 调用（防输出截断）
+- 通过 before-sha/sha 只处理本次 commit 新增的分析文件（防并发干扰）
 """
 import argparse, json, os, re, subprocess, sys
 from datetime import datetime
 from pathlib import Path
 
+
 def read_file(path):
     try:
-        with open(path, encoding='utf-8') as f:
-            return f.read()
+        return open(path, encoding='utf-8').read()
     except:
         return ""
 
-def call_deepseek(prompt: str, model: str = "qwen-turbo") -> str:
-    """调用 LLM API，优先级：DashScope(Qwen) > DeepSeek > OpenRouter(free)"""
+
+def call_llm(prompt: str) -> tuple:
+    """调用 LLM API，优先级：DeepSeek > DashScope(qwen-plus) > OpenRouter(free)
+    返回 (response_text, prompt_tokens, completion_tokens)
+    """
     import urllib.request
 
-    if os.environ.get("DASHSCOPE_API_KEY"):
-        api_key = os.environ["DASHSCOPE_API_KEY"]
-        base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-        model_name = "qwen-turbo"
-    elif os.environ.get("DEEPSEEK_API_KEY"):
+    if os.environ.get("DEEPSEEK_API_KEY"):
         api_key = os.environ["DEEPSEEK_API_KEY"]
         base_url = "https://api.deepseek.com/v1"
         model_name = "deepseek-v4-flash"
+        max_tokens = 16000
+    elif os.environ.get("DASHSCOPE_API_KEY"):
+        api_key = os.environ["DASHSCOPE_API_KEY"]
+        base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        model_name = "qwen-plus"
+        max_tokens = 16000
     else:
         api_key = os.environ.get("OPENROUTER_API_KEY", "")
         base_url = "https://openrouter.ai/api/v1"
         model_name = "deepseek/deepseek-v4-flash:free"
+        max_tokens = 16000
 
     payload = json.dumps({
         "model": model_name,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 32000,
+        "max_tokens": max_tokens,
         "temperature": 0.3
     }).encode()
 
     req = urllib.request.Request(
-        f"{base_url}/chat/completions",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
+        f"{base_url}/chat/completions", data=payload,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
     )
     with urllib.request.urlopen(req, timeout=300) as resp:
         data = json.loads(resp.read())
-        return data["choices"][0]["message"]["content"]
 
-def build_prompt(schema: str, reports: list, index_content: str) -> str:
-    """构建一次性生成所有 wiki 页面的 prompt"""
+    text = data["choices"][0]["message"]["content"]
+    usage = data.get("usage", {})
+    return text, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0)
 
-    reports_text = ""
-    for r in reports:
-        reports_text += f"\n\n### 分析报告：{r['filename']}\n{r['content']}\n"
-        if r.get('mindmap'):
-            reports_text += f"\n### 对应脑图（前20个节点）：\n{r['mindmap']}\n"
 
-    return f"""你是一个知识图谱构建专家。请根据以下输入，一次性生成所有需要的 wiki 页面内容。
+def build_report_prompt(schema: str, report: dict, index_content: str) -> str:
+    mindmap_section = ""
+    if report.get("mindmap"):
+        mindmap_section = f"\n### 对应脑图（前20个节点）：\n{report['mindmap']}\n"
+
+    return f"""你是知识图谱构建专家。根据以下单个视频分析报告，生成该报告对应的所有 wiki 页面。
 
 ## TheSchema.md（必须严格遵守）
 {schema}
@@ -67,88 +70,98 @@ def build_prompt(schema: str, reports: list, index_content: str) -> str:
 ## 现有索引（避免重复创建已有页面）
 {index_content}
 
-## 分析报告
-{reports_text}
+## 分析报告：{report['filename']}
+{report['content']}
+{mindmap_section}
 
-## 任务要求
+## 任务
+为这一个报告生成以下页面：
+1. **1个 Source 页**（对应本报告，唯一）
+2. **所有 Entity 页**（本报告中出现的实体，如已在现有索引中则跳过）
+3. **所有 Concept 页**（本报告概念，每视频至少4-5个，如已在现有索引中则跳过）
+4. **Comparison 页**（有直接对比时创建）
+5. **Overview 页**（仅在现有索引中已有 ≥2 个 source 时创建跨视频综述）
 
-请生成一个 JSON 对象，包含所有需要创建的 wiki 页面。格式如下：
-
+返回 JSON：
 {{
   "pages": [
-    {{
-      "path": "wiki/sources/xxx.md",
-      "content": "完整的 markdown 内容，包含 frontmatter"
-    }},
-    ...
+    {{"path": "wiki/sources/xxx.md", "content": "完整markdown含frontmatter"}},
+    {{"path": "wiki/entities/xxx.md", "content": "..."}},
+    {{"path": "wiki/concepts/xxx.md", "content": "..."}}
   ],
   "index_entries": {{
-    "Sources": ["- [[path|title]] — summary"],
-    "Entities": [...],
-    "Concepts": [...],
-    "Comparisons": [...],
-    "Overview": [...]
+    "Sources": ["- [[slug|title]] — summary"],
+    "Entities": ["..."],
+    "Concepts": ["..."],
+    "Comparisons": ["..."],
+    "Overview": ["..."]
   }},
-  "stats": {{
-    "sources": 数量,
-    "entities": 数量,
-    "concepts": 数量,
-    "comparisons": 数量,
-    "overviews": 数量
-  }}
+  "stats": {{"sources":0,"entities":0,"concepts":0,"comparisons":0,"overviews":0}}
 }}
 
-## 质量要求（必须满足）
+## 质量要求
+**Source 页**：执行摘要3-5句 + 核心要点5-10条（具体细节）+ 关键引言（原话+背景）+ 脑图节点列举 + 关联wikilinks
+**Entity 页**：≥5条核心特征/能力（具体技术细节）+ 2-3个应用场景 + 关系网络(≥2) + 关键事件/里程碑
+**Concept 页**：精确定义+技术实现 + 本库具体例子（文件路径/工具名/具体数据）+ 边界区分 + 关联≥2概念+≥1实体 + ≥250字
 
-**Source 页**（每个分析报告对应一个，唯一）：
-- frontmatter：title/type/tags/summary/sources/created/updated/layer/confidence/video_url/mindmap
-- 执行摘要（3-5句）
-- 核心要点（5-10条，具体有细节）
-- 关键引言（原话 + 背景分析）
-- 脑图核心节点列举（从脑图数据提取）
-- 关联实体 [[wikilink]]，关联概念 [[wikilink]]
-
-**Entity 页**（每个实体一个，文件名小写 slug）：
-- ≥5条核心特征/能力（每条有具体技术细节）
-- 2-3个应用场景（具体场景）
-- 关系网络（≥2条，注明关系类型）
-- 关键事件/里程碑
-- 出现的视频来源
-
-**Concept 页**（每个视频至少4-5个概念）：
-- 精确定义 + 技术实现细节
-- 本库具体例子（必须有文件路径/工具名/具体数据）
-- 与近似概念的边界区分
-- 关联概念（≥2）+ 关联实体（≥1）
-- 内容 ≥ 250 字
-
-**Comparison 页**（有直接对比时必须创建）：
-- 对比维度表格
-- 核心差异分析
-- 适用场景结论
-
-**Overview 页**（同主题 source ≥2时必须创建）：
-- 跨视频综合发现（L2 推断 + reasoning）
-- 开放问题/L3
-
-## 重要
-- 所有内容用中文
-- frontmatter 字段名用英文
-- 文件名用中文语义名（不加 video_id 前缀）
-- wikilink 使用小写 slug 格式：[[hermes-agent]]（不是 [[Hermes Agent]]）
-- 直接返回 JSON，不要有额外说明文字
+所有内容用中文，frontmatter字段名用英文，wikilink用[[slug]]格式。直接返回JSON，不要额外说明。
 """
 
-def parse_json_response(text: str) -> dict:
-    """从 LLM 响应中提取 JSON"""
-    # 去掉 markdown 代码块
+
+def parse_json(text: str) -> dict:
     text = re.sub(r'^```json\s*', '', text.strip(), flags=re.MULTILINE)
     text = re.sub(r'^```\s*$', '', text.strip(), flags=re.MULTILINE)
-    text = text.strip()
-    return json.loads(text)
+    return json.loads(text.strip())
+
+
+def get_new_report_files(wiki_path: Path, before_sha: str, sha: str) -> list:
+    """只取本次 commit 新增的分析文件，防止并发干扰"""
+    if not before_sha or before_sha == sha:
+        return sorted((wiki_path / "raw/notebooklm-analysis").glob("*.md"))
+
+    result = subprocess.run(
+        ["git", "-c", "core.quotepath=false", "diff", "--name-only",
+         "--diff-filter=AM", before_sha, sha],
+        cwd=wiki_path, capture_output=True, text=True
+    )
+    new_files = []
+    for line in result.stdout.splitlines():
+        if line.startswith("raw/notebooklm-analysis/") and line.endswith(".md"):
+            p = wiki_path / line
+            if p.exists():
+                new_files.append(p)
+    return sorted(new_files)
+
 
 def git_run(args, cwd):
     return subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True)
+
+
+def update_index(wiki_path, entries, total_pages, start_time):
+    idx = f"""# Wiki Index
+
+> YouTube 视频研究知识图谱。所有 wiki 页面按类型分类索引。
+> Last updated: {start_time.strftime('%Y-%m-%d')} | Total pages: {total_pages}
+
+## Sources
+"""
+    for e in entries.get("Sources", []):
+        idx += e + "\n"
+    idx += "\n## Entities\n"
+    for e in entries.get("Entities", []):
+        idx += e + "\n"
+    idx += "\n## Concepts\n"
+    for e in entries.get("Concepts", []):
+        idx += e + "\n"
+    idx += "\n## Comparisons\n"
+    for e in entries.get("Comparisons", []):
+        idx += e + "\n"
+    idx += "\n## Overview\n"
+    for e in entries.get("Overview", []):
+        idx += e + "\n"
+    idx += "\n## Queries\n"
+    (wiki_path / "index.md").write_text(idx, encoding="utf-8")
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -162,95 +175,94 @@ def main():
     run_id = args.run_id
     start_time = datetime.utcnow()
 
-    print(f"[sop_wiki_builder] Starting run {run_id}")
+    print(f"[wiki-builder] Starting run {run_id}")
 
-    # Phase 1: 收集输入
     schema = read_file(wiki_path / "TheSchema.md")
+
+    # 只取本次 commit 新增的分析文件
+    report_files = get_new_report_files(wiki_path, args.before_sha, args.sha)
+
+    if not report_files:
+        print("[wiki-builder] No new analysis reports in this commit, skipping.")
+        sys.exit(0)
+
+    print(f"[wiki-builder] {len(report_files)} new report(s): {[f.name for f in report_files]}")
+
+    for d in ["wiki/sources", "wiki/entities", "wiki/concepts",
+              "wiki/comparisons", "wiki/overview", "wiki/queries", "logs/webhook-runs"]:
+        (wiki_path / d).mkdir(parents=True, exist_ok=True)
+
+    total_pt = total_ct = 0
+    all_written = []
+    all_index_entries = {"Sources": [], "Entities": [], "Concepts": [], "Comparisons": [], "Overview": []}
+    total_stats = {"sources": 0, "entities": 0, "concepts": 0, "comparisons": 0, "overviews": 0}
+
+    # 每份报告独立一次 API 调用，并行发出
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    # 并行前统一读取一次 index（各 worker 只读不写）
     index_content = read_file(wiki_path / "index.md")
 
-    # 读取所有分析报告
-    reports = []
-    for report_file in sorted((wiki_path / "raw/notebooklm-analysis").glob("*.md")):
+    def process_report(args):
+        i, report_file = args
         content = read_file(report_file)
-        # 提取对应脑图的前20个节点
         mindmap_text = ""
-        mindmap_file = wiki_path / "raw/notebooklm-mindmaps" / (report_file.stem + ".json")
-        if mindmap_file.exists():
+        mf = wiki_path / "raw/notebooklm-mindmaps" / (report_file.stem + ".json")
+        if mf.exists():
             try:
-                mm = json.loads(mindmap_file.read_text())
+                mm = json.loads(mf.read_text())
                 nodes = mm.get("nodes", [])[:20]
-                mindmap_text = "\n".join(f"- {n.get('text','')}" for n in nodes)
+                mindmap_text = "\n".join(f"- {n.get('text', '')}" for n in nodes)
             except:
                 pass
-        reports.append({
+
+        prompt = build_report_prompt(schema, {
             "filename": report_file.name,
             "content": content,
             "mindmap": mindmap_text
-        })
+        }, index_content)
 
-    if not reports:
-        print("[sop_wiki_builder] No analysis reports found, skipping.")
-        sys.exit(0)
+        print(f"[wiki-builder] [{i}/{len(report_files)}] LLM call -> {report_file.name}")
+        t0 = datetime.utcnow()
+        response_text, pt, ct = call_llm(prompt)
+        elapsed = int((datetime.utcnow() - t0).total_seconds())
+        print(f"[wiki-builder] [{i}/{len(report_files)}] done {elapsed}s | {pt}+{ct} tokens")
+        return i, report_file.name, response_text, pt, ct
 
-    print(f"[sop_wiki_builder] Processing {len(reports)} reports...")
+    with ThreadPoolExecutor(max_workers=len(report_files)) as executor:
+        futures = [executor.submit(process_report, (i, f))
+                   for i, f in enumerate(report_files, 1)]
+        results_raw = [f.result() for f in as_completed(futures)]
 
-    # Phase 2: 一次 LLM 调用生成所有页面
-    prompt = build_prompt(schema, reports, index_content)
-    print(f"[sop_wiki_builder] Calling DeepSeek API (prompt size: {len(prompt)} chars)...")
+    # 汇总结果（并行完成后串行写文件）
+    for i, fname, response_text, pt, ct in sorted(results_raw, key=lambda x: x[0]):
+        total_pt += pt
+        total_ct += ct
+        try:
+            result = parse_json(response_text)
+        except Exception as e:
+            print(f"[wiki-builder] [{i}] JSON parse failed: {e}, saving raw")
+            (wiki_path / f"logs/webhook-runs/{run_id}-r{i}-raw.txt").write_text(response_text)
+            continue
 
-    response_text = call_deepseek(prompt)
-    print(f"[sop_wiki_builder] Got response ({len(response_text)} chars)")
+        for page in result.get("pages", []):
+            clean_path = page["path"].rstrip(".md") + ".md"
+            fp = wiki_path / clean_path
+            fp.parent.mkdir(parents=True, exist_ok=True)
+            fp.write_text(page["content"], encoding="utf-8")
+            all_written.append(clean_path)
+            print(f"[wiki-builder]   -> {clean_path}")
 
-    # Phase 3: 解析并写文件
-    plan = parse_json_response(response_text)
-    pages = plan.get("pages", [])
-    stats = plan.get("stats", {})
-    index_entries = plan.get("index_entries", {})
+        for k in all_index_entries:
+            all_index_entries[k].extend(result.get("index_entries", {}).get(k, []))
+        for k in total_stats:
+            total_stats[k] += result.get("stats", {}).get(k, 0)
 
-    # 确保目录存在
-    for d in ["wiki/sources", "wiki/entities", "wiki/concepts", "wiki/comparisons", "wiki/overview", "wiki/queries", "logs/webhook-runs"]:
-        (wiki_path / d).mkdir(parents=True, exist_ok=True)
+    update_index(wiki_path, all_index_entries, len(all_written), start_time)
 
-    written = []
-    for page in pages:
-        # 防止 LLM 生成的路径已含 .md 扩展名导致重命名
-        clean_path = page["path"].rstrip(".md") + ".md"
-        file_path = wiki_path / clean_path
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_text(page["content"], encoding="utf-8")
-        written.append(page["path"])
-        print(f"[sop_wiki_builder] Written: {page['path']}")
-
-    # Phase 4: 更新 index.md
-    new_index = f"""# Wiki Index
-
-> YouTube 视频研究知识图谱。所有 wiki 页面按类型分类索引。
-> Last updated: {start_time.strftime('%Y-%m-%d')} | Total pages: {len(written)}
-
-## Sources
-"""
-    for entry in index_entries.get("Sources", []):
-        new_index += entry + "\n"
-    new_index += "\n## Entities\n"
-    for entry in index_entries.get("Entities", []):
-        new_index += entry + "\n"
-    new_index += "\n## Concepts\n"
-    for entry in index_entries.get("Concepts", []):
-        new_index += entry + "\n"
-    new_index += "\n## Comparisons\n"
-    for entry in index_entries.get("Comparisons", []):
-        new_index += entry + "\n"
-    new_index += "\n## Overview\n"
-    for entry in index_entries.get("Overview", []):
-        new_index += entry + "\n"
-    new_index += "\n## Queries\n"
-
-    (wiki_path / "index.md").write_text(new_index, encoding="utf-8")
-
-    # Phase 5: 更新 pipeline-context.json
+    # 更新 pipeline-context.json
     end_time = datetime.utcnow()
     duration = int((end_time - start_time).total_seconds())
-
     ctx_file = wiki_path / "raw/pipeline-context.json"
     ctx = {}
     if ctx_file.exists():
@@ -258,68 +270,52 @@ def main():
             ctx = json.loads(ctx_file.read_text())
         except:
             pass
-
     ctx["stage_c"] = {
         "run_id": run_id,
         "start_time": start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "end_time": end_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "duration_s": duration,
-        "api_calls": 1,  # 只有一次！
-        "pages_created": len(written),
-        "sources": stats.get("sources", 0),
-        "entities": stats.get("entities", 0),
-        "concepts": stats.get("concepts", 0),
-        "comparisons": stats.get("comparisons", 0),
-        "overviews": stats.get("overviews", 0)
+        "api_calls": len(report_files),
+        "reports_processed": len(report_files),
+        "pages_created": len(all_written),
+        "prompt_tokens": total_pt,
+        "completion_tokens": total_ct,
+        **total_stats,
+        "status": "success"
     }
     ctx_file.write_text(json.dumps(ctx, ensure_ascii=False, indent=2))
 
-    # Phase 6: 写 run-log
-    log_content = f"""---
+    # 写 run-log
+    (wiki_path / f"logs/webhook-runs/{run_id}.md").write_text(f"""---
 run_id: {run_id}
 stage: stage_c
 start_time: {start_time.strftime('%Y-%m-%dT%H:%M:%SZ')}
 end_time: {end_time.strftime('%Y-%m-%dT%H:%M:%SZ')}
 duration_s: {duration}
-api_calls: 1
-pages_created: {len(written)}
-sources: {stats.get('sources', 0)}
-entities: {stats.get('entities', 0)}
-concepts: {stats.get('concepts', 0)}
-comparisons: {stats.get('comparisons', 0)}
-overviews: {stats.get('overviews', 0)}
+api_calls: {len(report_files)}
+reports_processed: {len(report_files)}
+pages_created: {len(all_written)}
+prompt_tokens: {total_pt}
+completion_tokens: {total_ct}
 status: success
 ---
+Reports: {len(report_files)} | Pages: {len(all_written)} | Time: {duration}s
+""")
 
-# Stage C Run Log
-
-Pages written: {len(written)}
-Duration: {duration}s (1 LLM API call)
-
-## Files Created
-"""
-    for p in written:
-        log_content += f"- {p}\n"
-
-    log_file = wiki_path / f"logs/webhook-runs/{run_id}.md"
-    log_file.write_text(log_content, encoding="utf-8")
-
-    # Phase 7: git commit + push
-    git_run(["add", "wiki/", "index.md", "log.md", "logs/", "raw/pipeline-context.json"], wiki_path)
-
-    result = git_run(["status", "--porcelain"], wiki_path)
-    if result.stdout.strip():
+    # git commit + push
+    git_run(["-c", "core.quotepath=false", "add",
+             "wiki/", "index.md", "log.md", "logs/", "raw/pipeline-context.json"], wiki_path)
+    if git_run(["status", "--porcelain"], wiki_path).stdout.strip():
         git_run(["commit", "-m", f"chore: update llm wiki graph [run:{run_id}]"], wiki_path)
-
-        for i in range(3):
-            r = git_run(["push", "origin", "main"], wiki_path)
-            if r.returncode == 0:
-                print(f"[sop_wiki_builder] Push successful")
+        for _ in range(3):
+            if git_run(["push", "origin", "main"], wiki_path).returncode == 0:
                 break
             git_run(["pull", "--ff-only", "origin", "main"], wiki_path)
 
-    print(f"[sop_wiki_builder] Done: {len(written)} pages in {duration}s (1 API call)")
-    print(json.dumps({"status": "success", "pages": len(written), "duration_s": duration}))
+    print(f"\n[wiki-builder] Done: {len(all_written)} pages | {len(report_files)} API calls | {duration}s")
+    print(json.dumps({"status": "success", "pages": len(all_written),
+                      "api_calls": len(report_files), "duration_s": duration}))
+
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,6 @@
 【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。
 §
-prompt-qa-unified-wiki: https://github.com/divanoo65/prompt-qa-unified-wiki, local /home/zhouhuijuan1987/wiki/prompt-qa-unified-wiki, PAT: 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 (divanoo65). Wiki uses TheSchema.md layout (raw/ + wiki/sources|entities|concepts|comparisons|overview|queries). llm-wiki webhook run IDs use gh-<run_id>-<attempt> prefix format.
+SOP Stage C 经验 2026-05-09: 单次 API 调用处理多份报告易截断。改用 v2 分批处理（每报告一次 API 调用）。API 优先级：export DEEPSEEK_API_KEY 且 unset DASHSCOPE_API_KEY 避免误用 qwen-turbo（max_tokens 仅 8192）。即使1份报告也可能截断JSON，需从response.txt恢复。LLM 输出文件名有时截断（缺末尾字符），push 后必须做死链检查。
 §
 User's knowledge graph philosophy: Strict "facts from raw only" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that "releasing discovery with guardrails" > "constraining to raw-only".
 §

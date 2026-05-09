@@ -177,6 +177,46 @@ if [ "$CHECK5_FAILED" = false ]; then
 fi
 echo ""
 
+# === CHECK 6: Dual .md.md extension ===
+echo "--- [Check 6] Double .md.md extension ---"
+CHECK6_FAILED=false
+DOUBLE_MD=$(find "$WIKI_PATH/wiki" -name '*.md.md' 2>/dev/null)
+if [ -n "$DOUBLE_MD" ]; then
+  echo "  ❌ Found files with double .md.md extension:"
+  echo "$DOUBLE_MD" | while IFS= read -r f; do echo "       $f"; done
+  CHECK6_FAILED=true
+  ALL_PASSED=false
+else
+  echo "  ✅ No .md.md files found"
+fi
+echo ""
+
+# === CHECK 7: Truncated filenames ===
+echo "--- [Check 7] Truncated filename detection ---"
+CHECK7_FAILED=false
+
+# Build a map: basename → full path, including partial truncations
+for link in $ALL_LINKS; do
+  # Exact match check already done in Check 5; here we check if a file
+  # exists whose name equals $link MINUS its last character (truncation pattern)
+  [ -z "$link" ] && continue
+  [ ${#link} -le 2 ] && continue
+  TRUNCATED="${link:0:$((${#link}-1))}"
+  TRUNC_FILE=$(find "$WIKI_PATH/wiki" -name "${TRUNCATED}.md" -print -quit 2>/dev/null || true)
+  if [ -n "$TRUNC_FILE" ]; then
+    REL="${TRUNC_FILE#$WIKI_PATH/}"
+    echo "  ⚠️  Truncation detected: wikilink [[${link}]] → on-disk file '${REL}'"
+    echo "       Suggestion: mv '${REL}' '$(dirname ${REL})/${link}.md'"
+    CHECK7_FAILED=true
+    ALL_PASSED=false
+  fi
+done
+
+if [ "$CHECK7_FAILED" = false ]; then
+  echo "  ✅ No truncated filenames detected"
+fi
+echo ""
+
 # === SUMMARY ===
 echo "========================================"
 echo " RESULTS"
