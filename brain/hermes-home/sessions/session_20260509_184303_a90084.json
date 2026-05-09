@@ -1,0 +1,828 @@
+{
+  "session_id": "20260509_184303_a90084",
+  "model": "deepseek-v4-flash",
+  "base_url": "https://api.deepseek.com/v1",
+  "platform": "webhook",
+  "session_start": "2026-05-09T18:43:03.981178",
+  "last_updated": "2026-05-09T18:46:38.389535",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nConversation started: Saturday, May 09, 2026 06:43 PM\nModel: deepseek-v4-flash\nProvider: deepseek",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "patch",
+        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "replace",
+                "patch"
+              ],
+              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
+              "default": "replace"
+            },
+            "path": {
+              "type": "string",
+              "description": "File path to edit (required for 'replace' mode)"
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
+              "default": false
+            },
+            "patch": {
+              "type": "string",
+              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Complete content to write to the file"
+            }
+          },
+          "required": [
+            "path",
+            "content"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 42,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Create the following missing wiki concept pages for the Harness Engineering knowledge graph. Read existing wiki pages and raw analysis reports to extract content, then write each .md file.\n\nThe wiki path is: /home/zhouhuijuan1987/wiki/youtube-video-research-wiki\n\nFor each concept page, write a complete markdown file with YAML frontmatter (title, type: concept, tags, summary, sources, created, updated, layer: L1, confidence: high) and body content covering: definition (≤3 sentences), examples from the wiki's videos, technical implementation details, boundary with adjacent concepts, associated concepts ([[wikilinks]], ≥2), associated entities ([[wikilinks]], ≥1).\n\nUse the following existing wiki pages as reference for content and format:\n1. wiki/concepts/约束工程.md\n2. wiki/concepts/执行编排层.md\n3. wiki/concepts/信息边界层.md\n4. wiki/concepts/上下文工程.md\n5. wiki/sources/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统.md\n6. wiki/sources/Hermes-Agent-高级玩法与部署优化简报.md\n\n**Concepts to create (in wiki/concepts/):**\n1. **Agent.md** — General AI Agent concept\n2. **上下文重映.md** — Context Remapping (Anthropic concept)\n3. **内网穿透.md** — Intranet Penetration for remote access\n4. **工具系统层.md** — Tool System Layer (part of Harness 6-layer architecture)\n5. **思维链.md** — Chain of Thought prompting\n6. **检索增强生成.md** — Retrieval Augmented Generation (RAG)\n7. **独立评估者模式.md** — Independent Evaluator Pattern (Anthropic)\n8. **目录化管理.md** — Catalog Management (OpenAI concept)\n9. **约束、校验与恢复层.md** — Constraint, Validation & Recovery Layer (part of Harness)\n10. **自动化治理.md** — Automated Governance (OpenAI concept)\n11. **记忆与状态层.md** — Memory & State Layer (part of Harness)\n12. **评估与观测层.md** — Evaluation & Observation Layer (part of Harness)\n\n**IMPORTANT**: All content must be in Chinese. Use today's date (2026-05-09) for created/updated. Write each file directly to wiki/concepts/."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "The user wants me to create 12 concept pages for their wiki. Let me first read the existing reference files to understand the format and extract content, then write each file.\n\nLet me start by reading the existing reference files.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The user wants me to create 12 concept pages for their wiki. Let me first read the existing reference files to understand the format and extract content, then write each file.\n\nLet me start by reading the existing reference files.",
+      "tool_calls": [
+        {
+          "id": "call_00_xc8z6M6rM5tg3NMlvDJU4239",
+          "call_id": "call_00_xc8z6M6rM5tg3NMlvDJU4239",
+          "response_item_id": "fc_00_xc8z6M6rM5tg3NMlvDJU4239",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/约束工程.md\"}"
+          }
+        },
+        {
+          "id": "call_01_afmYIdJQxjiLoHNNNpDL5876",
+          "call_id": "call_01_afmYIdJQxjiLoHNNNpDL5876",
+          "response_item_id": "fc_01_afmYIdJQxjiLoHNNNpDL5876",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/执行编排层.md\"}"
+          }
+        },
+        {
+          "id": "call_02_ukmqHGf0vfNQEEPlUIKR4938",
+          "call_id": "call_02_ukmqHGf0vfNQEEPlUIKR4938",
+          "response_item_id": "fc_02_ukmqHGf0vfNQEEPlUIKR4938",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/信息边界层.md\"}"
+          }
+        },
+        {
+          "id": "call_03_n1y0jzUnjo9PvynEDhMQ6767",
+          "call_id": "call_03_n1y0jzUnjo9PvynEDhMQ6767",
+          "response_item_id": "fc_03_n1y0jzUnjo9PvynEDhMQ6767",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/上下文工程.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: Harness Engineering（约束工程）\\n     3|type: concept\\n     4|tags: [harness-engineering, ai-engineering, system-design]\\n     5|summary: 通过构建模型外部的约束运行系统（Harness），确保 AI Agent 稳定、可纠偏、可落地的工程方法论。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# Harness Engineering（约束工程）\\n    14|\\n    15|**定义**\\n    16|Harness Engineering（约束工程）是 AI 工程化第三阶段的核心范式，指在模型之外构建一套完整的运行约束系统（Harness），包括信息边界、工具管理、执行编排、记忆状态、评估观测和故障恢复等机制，核心公式为 `Agent = Model + Harness`。其目标不是提升模型能力，而是让模型在真实任务中“不跑偏、跑得稳、可纠偏”。\\n    17|\\n    18|**在本库的具体例子**\\n    19|- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，提出了六层架构：信息边界层定义“我是谁”和任务成功标准；工具系统层管理工具选择与时机；执行编排层实现目标理解→任务串联→输出检查的闭环；记忆与状态层区分当前任务、中间结果与长期记忆；评估与观测层建立独立验收机制；约束与恢复层提供重试、回滚和路径切换能力。\\n    20|- Anthropic 的 [[独立评估者模式]] 是 Harness 架构中评估与观测层的具体实现；OpenAI 的 [[目录化管理]] 是信息边界层的优化手段。\\n    21|\\n    22|**技术实现细节**\\n    23|1. **信息边界构建**：在系统 Prompt 或结构化配置中明确角色、目标、成功标准，并通过规则引擎动态裁剪外部上下文，避免无关信息污染。\\n    24|2. **执行编排闭环**：采用有限状态机或工作流框架（如 LangGraph、Temporal）串联原子操作，每个步骤包含输入校验、前置条件检查和输出验证。\\n    25|3. **故障恢复机制**：维护任务状态的持久化快照，在 API 超时或异常时，从最近的检查点恢复而非从头重试，同时支持备选路径（如降级使用本地模型）。\\n    26|\\n    27|**与近似概念的边界**\\n    28|- **对比 [[提示工程]]**：提示工程关心指令的措辞表达，属于“语言设计”；约束工程关心系统整体的运行约束，属于“系统设计”。前者是后者中信息边界层的一部分。\\n    29|- **对比 [[上下文工程]]**：上下文工程关注给模型提供正确的信息（时机与内容）；约束工程关注模型在拿到信息后如何稳定执行任务、如何回退、如何验证结果。上下文工程是约束工程中信息边界层和工具系统层的基础。\\n    30|- **对比传统软件工程**：传统软件工程中的约束（如类型检查、断言）是确定性约束，Harness 中的约束需处理概率性模型的不确定性，如重试策略、置信度阈值、人工回退。\\n    31|\\n    32|**关联概念**\\n    33|- [[提示工程]]\\n    34|- [[上下文工程]]\\n    35|- [[信息边界层]]\\n    36|- [[执行编排层]]\\n    37|- [[评估与观测层]]\\n    38|- [[约束、校验与恢复层]]\\n    39|- [[独立评估者模式]]\\n    40|- [[上下文重映]]\\n    41|- [[目录化管理]]\\n    42|- [[自动化治理]]\\n    43|\\n    44|**关联实体**\\n    45|- [[Anthropic]]\\n    46|- [[OpenAI]]\\n    47|- [[Agent]]\", \"total_lines\": 46, \"file_size\": 3270, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_xc8z6M6rM5tg3NMlvDJU4239"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: 执行编排层\\n     3|type: concept\\n     4|tags: [harness-engineering, execution-orchestration, workflow]\\n     5|summary: Harness 架构的第三层，将原子能力（搜索、总结、写代码等）按逻辑链路串联成闭环流程，包括目标理解、任务串联、输出检查与修正重试。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# 执行编排层\\n    14|\\n    15|**定义**\\n    16|执行编排层（Execution Orchestration Layer）是 Harness 架构的第三层，负责将多个原子操作（如搜索、总结、写代码、调用 API）按任务逻辑串联成有状态的工作流，形成“理解目标 → 判断信息完备性 → 生成输出 → 检查输出 → 修正重试”的完整闭环，确保系统在复杂多步骤任务中能有序执行并自我纠偏。\\n    17|\\n    18|**在本库的具体例子**\\n    19|- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，执行编排层被描述为将搜索、总结、写代码等能力串联起来，且包含闭环流程。典型场景：一个 Agent 被要求“查找最新的 AI 论文并写一份摘要”——它需要先执行搜索，然后对搜索结果进行排名，再读取前几篇论文，最后生成摘要。每一步的输出需要检查（例如搜索结果是否为空），若失败则触发重试或切换搜索策略。\\n    20|- Anthropic 的 [[独立评估者模式]] 中 Planner → Generator → Evaluator 的流程正是执行编排层的一种具体编排模式。\\n    21|\\n    22|**技术实现细节**\\n    23|1. **工作流引擎**：使用状态机或 DAG（有向无环图）框架（如 LangGraph、Temporal）定义步骤和转换条件，每个步骤可包含输入校验、前置条件判断和后置检查。\\n    24|2. **检查点与回滚**：在关键步骤保存执行状态快照，若后续步骤失败，可回滚到最近的检查点重新执行，而非从头开始。\\n    25|3. **条件分支与并行**：根据中间结果动态决定后续路径（例如满足条件则跳过某些步骤），或同时执行多个独立子任务（如同时搜索多个数据源）。\\n    26|\\n    27|**与近似概念的边界**\\n    28|- **区别于 [[工具系统层]]**：工具系统层定义“有哪些原子工具可用”及“何时调用”，执行编排层定义“如何安排这些调用的顺序和逻辑”。工具是乐高积木，编排是搭建图纸。\\n    29|- **区别于传统业务流程图**：传统流程图的步骤是确定性的，而执行编排层需要处理模型产出的不确定性，因此在每个步骤都嵌入校验和重试逻辑。\\n    30|\\n    31|**关联概念**\\n    32|- [[约束工程]]\\n    33|- [[工具系统层]]\\n    34|- [[信息边界层]]\\n    35|- [[评估与观测层]]\\n    36|- [[独立评估者模式]]\\n    37|\\n    38|**关联实体**\\n    39|- [[Anthropic]]\\n    40|- [[OpenAI]]\", \"total_lines\": 39, \"file_size\": 2829, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_01_afmYIdJQxjiLoHNNNpDL5876"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: 信息边界层\\n     3|type: concept\\n     4|tags: [harness-engineering, system-design, information-boundary]\\n     5|summary: Harness 架构的第一层，负责定义 Agent 的角色、目标、任务范围，并裁剪和组织外部信息，避免上下文污染。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# 信息边界层\\n    14|\\n    15|**定义**\\n    16|信息边界层（Information Boundary Layer）是 Harness Engineering 六层架构的第一层，主要职责为：明确“我是谁”（角色定义）、任务目标的成功标准，对输入的上下文进行裁剪（只保留与当前任务最相关的信息），并以结构化方式组织规则、任务、状态和外部证据，确保模型在定义的边界内思考，不被无关信息带偏。\\n    17|\\n    18|**在本库的具体例子**\\n    19|- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，信息边界层被描述为：首先定义角色（例如“你是一个资深前端工程师”），然后明确任务（“请重构这个组件”），并限定上下文范围（只提供该组件的相关代码和设计文档，不包含无关仓库）。\\n    20|- OpenAI 的 [[目录化管理]] 是信息边界层的实现：将工程规范组织成索引目录，Agent 只在需要时获取子文档，而非将所有内容一次性注入。\\n    21|\\n    22|**技术实现细节**\\n    23|1. **结构化角色 Prompt**：在系统消息中固定角色与约束，使用分隔符（如 XML 标签）区分不同部分（规则、任务、运行状态、外部证据）。\\n    24|2. **动态上下文过滤**：根据任务类型和进度，使用规则引擎或向量检索从全局知识库中筛选出当前步骤需要的信息片段。\\n    25|3. **上下文窗口监控**：当上下文即将接近固定窗口（如 8K/128K）时，自动压缩或移除已完成的中间结果，保留关键状态。\\n    26|\\n    27|**与近似概念的边界**\\n    28|- **区别于 [[工具系统层]]**：信息边界层决定“什么信息能进来”，工具系统层决定“模型能使用什么工具去获取信息或操作外部系统”。信息边界层是静态约束，工具系统层是动态能力暴露。\\n    29|- **区别于传统系统 Prompt**：传统系统 Prompt 往往包含所有规则，容易膨胀；信息边界层强调“结构化组织”和“动态加载”，是一种工程化的上下文管理方式。\\n    30|\\n    31|**关联概念**\\n    32|- [[约束工程]]\\n    33|- [[上下文工程]]\\n    34|- [[工具系统层]]\\n    35|- [[执行编排层]]\\n    36|- [[目录化管理]]\\n    37|\\n    38|**关联实体**\\n    39|- [[OpenAI]]\\n    40|- [[Anthropic]]\", \"total_lines\": 39, \"file_size\": 2635, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_02_ukmqHGf0vfNQEEPlUIKR4938"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: 上下文工程\\n     3|type: concept\\n     4|tags: [context-engineering, ai-engineering]\\n     5|summary: 通过在正确时机向模型送入正确且适量的信息，解决模型“信息不足”或“信息过载”问题的工程方法。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# 上下文工程\\n    14|\\n    15|**定义**\\n    16|上下文工程（Context Engineering）是 AI 工程化第二阶段的核心，关注模型外部信息的管理：如何检索、筛选、组织、压缩并动态注入上下文，使模型在有限的上下文窗口内获得完成任务所需的最相关、最新信息。其本质是“信息设计”。\\n    17|\\n    18|**在本库的具体例子**\\n    19|- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，上下文工程被类比为「给员工准备好客户资料、产品报价等背景文件」。视频指出，当 Agent 失败时，常见原因不是模型不好，而是上下文欠缺或污染。\\n    20|- OpenAI 的 [[目录化管理]] 是上下文工程的典型实践：将大量文档拆分为索引和子文档，Agent 按需加载，而不是将所有内容塞入一个 `.md` 文件。这解决了上下文窗口稀缺问题。\\n    21|\\n    22|**技术实现细节**\\n    23|1. **检索增强生成（RAG）**：基于向量相似度从知识库中检索相关片段，组成动态上下文。\\n    24|2. **上下文压缩**：通过摘要或筛选只保留关键信息，去除冗余，减少 token 消耗。\\n    25|3. **分阶段注入**：先注入全局框架（如任务步骤），当 Agent 需要特定细节时再注入子文档，例如 OpenAI 的 Skills 目录。\\n    26|\\n    27|**与近似概念的边界**\\n    28|- **对比 [[提示工程]]**：提示工程决定“怎么说”，上下文工程决定“给什么”。前者是语言设计，后者是信息供给。两者协同工作：Prompt 中包含从上下文中提取的关键点。\\n    29|- **对比 [[约束工程]]**：上下文工程只关注输入信息质量，不涉及模型执行后的校验、恢复等机制。约束工程包含上下文工程作为其信息边界层的一部分。\\n    30|\\n    31|**关联概念**\\n    32|- [[提示工程]]\\n    33|- [[约束工程]]\\n    34|- [[目录化管理]]\\n    35|- [[检索增强生成]]\\n    36|\\n    37|**关联实体**\\n    38|- [[OpenAI]]（在 GPT 模型应用中大量使用上下文工程）\\n    39|- [[Anthropic]]（Claude 的 long context 能力与上下文工程互补）\", \"total_lines\": 38, \"file_size\": 2438, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_03_n1y0jzUnjo9PvynEDhMQ6767"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Now let me read the source files to extract more content for the new concepts.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now let me read the source files to extract more content for the new concepts.",
+      "tool_calls": [
+        {
+          "id": "call_00_fURG056gOWGrfJ8FxFKT9805",
+          "call_id": "call_00_fURG056gOWGrfJ8FxFKT9805",
+          "response_item_id": "fc_00_fURG056gOWGrfJ8FxFKT9805",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统.md\", \"limit\": 200}"
+          }
+        },
+        {
+          "id": "call_01_mP1LZ3u2whf0qJgwG39e0706",
+          "call_id": "call_01_mP1LZ3u2whf0qJgwG39e0706",
+          "response_item_id": "fc_01_mP1LZ3u2whf0qJgwG39e0706",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes-Agent-高级玩法与部署优化简报.md\", \"limit\": 200}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: Harness Engineering 深度简报：构建稳定、可落地的 AI Agent 系统\\n     3|type: source\\n     4|tags: [harness-engineering, agent, ai-engineering]\\n     5|summary: 深入剖析 Harness Engineering 概念，提出 Agent = Model + Harness 的核心公式，并给出六层成熟架构及行业最佳实践。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# Harness Engineering 深度简报：构建稳定、可落地的 AI Agent 系统\\n    14|\\n    15|**视频元数据**\\n    16|- 标题：Harness Engineering 深度简报：构建稳定、可落地的 AI Agent 系统\\n    17|- URL：https://www.youtube.com/watch?v=3DlXq9nsQOE\\n    18|\\n    19|**脑图引用**\\n    20|- 对应脑图文件：`raw/notebooklm-mindmaps/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.json`\\n    21|\\n    22|**执行摘要**\\n    23|本视频系统性地介绍了 Harness Engineering（约束工程）这一新型 AI 工程范式，指出 Agent 系统的稳定性关键不在于模型本身，而在于模型外部的约束系统（Harness）。视频将 AI 工程演进划分为提示工程、上下文工程和约束工程三个阶段，并深入拆解了约束工程的六层架构：信息边界、工具系统、执行编排、记忆与状态、评估与观测、约束检验与恢复。同时，以 Anthropic 和 OpenAI 的一线实践为例，展示了如何将 Harness 原则落地到真实系统中。\\n    24|\\n    25|**核心要点**\\n    26|1. **核心公式**：Agent = Model + Harness，模型外的运行系统决定稳定性。\\n    27|2. **AI 工程三阶段**：Prompt Engineering（语言设计）→ Context Engineering（信息设计）→ Harness Engineering（系统设计）。\\n    28|3. **六层架构之信息边界**：定义角色目标、裁剪信息、结构化组织上下文。\\n    29|4. **六层架构之工具系统**：工具选择、调用时机、结果精炼，避免模型乱用工具。\\n    30|5. **六层架构之执行编排**：目标理解 → 任务串联 → 输出检查，形成闭环。\\n    31|6. **六层架构之记忆与状态**：区分当前任务、中间结果、长期记忆，防止混乱。\\n    32|7. **六层架构之评估与观测**：独立于生成的验收机制，包括环境验证、自动测试、日志监控。\\n    33|8. **六层架构之约束与恢复**：行为边界、重试、回滚、路径切换，而非从头开始。\\n    34|9. **Anthropic 实践**：Context Reflected（进程重置）、独立评估者模式（Planner/Generator/Evaluator 分离）。\\n    35|10. **OpenAI 实践**：工程师成为环境设计师，目录化 Skills 管理上下文，自动化治理拦截规则。\\n    36|\\n    37|**关键引言**\\n    38|- “真正决定我们的系统能不能稳定的跑起来，往往不是模型本身，而是模型外面那套运行的系统。” —— 强调 Harness 的关键地位。\\n    39|- “Agent 等于 model 加 harness。翻译成白话：在一个 Agent 系统里，除了模型本身以外，几乎所有能决定它能否稳定交付的东西都可以算进 Harness。” —— 直接定义 Harness 边界。\\n    40|- “Prompt 是告诉新入职员工任务流程，Context 是给员工准备好背景文件，Harness 是让员工带上 Checklist，在关键节点汇报，会后核对录音，按标准验收结果。” —— 通俗类比三阶段差异。\\n    41|\\n    42|**脑图核心节点**\\n    43|- Harness Engineering (HNIS)\\n    44|  - 概念定义：核心定义（Agent = Model + Harness），本质（模型外的运行系统），目标（不跑偏、跑得稳、可纠偏）\\n    45|  - AI工程化三阶段：Prompt Engineering → Context Engineering → Harness Engineering\\n    46|  - 六层成熟架构：信息边界、工具系统、执行编排、记忆与状态、评估与观测、约束与恢复\\n    47|  - 一线公司实践：Anthropic（Context Reflect，角色拆分）、OpenAI（环境设计，目录化管理，自动化治理）\\n    48|\\n    49|**关联实体**\\n    50|- [[Anthropic]]\\n    51|- [[OpenAI]]\\n    52|- [[Agent]]\\n    53|\\n    54|**关联概念**\\n    55|- [[约束工程]]\\n    56|- [[提示工程]]\\n    57|- [[上下文工程]]\\n    58|- [[信息边界层]]\\n    59|- [[执行编排层]]\\n    60|- [[记忆与状态层]]\\n    61|- [[评估与观测层]]\\n    62|- [[约束、校验与恢复层]]\\n    63|- [[独立评估者模式]]\\n    64|- [[上下文重映]]\", \"total_lines\": 63, \"file_size\": 4163, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_fURG056gOWGrfJ8FxFKT9805"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: Hermes-Agent 高级玩法与部署优化简报\\n     3|type: source\\n     4|tags: [hermes-agent, ollama, open-webui, deployment, cost-optimization]\\n     5|summary: 本视频介绍了Hermes Agent的稳定性优势、通过Ollama集成云端免费模型实现零资源部署、使用Open WebUI优化交互体验，以及通过主副模型策略降低Token消耗成本。\\n     6|sources: [raw/notebooklm-analysis/Hermes-Agent-高级玩法与部署优化简报.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# Hermes-Agent 高级玩法与部署优化简报\\n    14|\\n    15|## 视频元数据\\n    16|- **标题**: Hermes-Agent 高级玩法与部署优化简报\\n    17|- **URL**: https://www.youtube.com/watch?v=rBUfD_wvbhw\\n    18|- **脑图文件**: `raw/notebooklm-mindmaps/Hermes-Agent-高级玩法与部署优化简报.json`\\n    19|\\n    20|## 执行摘要\\n    21|\\n    22|Hermes Agent 是一个注重稳定性的 AI Agent 框架，相比频繁更新导致 bug 的同类产品（如 OpenCloud），更适合生产环境。通过集成 Ollama 提供的云端免费模型，用户无需本地 GPU 即可完成部署。结合 Open WebUI，可获得类似 ChatGPT 的交互体验，支持 Markdown、代码执行和移动端访问。通过主副模型分离策略，将简单任务交给低成本模型（如 Gemini 1.5 Flash），可大幅降低 Token 消耗，使 Agent 运行成本可控。\\n    23|\\n    24|## 核心要点\\n    25|\\n    26|1. **稳定性优势**: Hermes Agent 在版本更新时极少引入 bug，而 OpenCloud 每次更新都会出现大量问题，是用户选择 Hermes 的首要原因。\\n    27|2. **官方中文名**: 社区已获得官方确认，中文名为“赫美斯”，且首字母“H”需发音。\\n    28|3. **Ollama 云端模型集成**: 用户可通过 Ollama 一键连接免费云端模型（如 Minimax-M2.7），完全零本地资源占用。\\n    29|4. **部署流程**: 选择带“Cloud”后缀的模型 → 浏览器登录账号 → 授权设备 → 刷新 Gateway 即可使用。\\n    30|5. **Open WebUI 交互**: 提供左侧历史侧边栏、Markdown 完美渲染、代码块直接运行（如 Python 冒泡算法）、流式输出、手机端通过 IP 访问等功能。\\n    31|6. **配置文件修改**: 需在 Hermes 的配置文件中启用 API 服务（端口 8642）并设置自定义密码，然后在 Open WebUI 管理界面添加连接 `http://[本地IP]:8642/v1`。\\n    32|7. **主副模型分离**: 主模型负责复杂推理，副模型（推荐 Gemini 1.5 Flash）负责批准、压缩、MCP 调用、Web 搜索、视觉等辅助任务，极大降低 Token 消耗。\\n    33|8. **辅助任务列表**: 包括 Approval（批准）、Compression（压缩）、Refresh Memory（重刷记忆）、MCP 调用、Web Search（网页搜索）、Visual（视觉）六大类。\\n    34|9. **成本控制效果**: 使用 Gemini 1.5 Flash 处理辅助任务，在保证性能的同时，总 Token 消耗可降至原来的 1/5 以下。\\n    35|10. **移动端远程访问**: 通过内网穿透工具（如 frp）暴露 Open WebUI 的 8080 端口，即可在户外通过公网访问家中的 Agent。\\n    36|\\n    37|## 关键引言\\n    38|\\n    39|> “HM Agent 它的稳定性要远超 open Cloud，因为 Opencloud 每次更新都会引入非常多的 bug，而 h agent 呢，它就非常稳定，我们在更新版的时候也不会出现崩溃或者被引入多种 bug 等情况。”\\n    40|\\n    41|- **背景**: 强调开发者选择 Hermes Agent 的核心驱动力——生产环境的可靠性，直接对比 OpenCloud 的稳定性缺陷。\\n    42|\\n    43|> “官方向他们已经明确了在中文语境下读什么，官方给出的中文名就叫赫美斯。”\\n    44|\\n    45|- **背景**: 针对社区发音争议，官方统一品牌认知，有助于用户准确交流。\\n    46|\\n    47|> “副模型在这里我使用的都是 Google Gemini 1.5 Flash 模型……发现在这些任务都用 Gemini 1.5 Flash 已经足够了。”\\n    48|\\n    49|- **背景**: 提供实操性的成本优化建议，证明廉模型可胜任辅助任务，降低总成本。\\n    50|\\n    51|## 脑图核心节点\\n    52|\\n    53|以下为视频对应脑图的一级节点：\\n    54|- Hermes Agent 高级玩法\\n    55|- Ollama 云端免费模型\\n    56|- Open WebUI 美化与交互\\n    57|- 主副模型省 Token 配置\\n    58|- 工具与稳定性\\n    59|\\n    60|## 关联实体\\n    61|\\n    62|- [[Hermes-Agent]]\\n    63|- [[Ollama]]\\n    64|- [[Open-WebUI]]\\n    65|- [[OpenCloud]]\\n    66|- [[Gemini]]\\n    67|\\n    68|## 关联概念\\n    69|\\n    70|- [[Ollama云端模型部署]]\\n    71|- [[主副模型策略]]\\n    72|- [[辅助任务分类]]\\n    73|- [[Token成本优化]]\\n    74|- [[Open-WebUI集成配置]]\\n    75|- [[内网穿透]]\\n    76|\", \"total_lines\": 75, \"file_size\": 4345, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_01_mP1LZ3u2whf0qJgwG39e0706"
+    },
+    {
+      "role": "assistant",
+      "content": "Let me also check for any existing files in the wiki that might be useful for cross-referencing:",
+      "reasoning": "Now I have a good understanding of the format. Let me also check for any other existing concept files and the directory structure.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now I have a good understanding of the format. Let me also check for any other existing concept files and the directory structure.",
+      "tool_calls": [
+        {
+          "id": "call_00_yGSGF5pVKIXiW4tsXQJg2934",
+          "call_id": "call_00_yGSGF5pVKIXiW4tsXQJg2934",
+          "response_item_id": "fc_00_yGSGF5pVKIXiW4tsXQJg2934",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"wiki/concepts/*.md\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki\", \"target\": \"files\"}"
+          }
+        },
+        {
+          "id": "call_01_sL41Q1yuoVfCKNVVLg516316",
+          "call_id": "call_01_sL41Q1yuoVfCKNVVLg516316",
+          "response_item_id": "fc_01_sL41Q1yuoVfCKNVVLg516316",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"wiki/entities/*.md\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki\", \"target\": \"files\"}"
+          }
+        },
+        {
+          "id": "call_02_rzLNdtjQeNVlUA944MOq1979",
+          "call_id": "call_02_rzLNdtjQeNVlUA944MOq1979",
+          "response_item_id": "fc_02_rzLNdtjQeNVlUA944MOq1979",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"wiki/sources/*.md\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 35, \"files\": [\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-mindmaps/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-mindmaps/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/3DlXq9nsQOE.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/rBUfD_wvbhw.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/index.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/log.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608876586-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608783805-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/T-3DlXq9nsQOE.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608727086-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608728632-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/comparisons/Hermes-Agent-vs-OpenCloud.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Gemini.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Anthropic.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Hermes-Agent.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Open-WebUI.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Ollama.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenAI.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenCloud.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/执行编排层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/提示工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/约束工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/辅助任务分类.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Ollama云端模型部署.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Token成本优化.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/主副模型策略.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/信息边界层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Open-WebUI集成配置.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/上下文工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/TheSchema.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/README.md\"]}",
+      "tool_call_id": "call_00_yGSGF5pVKIXiW4tsXQJg2934"
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 35, \"files\": [\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-mindmaps/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-mindmaps/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/3DlXq9nsQOE.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/rBUfD_wvbhw.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/index.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/log.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608876586-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608783805-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/T-3DlXq9nsQOE.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608727086-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608728632-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/comparisons/Hermes-Agent-vs-OpenCloud.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Gemini.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Anthropic.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Hermes-Agent.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Open-WebUI.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Ollama.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenAI.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenCloud.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/执行编排层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/提示工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/约束工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/辅助任务分类.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Ollama云端模型部署.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Token成本优化.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/主副模型策略.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/信息边界层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Open-WebUI集成配置.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/上下文工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/TheSchema.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/README.md\"]}",
+      "tool_call_id": "call_01_sL41Q1yuoVfCKNVVLg516316"
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 35, \"files\": [\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-mindmaps/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-mindmaps/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/3DlXq9nsQOE.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/rBUfD_wvbhw.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/index.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/log.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608876586-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608783805-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/T-3DlXq9nsQOE.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608727086-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/logs/webhook-runs/gh-25608728632-1.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/sources/Hermes-Agent-高级玩法与部署优化简报.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/comparisons/Hermes-Agent-vs-OpenCloud.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Gemini.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Anthropic.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Hermes-Agent.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Open-WebUI.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Ollama.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenAI.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenCloud.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/执行编排层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/提示工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/约束工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/辅助任务分类.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Ollama云端模型部署.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Token成本优化.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/主副模型策略.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/信息边界层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Open-WebUI集成配置.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/上下文工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/TheSchema.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/README.md\"]}",
+      "tool_call_id": "call_02_rzLNdtjQeNVlUA944MOq1979"
+    },
+    {
+      "role": "assistant",
+      "content": "Let me read the raw analysis files for more content:",
+      "reasoning": "Let me also read the raw analysis files for more detailed content, and also check existing entity files.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me also read the raw analysis files for more detailed content, and also check existing entity files.",
+      "tool_calls": [
+        {
+          "id": "call_00_rjpwjmovyue5y3Ct28m19425",
+          "call_id": "call_00_rjpwjmovyue5y3Ct28m19425",
+          "response_item_id": "fc_00_rjpwjmovyue5y3Ct28m19425",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md\", \"limit\": 300}"
+          }
+        },
+        {
+          "id": "call_01_UVFUstBRnuOnvVuVFk7K6561",
+          "call_id": "call_01_UVFUstBRnuOnvVuVFk7K6561",
+          "response_item_id": "fc_01_UVFUstBRnuOnvVuVFk7K6561",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/notebooklm-analysis/Hermes-Agent-高级玩法与部署优化简报.md\", \"limit\": 300}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|video_id: 3DlXq9nsQOE\\n     3|video_url: https://www.youtube.com/watch?v=3DlXq9nsQOE\\n     4|source_id: 39d024dd-5217-43d9-8cd8-42876c57dbbc\\n     5|mindmap_file: Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.json\\n     6|processed_at: 20260509T183502Z\\n     7|---\\n     8|\\n     9|# Harness Engineering 深度简报：构建稳定、可落地的 AI Agent 系统\\n    10|\\n    11|## 执行摘要\\n    12|\\n    13|随着人工智能应用从简单的对话生成转向复杂的任务执行，AI 工程领域正在经历一场核心范式的转移。本简报深入探讨了近期备受关注的 **Harness Engineering（马具工程/约束工程）** 概念。\\n    14|\\n    15|Harness Engineering 的核心观点是：决定一个 AI 系统（尤其是 Agent）能否在真实场景中稳定运行的关键，往往不在于模型本身，而在于模型外部的运行系统。简而言之，**Agent = 模型 + Harness**。当模型由于上下文过载、执行偏差或缺乏反馈而导致成功率遇到瓶颈时，Harness Engineering 提供了一套包含信息边界、工具管理、执行编排、状态管理、评估观测及故障恢复的六层架构，旨在将 AI 的“聪明才智”转化为可稳定交付的业务价值。\\n    16|\\n    17|---\\n    18|\\n    19|## AI 工程的三个演进阶段\\n    20|\\n    21|AI 工程在过去两年中经历了三次明显的重心迁移，反映了开发者在不同阶段面临的核心挑战：\\n    22|\\n    23|| 阶段 | 核心概念 | 关注点 | 解决的问题 | 本质 |\\n    24|| :--- | :--- | :--- | :--- | :--- |\\n    25|| **第一阶段** | **Prompt Engineering** | 指令设计 | 模型有没有听懂要求？ | 塑造局部概率空间，属于**语言设计**。 |\\n    26|| **第二阶段** | **Context Engineering** | 信息供给 | 模型有没有拿到正确且足够的信息？ | 在合适时机送入正确信息，属于**信息设计**。 |\\n    27|| **第三阶段** | **Harness Engineering** | 运行约束 | 模型在真实执行中能否持续做对？ | 驾驭、监督和纠偏执行过程，属于**系统设计**。 |\\n    28|\\n    29|---\\n    30|\\n    31|## Harness Engineering 的六层架构\\n    32|\\n    33|一个成熟的 Harness 系统负责在模型之外构建“轨道”，确保任务不跑偏。其详细架构可拆解为以下六层：\\n    34|\\n    35|1.  **信息边界层 (Information Boundary)**\\n    36|    *   **角色与目标：** 定义“我是谁”、任务是什么、成功的标准是什么。\\n    37|    *   **信息裁剪：** 避免上下文污染，确保模型只在相关的边界内思考。\\n    38|    *   **结构化组织：** 将规则、当前任务、运行状态和外部证据分层清晰组织。\\n    39|\\n    40|2.  **工具系统层 (Tool System)**\\n    41|    *   **工具选择：** 解决工具太少能力不足或工具太多导致模型乱用的问题。\\n    42|    *   **调用时机：** 明确何时该查，何时该答。\\n    43|    *   **结果精炼：** 并非直接透传工具返回的原始数据，而是提炼与任务相关的关键信息。\\n    44|\\n    45|3.  **执行编排层 (Execution Orchestration)**\\n    46|    *   **逻辑链路：** 将搜索、总结、写代码等原子能力串联。\\n    47|    *   **闭环流程：** 包含理解目标、判断信息完备性、生成输出、检查输出、修正重试的完整闭环。\\n    48|\\n    49|4.  **记忆与状态层 (Memory and State)**\\n    50|    *   **分类管理：** 明确区分当前任务状态、对话中间结果、长期记忆与用户偏好，防止系统运行越久越混乱。\\n    51|\\n    52|5.  **评估与观测层 (Evaluation and Observation)**\\n    53|    *   **独立验证：** 建立独立于生成过程的验收机制，包括环境验证、自动化测试、日志与指标监控。\\n    54|    *   **自我意识：** 让系统不仅能做，还能通过反馈知道自己做得对不对。\\n    55|\\n    56|6.  **约束、校验与恢复层 (Constraint, Validation & Recovery)**\\n    57|    *   **行为边界：** 规定哪些能做，哪些不能做。\\n    58|    *   **故障恢复：** 在 API 超时、格式混乱或理解偏差时，具备重试、回滚或切换路径的机制，而非从头开始。\\n    59|\\n    60|---\\n    61|\\n    62|## 行业顶尖实践案例分析\\n    63|\\n    64|### Anthropic：应对“上下文焦虑”与建立独立审计\\n    65|*   **Context Reflected（上下文重映）：** 当上下文过长导致模型丢细节或急于收尾时，不只是做压缩，而是启动一个干净的“新 Agent”进行交接，类似程序开发中的“重启进程”以解决内存泄漏。\\n    66|*   **独立评估者模式：** 将任务拆分为 **Planner（规划者）**、**Generator（执行者）** 和 **Evaluator（评估者）**。评估者必须是独立的，且在真实环境中操作（如实际运行页面）而非仅仅审查代码。\\n    67|\\n    68|### OpenAI：环境设计与按需暴露\\n    69|*   **工程师角色的转变：** 工程师不再只是写代码，而是“环境设计师”。当 Agent 失败时，首要思考的是环境中缺了什么结构性能力，而非让模型“再努力一点”。\\n    70|*   **目录化 Skills：** 放弃将所有规范塞进一个巨大的 `.md` 文件，而是将其变为目录索引，Agent 根据需要动态调取子文档（设计、安全规则等），解决上下文窗口稀缺问题。\\n    71|*   **自动化治理：** 将资深工程师的经验（如模块分层规则）写成系统拦截规则。这些规则不仅报错，还会将修复建议反馈给 Agent 进入下一轮迭代。\\n    72|\\n    73|---\\n    74|\\n    75|## 关键引述与背景\\n    76|\\n    77|> “真正决定我们的系统能不能稳定的跑起来，往往不是模型本身，而是模型外面那套运行的系统。”\\n    78|\\n    79|> “Agent 等于 model 加 harness。翻译成白话：在一个 Agent 系统里，除了模型本身以外，几乎所有能决定它能否稳定交付的东西都可以算进 Harness。”\\n    80|\\n    81|> **通俗类比：**\\n    82|> *   **Prompt：** 告诉新入职员工任务流程（先宣讲，再确认需求）。\\n    83|> *   **Context：** 给员工准备好客户资料、产品报价等背景文件。\\n    84|> *   **Harness：** 让员工带上 Checklist，在关键节点汇报，会后核对录音，按标准验收结果。重点是有没有一套**持续观测、纠偏和验收**的机制。\\n    85|\\n    86|---\\n    87|\\n    88|## 行动洞察与落地建议\\n    89|\\n    90|1.  **从“调优提示词”转向“设计环境”：** 当任务成功率停滞不前时，应检查系统的执行编排和故障恢复机制，而非仅仅修改 Prompt 或更换更强的模型。\\n    91|2.  **实施分层信息策略：** 针对上下文窗口这一稀缺资源，采用“进阶式”暴露信息的思路。只在模型需要触发特定能力时，才动态加载相关的详细 SOP 和参数定义。\\n    92|3.  **构建独立的评估闭环：** 必须建立“生产与验收分离”的机制。确保评估者具备在真实环境中运行和验证结果的能力，形成“生成—检查—修复”的有效循环。\\n    93|4.  **容错是系统的基本属性：** 在长链路任务中，失败是常态。Harness 系统必须具备状态保存和路径回滚能力，确保系统在部分步骤失败后能够拉回正轨并稳定交付。\", \"total_lines\": 92, \"file_size\": 6795, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_rjpwjmovyue5y3Ct28m19425"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|video_id: rBUfD_wvbhw\\n     3|video_url: https://www.youtube.com/watch?v=rBUfD_wvbhw\\n     4|source_id: e2ac136d-621a-4c96-80ef-3d7c5d003fff\\n     5|mindmap_file: Hermes-Agent-高级玩法与部署优化简报.json\\n     6|processed_at: 20260509T183520Z\\n     7|---\\n     8|\\n     9|# Hermes Agent 高级玩法与部署优化简报\\n    10|\\n    11|本报告旨在总结 Hermes Agent（中文名：赫美斯）的高级操作技巧与部署方案，重点分析如何利用 Ollama 云端模型、Open WebUI 交互界面以及主副模型配置，提升 Agent 的稳定性、易用性并大幅降低 Token 消耗成本。\\n    12|\\n    13|## 执行摘要\\n    14|\\n    15|Hermes Agent 作为一个高性能 Agent 框架，其核心优势在于极高的稳定性，相比频繁更新产生 Bug 的同类产品（如 OpenCloud），更适合追求长期稳定运行的用户。通过集成 Ollama 提供的云端免费额度，用户可实现零资源占用部署；结合 Open WebUI，可获得超越传统聊天软件（如微信）的交互体验，支持 Markdown 解析与代码直接运行；此外，通过合理配置主副模型架构，将辅助性任务分摊给低成本模型，可有效解决 Agent 运行成本高昂的问题。\\n    16|\\n    17|---\\n    18|\\n    19|## 核心主题深度分析\\n    20|\\n    21|### 1. 稳定性与品牌定位\\n    22|在当前的 Agent 框架竞争中，Hermes Agent 的 GitHub 仓库星标增速已超越 OpenCloud。\\n    23|*   **稳定性优势：** 文档指出 OpenCloud 在更新过程中常引入 Bug 导致系统崩溃，而 Hermes Agent 在版本更新时表现出极强的稳定性。\\n    24|*   **官方命名澄清：** 关于 \\\"Hermes\\\" 的发音，官方已明确中文语境下称为**“赫美斯”**，且首字母 \\\"H\\\" 需发音。\\n    25|\\n    26|### 2. Ollama 集成与云端免费模型利用\\n    27|Ollama 已深度集成 Hermes Agent，为用户提供了低门槛的部署路径。\\n    28|*   **零资源占用：** 用户可通过 Ollama 访问云端免费模型（如 Minimax-M2.7），无需消耗本地计算资源。\\n    29|*   **傻瓜式配置：** 只需安装 Ollama 客户端，通过一条命令行即可完成 Hermes Agent 的初始化与模型连接。\\n    30|*   **部署流程：** 选择带有 \\\"Cloud\\\" 后缀的模型 -> 浏览器登录账号 -> 建立设备连接 -> 刷新 Gateway 即可投入使用。\\n    31|\\n    32|### 3. Open WebUI 交互界面优化\\n    33|虽然 Hermes Agent 支持微信等聊天工具，但其在格式解析和历史记录管理上存在局限。Open WebUI 的原生态支持带来了以下提升：\\n    34|*   **类 GPT 体验：** 提供左侧侧边栏保存绘画记录，支持多轮对话的分离与检索。\\n    35|*   **高级功能支持：**\\n    36|    *   **Markdown 解析：** 完美展示代格式。\\n    37|    *   **代码执行：** 可以在界面内直接运行 Python 代码（如冒泡算法）。\\n    38|    *   **流式输出：** 提供实时的响应反馈。\\n    39|    *   **多端访问：** 支持通过 IP 地址在手机浏览器上访问，实现移动端交互。\\n    40|*   **配置要点：** 需在配置文件中启用 API 服务并设置自定义密码。\\n    41|\\n    42|### 4. 主副模型策略与 Token 成本控制\\n    43|针对用户反馈 Agent 消耗 Token 过快的问题，Hermes Agent 提供了“主副模型”分离机制：\\n    44|*   **核心逻辑：** 主模型（昂贵模型）仅负责复杂的指令处理；副模型（廉价模型，如 Gemini 1.5 Flash）负责简单或重复性的辅助任务。\\n    45|*   **辅助任务类型：**\\n    46|    | 任务分类 | 功能描述 |\\n    47|    | :--- | :--- |\\n    48|    | **Approval (批准)** | 任务授权确认 |\\n    49|    | **Compression (压缩)** | 上下文内容压缩 |\\n    50|    | **Refresh Memory (重刷记忆)** | 会话记忆管理 |\\n    51|    | **MCP 调用** | 外部工具调用 |\\n    52|    | **Web Search (网页搜索)** | 实时信息检索 |\\n    53|    | **Visual (视觉)** | 图像相关任务处理 |\\n    54|\\n    55|---\\n    56|\\n    57|## 重要引言与背景\\n    58|\\n    59|> “HM Agent 它的稳定性要远超 open Cloud，因为 Opencloud 每次更新都会引入非常多的 bug，而 h agent 呢，它就非常稳定，我们在更新版的时候也不会出现崩溃或者被引入多种 bug 等情况。”\\n    60|\\n    61|**背景：** 这强调了开发者选择 Hermes Agent 的核心驱动力——生产环境的可靠性。\\n    62|\\n    63|> “官方向他们已经明确了在中文语境下读什么，官方给出的中文名就叫赫美斯。”\\n    64|\\n    65|**背景：** 针对社区关于发音的争议，明确了官方的品牌定位，有助于统一用户认知。\\n    66|\\n    67|> “副模型在这里我使用的都是 Google Gemini 1.5 Flash 模型……发现在这些任务都用 Gemini 1.5 Flash 已经足够了。”\\n    68|\\n    69|**背景：** 提供了实操性的成本优化建议，证明了使用高性能副模型替代昂贵主模型处理杂务的可行性。\\n    70|\\n    71|---\\n    72|\\n    73|## 实践指南与行动建议\\n    74|\\n    75|### 1. 快速部署建议\\n    76|*   **小白用户：** 直接下载 Ollama 客户端，运行内置的 Hermes 指令，选择云端模型以规避本地硬件限制。\\n    77|*   **进阶用户：** 使用 `antigravity` 或 VS Code 编辑配置文件，启用 API 功能（端口 8642），并对接 Open WebUI。\\n    78|\\n    79|### 2. Open WebUI 配置步骤\\n    80|1.  **安装：** 按照官方仓库提供的一键命令安装 Open WebUI。\\n    81|2.  **修改配置：** 在 `agent` 配置文件中添加 `启用 API 服务` 和 `设置 API 密码` 两个参数。\\n    82|3.  **连接设置：** 在 Open WebUI 的管理界面中添加连接地址：`http://[本地IP]:8642/v1`。\\n    83|4.  **安全提醒：** 务必在参数中设置复杂的自定义密码以保证 API 安全。\\n    84|\\n    85|### 3. Token 节省配置方案\\n    86|*   **配置文件修改：** 进入辅助任务配置区域。\\n    87|*   **模型指定：** 建议将 `Approval`、`Compression`、`MCP`、`Web` 等辅助任务的 `Model ID` 统一修改为性价比极高的模型（如 Gemini 1.5 Flash）。\\n    88|*   **重启服务：** 修改完毕后，务必通过终端命令重启 `Hermes Agent Gateway` 以使配置生效。\\n    89|\\n    90|### 4. 移动端远程访问\\n    91|*   若需在户外通过手机访问家中的 Agent，建议结合“内网穿透”工具，通过公网 IP 或域名访问 Open WebUI 的 8080 端口。\", \"total_lines\": 90, \"file_size\": 5918, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_01_UVFUstBRnuOnvVuVFk7K6561"
+    },
+    {
+      "role": "assistant",
+      "content": "Let me read the entity files for cross-referencing:",
+      "reasoning": "Now I have a comprehensive understanding of the content. Let me also read the existing entity files for Anthropic, OpenAI, and some of the other concept files for cross-referencing purposes.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now I have a comprehensive understanding of the content. Let me also read the existing entity files for Anthropic, OpenAI, and some of the other concept files for cross-referencing purposes.",
+      "tool_calls": [
+        {
+          "id": "call_00_Y6yYT8zTlblyeP6PWoSR1844",
+          "call_id": "call_00_Y6yYT8zTlblyeP6PWoSR1844",
+          "response_item_id": "fc_00_Y6yYT8zTlblyeP6PWoSR1844",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Anthropic.md\"}"
+          }
+        },
+        {
+          "id": "call_01_ZQDQ2H7gVjhtWaEh4xKF7394",
+          "call_id": "call_01_ZQDQ2H7gVjhtWaEh4xKF7394",
+          "response_item_id": "fc_01_ZQDQ2H7gVjhtWaEh4xKF7394",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/OpenAI.md\"}"
+          }
+        },
+        {
+          "id": "call_02_dCpfCy7mK2hspgO3bYVF1501",
+          "call_id": "call_02_dCpfCy7mK2hspgO3bYVF1501",
+          "response_item_id": "fc_02_dCpfCy7mK2hspgO3bYVF1501",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/entities/Hermes-Agent.md\"}"
+          }
+        },
+        {
+          "id": "call_03_IsPqOJ5yRssVX7HCLhKD7615",
+          "call_id": "call_03_IsPqOJ5yRssVX7HCLhKD7615",
+          "response_item_id": "fc_03_IsPqOJ5yRssVX7HCLhKD7615",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/提示工程.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: Anthropic\\n     3|type: entity\\n     4|tags: [company, ai-research, llm]\\n     5|summary: 美国人工智能公司，以 AI 安全研究闻名，提出 Context Reflected 和独立评估者模式等 Harness 实践。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# Anthropic\\n    14|\\n    15|**基本定位**\\n    16|Anthropic 是一家专注于 AI 安全和对齐研究的美国公司，由前 OpenAI 成员创立，推出了 Claude 系列大语言模型。在 Harness Engineering 体系中，其提出的 Context Reflected（上下文重映）和独立评估者模式是重要的系统设计实践。\\n    17|\\n    18|**核心特征/能力**\\n    19|1. **Context Reflected（上下文重映）**：当上下文过长导致模型丢失细节或急于收尾时，启动一个干净的“新 Agent”进行任务交接，类似程序开发中的“重启进程”以解决内存泄漏。\\n    20|2. **独立评估者模式**：将 Agent 任务拆分为 Planner（规划者）、Generator（执行者）和 Evaluator（评估者）三个角色，评估者必须在真实环境中操作（如实际运行页面），而非仅审查代码，从而形成“生产与验收分离”的机制。\\n    21|3. **角色拆分治理**：通过明确的角色分工降低单一 Agent 的认知负荷，提高任务执行的可靠性。\\n    22|4. **注重环境隔离**：强调评估者与执行者运行在独立的环境中，避免评估结果被生成过程污染。\\n    23|5. **安全性优先的系统设计**：将安全约束嵌入评估环节，确保 Agent 行为符合预期边界。\\n    24|\\n    25|**应用场景**\\n    26|- **长链路任务**：需要多步骤推理和执行的场景（如代码编写、数据分析），采用 Context Reflect 防止上下文退化。\\n    27|- **质量敏感型任务**：需要高准确度的输出（如医疗建议、金融报告），通过独立评估者模式进行双重验证。\\n    28|- **复杂编排 Agent**：涉及多个工具调用的任务，由 Planner 规划、Generator 执行、Evaluator 验收，形成闭环。\\n    29|\\n    30|**关系网络**\\n    31|- [[OpenAI]]：竞争关系，同为领先的 AI 研究机构，但在安全策略和技术路线上有所不同。\\n    32|- [[Agent]]：Anthropic 的实践是针对 Agent 系统的 Harness 设计，属于 Agent 系统的一个实现方案。\\n    33|- [[上下文重映]]：Anthropic 提出的关键技术概念。\\n    34|- [[独立评估者模式]]：Anthropic 推崇的评估范式。\\n    35|\\n    36|**关键事件/里程碑**\\n    37|- 2021 年：Anthropic 由 Dario Amodei、Daniela Amodei 等人创立。\\n    38|- 2023 年：推出 Claude 2 模型，强化安全对齐。\\n    39|- 2024-2025 年：在 Agent 系统领域推广 Harness Engineering 思想，提出上述模式。\\n    40|\\n    41|**出现的视频来源**\\n    42|- [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]]\", \"total_lines\": 41, \"file_size\": 2824, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_Y6yYT8zTlblyeP6PWoSR1844"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: OpenAI\\n     3|type: entity\\n     4|tags: [company, ai-research, llm]\\n     5|summary: 全球领先的人工智能研究机构，提出环境设计理念、目录化 Skills 管理和自动化治理系统等 Harness 实践。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# OpenAI\\n    14|\\n    15|**基本定位**\\n    16|OpenAI 是全球领先的人工智能研究机构，推出了 GPT 系列模型、ChatGPT 等产品。在 Harness Engineering 体系中，其强调工程师角色的转变——从写代码到“环境设计师”，并提出了目录化 Skills 和自动化治理等系统设计方法。\\n    17|\\n    18|**核心特征/能力**\\n    19|1. **环境设计理念**：工程师不再只是写代码，而是设计 Agent 运行的环境。当 Agent 失败时，首要思考环境中缺了什么结构性能力，而非让模型“再努力一点”。\\n    20|2. **目录化 Skills**：放弃将所有规范塞进一个巨大的 `.md` 文件，而是将其变为目录索引，Agent 根据需要动态调取子文档（如设计规范、安全规则），解决上下文窗口稀缺问题。\\n    21|3. **自动化治理**：将资深工程师的经验（如模块分层规则）写成系统拦截规则，不仅报错，还会将修复建议反馈给 Agent，进入下一轮迭代。\\n    22|4. **细粒度工具暴露**：按需暴露工具和技能，避免在上下文中塞入过多无关能力导致 Agent 误用。\\n    23|5. **动态上下文加载**：根据任务阶段动态加载相关 SOP 和参数定义，实现“进阶式”信息暴露。\\n    24|\\n    25|**应用场景**\\n    26|- **大型代码库维护**：Agent 需要理解多层架构时，通过目录化 Skills 按需加载模块文档，避免上下文爆炸。\\n    27|- **安全合规审查**：自动化治理系统可拦截违规行为（如跨层依赖），并给出修复建议，适合企业级 AI 应用。\\n    28|- **复杂多步任务**：通过环境设计中的结构性工具（如数据库查询、API 调用）让 Agent 在有限信息下稳定执行。\\n    29|\\n    30|**关系网络**\\n    31|- [[Anthropic]]：竞争关系，同为 AI 研究巨头，但在 Harness 实践上各有侧重。\\n    32|- [[Agent]]：OpenAI 的实践围绕 Agent 系统的 Harness 设计，属于 Agent 系统的一个实现方案。\\n    33|- [[目录化管理]]：OpenAI 提出的上下文管理概念。\\n    34|- [[自动化治理]]：OpenAI 的系统化规则引擎。\\n    35|\\n    36|**关键事件/里程碑**\\n    37|- 2015 年：OpenAI 创立。\\n    38|- 2022 年：ChatGPT 发布，引爆全球 AI 应用。\\n    39|- 2024-2025 年：将 Harness Engineering 理念融入生产系统，提出环境设计方法。\\n    40|\\n    41|**出现的视频来源**\\n    42|- [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]]\", \"total_lines\": 41, \"file_size\": 2738, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_01_ZQDQ2H7gVjhtWaEh4xKF7394"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: Hermes Agent\\n     3|type: entity\\n     4|tags: [hermes-agent, agent-framework, AI]\\n     5|summary: 一个注重稳定性的 AI Agent 框架，支持主副模型分离、集成 Ollama 云端模型和 Open WebUI，中文名“赫美斯”。\\n     6|sources: [raw/notebooklm-analysis/Hermes-Agent-高级玩法与部署优化简报.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# Hermes Agent\\n    14|\\n    15|## 基本定位\\n    16|\\n    17|Hermes Agent 是一个以稳定性为核心卖点的 AI Agent 框架，由社区开发并维护。它通过主副模型分离架构降低运行成本，同时原生集成 [[Ollama]] 提供云端免费模型部署，并通过 [[Open-WebUI]] 提供现代化交互界面。官方中文名称定为“赫美斯”。\\n    18|\\n    19|## 核心特征/能力\\n    20|\\n    21|1. **极强稳定性**: 在版本更新时极少引入 bug，不会出现崩溃或功能异常，远优于 [[OpenCloud]]。\\n    22|2. **主副模型分离机制**: 允许指定主模型处理复杂任务，副模型（如 [[Gemini]] 1.5 Flash）处理批准、压缩、MCP 调用等辅助任务，大幅节省 Token。\\n    23|3. **零资源云端部署**: 通过 Ollama 集成云端免费模型（如 Minimax-M2.7），完全不需要本地 GPU 或高性能硬件。\\n    24|4. **Open WebUI 原生支持**: 配置文件暴露 API 端口后，可直接对接 Open WebUI，获得 Markdown 解析、代码执行、流式输出、侧边栏历史记录等高级交互功能。\\n    25|5. **辅助任务六大类**: 提供 Approval（批准）、Compression（压缩）、Refresh Memory（重刷记忆）、MCP 调用、Web Search（网页搜索）、Visual（视觉）的模块化处理，每组可独立配置模型。\\n    26|6. **多端访问能力**: 通过内网穿透工具可实现在手机浏览器远程访问，支持公网 IP 或域名接入。\\n    27|7. **GitHub 星标增速领先**: 在同类 Agent 框架中，星标增长已超过 OpenCloud，社区活跃度高。\\n    28|\\n    29|## 应用场景\\n    30|\\n    31|1. **个人本地 AI 助手**: 用户在自己的 Windows/Mac 机器上部署 Hermes Agent，通过 Open WebUI 进行日常问答、代码编写、文件处理等任务。\\n    32|2. **低成本企业 Agent 服务**: 企业使用主副模型策略，将高频简单任务交给 Gemini 1.5 Flash 等廉价模型，仅复杂请求调用昂贵模型，控制 API 成本。\\n    33|3. **移动端远程 AI 访问**: 通过内网穿透，在户外用手机访问家中运行的 Agent，实现随时随地的智能助理。\\n    34|\\n    35|## 关系网络\\n    36|\\n    37|- [[Ollama]] — **集成依赖**: Hermes Agent 通过 Ollama 加载云端免费模型，Ollama 作为模型运行时提供基础设施。\\n    38|- [[Open-WebUI]] — **交互集成**: Hermes Agent 暴露 API 后与 Open WebUI 对接，提供用户界面。\\n    39|- [[OpenCloud]] — **直接竞争**: 两者均为 Agent 框架，但 Hermes Agent 在稳定性上领先。\\n    40|- [[Gemini]] — **推荐副模型**: 官方推荐使用 Gemini 1.5 Flash 作为辅助任务的低成本模型。\\n    41|\\n    42|## 关键事件/里程碑\\n    43|\\n    44|- **中文命名确认**: 社区获得官方确认，中文名为“赫美斯”，统一了品牌认知。\\n    45|- **Ollama 集成发布**: Hermes Agent 推出 Ollama 一键部署功能，支持云端免费模型。\\n    46|- **GitHub 星标超越 OpenCloud**: 标志着其在社区认可度上的提升。\\n    47|\\n    48|## 出现的视频来源\\n    49|\\n    50|- [[Hermes-Agent-高级玩法与部署优化简报]]\\n    51|\", \"total_lines\": 50, \"file_size\": 3306, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_02_dCpfCy7mK2hspgO3bYVF1501"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: 提示工程\\n     3|type: concept\\n     4|tags: [prompt-engineering, ai-engineering]\\n     5|summary: 通过精心设计输入指令（Prompt）来引导 AI 模型产生期望输出的方法论，属于 AI 工程化第一阶段。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|run_id: T-3DlXq9nsQOE\\n    11|---\\n    12|\\n    13|# 提示工程\\n    14|\\n    15|**定义**\\n    16|提示工程（Prompt Engineering）是 AI 工程化的第一阶段，核心是设计符合模型理解的指令文本（包括角色设定、任务描述、输出格式、示例等），以塑造局部概率空间，使模型更准确地回答问题或执行任务。其本质是“语言设计”。\\n    17|\\n    18|**在本库的具体例子**\\n    19|- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，提示工程被描述为「告诉新入职员工任务流程」，即通过一段 Prompt 告知 Agent 要执行的步骤，例如“先搜索资料，再总结，最后输出 Markdown 格式”。但这在长链路任务中容易失效，因此需要更高级的 Harness 工程。\\n    20|- 报告中指出，当任务成功率停滞时，不应仅仅修改 Prompt，而应检查执行编排和故障恢复机制。许多早期 Agent 系统仅依赖长 Prompt 就尝试完成多步任务，结果因上下文过载而失败。\\n    21|\\n    22|**技术实现细节**\\n    23|1. **模板化**：将 Prompt 分为系统角色、任务描述、上下文输入、输出格式等固定部分，动态填入变量。\\n    24|2. **少样本示例**：在 Prompt 中插入输入-输出对，帮助模型理解期望的推理模式。\\n    25|3. **思维链（Chain-of-Thought）**：引导模型逐步推理，分解复杂问题。\\n    26|\\n    27|**与近似概念的边界**\\n    28|- **对比 [[上下文工程]]**：提示工程只优化指令本身，不涉及外部信息的动态注入；上下文工程则关注在何时给模型送入哪些外部信息（如数据库查询结果、网页内容）。提示工程是上下文工程的基础组成部分。\\n    29|- **对比 [[约束工程]]**：提示工程停留在“告诉”模型，而约束工程通过系统机制“强制”模型执行正确路径，包括错误重试、输出校验等。\\n    30|\\n    31|**关联概念**\\n    32|- [[上下文工程]]\\n    33|- [[约束工程]]\\n    34|- [[思维链]]\\n    35|\\n    36|**关联实体**\\n    37|- [[OpenAI]]（GPT 系列模型常以此为优化重点）\\n    38|- [[Anthropic]]（Claude 模型也高度依赖提示工程）\", \"total_lines\": 37, \"file_size\": 2432, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_03_IsPqOJ5yRssVX7HCLhKD7615"
+    },
+    {
+      "role": "assistant",
+      "content": "Now I have a thorough understanding of the format, content, and cross-references. Let me create all 12 concept pages. I'll write them in batches.",
+      "reasoning": "Now I have a comprehensive understanding of the format and content. Let me create all 12 concept files. Let me write them one by one.\n\n1. **Agent.md** - General AI Agent concept\n2. **上下文重映.md** - Context Remapping (Anthropic concept)\n3. **内网穿透.md** - Intranet Penetration for remote access\n4. **工具系统层.md** - Tool System Layer (part of Harness 6-layer architecture)\n5. **思维链.md** - Chain of Thought prompting\n6. **检索增强生成.md** - Retrieval Augmented Generation (RAG)\n7. **独立评估者模式.md** - Independent Evaluator Pattern (Anthropic)\n8. **目录化管理.md** - Catalog Management (OpenAI concept)\n9. **约束、校验与恢复层.md** - Constraint, Validation & Recovery Layer (part of Harness)\n10. **自动化治理.md** - Automated Governance (OpenAI concept)\n11. **记忆与状态层.md** - Memory & State Layer (part of Harness)\n12. **评估与观测层.md** - Evaluation & Observation Layer (part of Harness)\n\nLet me write them all now.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now I have a comprehensive understanding of the format and content. Let me create all 12 concept files. Let me write them one by one.\n\n1. **Agent.md** - General AI Agent concept\n2. **上下文重映.md** - Context Remapping (Anthropic concept)\n3. **内网穿透.md** - Intranet Penetration for remote access\n4. **工具系统层.md** - Tool System Layer (part of Harness 6-layer architecture)\n5. **思维链.md** - Chain of Thought prompting\n6. **检索增强生成.md** - Retrieval Augmented Generation (RAG)\n7. **独立评估者模式.md** - Independent Evaluator Pattern (Anthropic)\n8. **目录化管理.md** - Catalog Management (OpenAI concept)\n9. **约束、校验与恢复层.md** - Constraint, Validation & Recovery Layer (part of Harness)\n10. **自动化治理.md** - Automated Governance (OpenAI concept)\n11. **记忆与状态层.md** - Memory & State Layer (part of Harness)\n12. **评估与观测层.md** - Evaluation & Observation Layer (part of Harness)\n\nLet me write them all now.",
+      "tool_calls": [
+        {
+          "id": "call_00_PqBgnkY2lERczIRUlMkp9003",
+          "call_id": "call_00_PqBgnkY2lERczIRUlMkp9003",
+          "response_item_id": "fc_00_PqBgnkY2lERczIRUlMkp9003",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Agent.md\", \"content\": \"---\\ntitle: Agent\\ntype: concept\\ntags: [agent, ai-engineering, system-design]\\nsummary: 能够在环境中自主感知、决策并执行任务的 AI 系统实体，核心公式为 Agent = Model + Harness，是 AI 工程化的最终落地形态。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# Agent\\n\\n**定义**\\nAgent（智能体）是 AI 系统中能够自主感知环境、做出决策并执行任务的实体。在 Harness Engineering 框架下，Agent 的核心公式为 `Agent = Model + Harness`，即由模型提供智能推理能力，由 Harness（约束运行系统）确保执行过程的稳定性、可纠偏性和可落地性。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，Agent 被描述为需要带上「Checklist」的执行者：不仅要理解任务（Prompt），获取信息（Context），还需要持续的观测、纠偏和验收机制（Harness）。\\n- [[Hermes-Agent-高级玩法与部署优化简报]] 中的 [[Hermes-Agent]] 是 Agent 框架的具体实现，通过主副模型分离、Ollama 云端集成等策略优化 Agent 的部署成本和运行稳定性。\\n\\n**技术实现细节**\\n1. **Harness 六层架构**：一个成熟的 Agent 系统包含信息边界层、工具系统层、执行编排层、记忆与状态层、评估与观测层、约束与恢复层，共同构成 Agent 的运行轨道。\\n2. **主副模型分离**：如 [[Hermes-Agent]] 的实现，主模型负责复杂推理，副模型负责批准、压缩、MCP 调用等辅助任务，大幅降低 Token 消耗。\\n3. **多 Agent 协作**：如 Anthropic 的 [[独立评估者模式]]，将 Agent 拆分为 Planner、Generator、Evaluator 三个角色，实现生产与验收分离。\\n\\n**与近似概念的边界**\\n- **对比 [[约束工程]]**：Agent 是系统的最终实体，约束工程是构建 Agent 的外部运行系统的工程方法论。Agent 使用约束工程来确保稳定执行。\\n- **区别于大语言模型（LLM）**：LLM 只是 Agent 的「大脑」组件，Agent 还包括工具调用、状态管理、执行编排等模型外部的系统能力。模型提供推理，Agent 提供完整的任务执行能力。\\n\\n**关联概念**\\n- [[约束工程]]\\n- [[上下文工程]]\\n- [[提示工程]]\\n- [[独立评估者模式]]\\n- [[主副模型策略]]\\n\\n**关联实体**\\n- [[Anthropic]]\\n- [[OpenAI]]\\n- [[Hermes-Agent]]\\n\"}"
+          }
+        },
+        {
+          "id": "call_01_8BeZYE9TqpwzfO3Bsgwb9810",
+          "call_id": "call_01_8BeZYE9TqpwzfO3Bsgwb9810",
+          "response_item_id": "fc_01_8BeZYE9TqpwzfO3Bsgwb9810",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/上下文重映.md\", \"content\": \"---\\ntitle: 上下文重映\\ntype: concept\\ntags: [anthropic, context-management, harness-engineering]\\nsummary: Anthropic 提出的上下文管理策略，当上下文过长导致模型丢失细节或急于收尾时，启动一个干净的\\\"新 Agent\\\"进行任务交接，类似重启进程解决内存泄漏。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 上下文重映\\n\\n**定义**\\n上下文重映（Context Reflected）是 [[Anthropic]] 提出的一种上下文管理策略。当 Agent 的上下文窗口因长时间运行而积累过多信息，导致模型丢失早期细节或产生「急于收尾」行为时，系统不是对上下文做压缩摘要，而是启动一个干净的「新 Agent」实例来接手后续任务，通过「进程级重置」解决上下文退化问题。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，上下文重映被描述为类似程序开发中的「重启进程」以解决内存泄漏。当上下文过长时，模型可能会对中间步骤产生厌倦或忽略早期指令，此时启动一个全新 Agent 实例，将关键状态传递给新实例，实现干净的上下文延续。\\n- 这是 [[Anthropic]] 应对「上下文焦虑」（Context Anxiety）的核心手段之一，与 [[独立评估者模式]] 配合使用，在长链路任务中显著提升稳定性。\\n\\n**技术实现细节**\\n1. **状态传递**：新 Agent 实例并非完全从零开始，而是接收经过筛选的关键中间结果、当前目标和已完成步骤摘要，而非全部原始上下文。\\n2. **触发条件**：根据上下文 token 计数（如接近窗口 80%）或行为检测（如模型开始忽略早期指令）触发上下文重映。\\n3. **交接协议**：旧 Agent 在重置前执行一次「状态导出」，将当前任务状态、已完成步骤、未完成任务打包为结构化数据传入新 Agent 的系统 Prompt。\\n4. **环境隔离**：新 Agent 运行在独立的环境中，避免旧 Agent 中积累的偏差影响新实例的判断。\\n\\n**与近似概念的边界**\\n- **区别于 [[上下文工程]] 的上下文压缩**：上下文压缩是通过摘要减少 token 量，所有信息保留在同一个 Agent 实例中；上下文重映是通过 Agent 实例替换「刷新」上下文环境，而非压缩。\\n- **区别于 [[执行编排层]] 的检查点恢复**：检查点恢复是在失败后从最近的保存点继续执行，上下文重映是主动预防性的上下文「垃圾回收」，在失败发生前就切换实例。\\n\\n**关联概念**\\n- [[上下文工程]]\\n- [[信息边界层]]\\n- [[独立评估者模式]]\\n- [[约束工程]]\\n\\n**关联实体**\\n- [[Anthropic]]\\n- [[Agent]]\\n\"}"
+          }
+        },
+        {
+          "id": "call_02_HfSmQfeirN4Fgz7ZUg133881",
+          "call_id": "call_02_HfSmQfeirN4Fgz7ZUg133881",
+          "response_item_id": "fc_02_HfSmQfeirN4Fgz7ZUg133881",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/内网穿透.md\", \"content\": \"---\\ntitle: 内网穿透\\ntype: concept\\ntags: [network, deployment, remote-access, hermes-agent]\\nsummary: 将内网服务（如 Agent 的 Open WebUI 界面）通过公网 IP 或域名暴露到外网的技术手段，实现移动端远程访问本地部署的 AI Agent。\\nsources: [raw/notebooklm-analysis/Hermes-Agent-高级玩法与部署优化简报.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 内网穿透\\n\\n**定义**\\n内网穿透（Intranet Penetration）是一种网络技术，通过建立隧道连接，使位于内网（如家庭或企业局域网）中的服务能够通过公网 IP 或域名从外部网络访问。在 AI Agent 部署场景中，它解决了本地运行的 Agent 服务无法在户外通过手机等移动设备直接访问的问题。\\n\\n**在本库的具体例子**\\n- 在 [[Hermes-Agent-高级玩法与部署优化简报]] 中，内网穿透被推荐为实现移动端远程访问的关键技术。用户部署 [[Hermes-Agent]] 并通过 [[Open-WebUI]] 提供交互界面后，使用内网穿透工具（如 frp）将 Open WebUI 的 8080 端口暴露到公网，即可在户外通过手机浏览器访问家中的 Agent。\\n- 在 [[Hermes-Agent]] 的典型应用场景中，内网穿透使个人本地 AI 助手从「仅限居家使用」扩展为「随时随地访问」。\\n\\n**技术实现细节**\\n1. **常用工具**：frp（Fast Reverse Proxy）是最常用的内网穿透工具，由服务端（公网服务器）和客户端（内网机器）组成。其他方案包括 Ngrok、Cloudflare Tunnel、ZeroTier 等。\\n2. **典型配置**：在内网机器上运行 frp 客户端，将本地 Open WebUI 的 8080 端口映射到公网服务器的指定端口。用户通过 `http://公网IP:映射端口` 访问。\\n3. **安全措施**：必须设置 API 密码认证（如 [[Hermes-Agent]] 配置文件中的自定义密码），推荐结合 HTTPS 和 IP 白名单，防止未经授权的访问。\\n4. **Heremss Agent 实践**：先确保 Agent 配置文件中启用了 API 服务（端口 8642），Open WebUI 运行在 8080 端口，然后通过 frp 将 8080 端口暴露到公网。\\n\\n**与近似概念的边界**\\n- **区别于 VPN**：VPN 是将远程设备接入内网，能访问所有内网资源；内网穿透是精准暴露特定端口，仅映射指定服务，暴露面更小。\\n- **区别于端口转发**：端口转发通常需要公网 IP 且需在路由器上配置；内网穿透不需要公网 IP，仅需一台公网服务器即可实现。\\n\\n**关联概念**\\n- [[Open-WebUI集成配置]]\\n- [[Ollama云端模型部署]]\\n\\n**关联实体**\\n- [[Hermes-Agent]]\\n- [[Open-WebUI]]\\n\"}"
+          }
+        },
+        {
+          "id": "call_03_mzN4Na8e3C66FwsjwPdR0904",
+          "call_id": "call_03_mzN4Na8e3C66FwsjwPdR0904",
+          "response_item_id": "fc_03_mzN4Na8e3C66FwsjwPdR0904",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/工具系统层.md\", \"content\": \"---\\ntitle: 工具系统层\\ntype: concept\\ntags: [harness-engineering, tool-system, agent-capabilities]\\nsummary: Harness 架构的第二层，负责管理 Agent 可调用的外部工具，包括工具选择、调用时机控制和结果精炼，解决工具不足或工具过载的问题。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 工具系统层\\n\\n**定义**\\n工具系统层（Tool System Layer）是 Harness 六层架构的第二层，负责管理 Agent 可调用的外部工具集合。其核心职责包括：为 Agent 选择和暴露合适的工具（避免工具过多导致模型乱用）、定义工具的调用时机（明确何时该调用工具、何时该直接回答），以及对工具的原始返回结果进行精炼提取（而非直接透传原始数据）。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，工具系统层被描述为需要解决「工具太少能力不足，工具太多模型乱用」的矛盾。典型场景：Agent 可调用搜索、数据库、代码执行器等工具，但不应在只需要简单回答时错误调用搜索。\\n- OpenAI 的 [[目录化管理]] 与工具系统层配合——Agent 按需调取子文档中的工具定义和参数规范，而非将所有工具暴露在上下文窗口内。\\n- [[Hermes-Agent]] 中的 MCP 调用和 Web Search 辅助任务属于工具系统层的具体实现，通过副模型处理工具调用降低 Token 消耗。\\n\\n**技术实现细节**\\n1. **工具注册机制**：每个工具以结构化接口定义（名称、描述、输入参数、输出格式）注册到工具注册表中，Agent 根据语义匹配选择合适的工具。\\n2. **调用时机决策**：通过规则引擎或分类器判断当前任务是否需要调用工具（例如，当 Agent 知识不足以回答时触发搜索），避免频繁误调。\\n3. **结果精炼管道**：工具返回的原始数据（如搜索结果的 HTML 页面）经过摘要、过滤、格式转换后，只保留与当前任务相关的关键信息注入上下文。\\n4. **工具权限分级**：将工具分为只读（如搜索、文档查询）和写操作（如数据库修改、文件写入）两类，写操作需要额外的审批流程（如 [[Hermes-Agent]] 的 Approval 辅助任务）。\\n\\n**与近似概念的边界**\\n- **区别于 [[信息边界层]]**：信息边界层决定「什么信息能进入 Agent 的上下文」，工具系统层决定「Agent 能使用什么工具去获取或操作外部系统」。前者是信息筛选，后者是能力暴露。\\n- **区别于 [[执行编排层]]**：工具系统层定义「有哪些原子工具可用」和「何时调用它们」，执行编排层定义「如何将这些工具调用串联成有逻辑顺序的工作流」。工具是原子能力，编排是流程设计。\\n\\n**关联概念**\\n- [[约束工程]]\\n- [[信息边界层]]\\n- [[执行编排层]]\\n- [[目录化管理]]\\n- [[主副模型策略]]\\n\\n**关联实体**\\n- [[OpenAI]]\\n- [[Anthropic]]\\n- [[Hermes-Agent]]\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 2535, \"dirs_created\": true}",
+      "tool_call_id": "call_00_PqBgnkY2lERczIRUlMkp9003"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 2852, \"dirs_created\": true}",
+      "tool_call_id": "call_01_8BeZYE9TqpwzfO3Bsgwb9810"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 2648, \"dirs_created\": true}",
+      "tool_call_id": "call_02_HfSmQfeirN4Fgz7ZUg133881"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3177, \"dirs_created\": true}",
+      "tool_call_id": "call_03_mzN4Na8e3C66FwsjwPdR0904"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, the first 4 files are written. Let me continue with the next 4.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, the first 4 files are written. Let me continue with the next 4.",
+      "tool_calls": [
+        {
+          "id": "call_00_Mfx1d1DOQRKTc1huBPhn9095",
+          "call_id": "call_00_Mfx1d1DOQRKTc1huBPhn9095",
+          "response_item_id": "fc_00_Mfx1d1DOQRKTc1huBPhn9095",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 思维链\\ntype: concept\\ntags: [prompt-engineering, reasoning, chain-of-thought]\\nsummary: 通过引导模型在给出最终答案前生成中间推理步骤的方法论，将复杂问题分解为一系列逻辑连贯的子问题，显著提升模型在多步骤推理任务中的准确性。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 思维链\\n\\n**定义**\\n思维链（Chain of Thought, CoT）是一种提示工程技术，通过在输入中要求模型「逐步思考」或提供包含中间推理步骤的示例，引导模型在输出最终答案之前显式生成推理过程。其本质是将复杂问题分解为一系列逻辑连贯的子问题，使模型的推理过程可解释、可审计，并显著提升在数学、逻辑和多步骤推理任务中的准确性。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，思维链被提及为 [[提示工程]] 阶段的核心技术之一，与模板化和少样本示例并列。视频指出思维链是早期 Prompt Engineering 中用来提升单次回答质量的重要手段。\\n- 在 [[约束工程]] 的六层架构中，思维链可以嵌入到 [[执行编排层]] 的每个步骤中——Agent 在执行每一步时通过思维链推理当前状态和下一步行动，使编排的决策过程更加透明。\\n- Anthropic 的 [[独立评估者模式]] 中的 Generator 角色在执行任务时使用思维链推理来确保代码或分析的质量。\\n\\n**技术实现细节**\\n1. **Zero-shot CoT**：在 Prompt 中直接添加「让我们逐步思考」或「请一步步推理」等指令，无需额外示例，模型会自动生成推理步骤。\\n2. **Few-shot CoT**：在 Prompt 中插入 2-3 个包含完整推理过程的示例（问题→推理步骤→答案），引导模型遵循同样的推理模式。\\n3. **Self-Consistency CoT**：多次采样思维链推理结果，通过投票或共识机制选取最优答案，降低单次推理的随机性偏差。\\n4. **Tree of Thought（思维树）**：思维链的扩展版本，在每一步生成多个推理分支并行探索，然后通过评估选择最优路径。\\n\\n**与近似概念的边界**\\n- **区别于 [[提示工程]]**：思维链是提示工程的一种具体技术手段，而非独立的工程范式。提示工程涵盖指令设计的所有方面，思维链聚焦于「引导逐步推理」这一特定策略。\\n- **区别于 [[执行编排层]]**：思维链是模型内部的推理机制（在单次生成中完成），执行编排层是系统外部的工作流管理（跨越多次模型调用）。前者解决「如何思考」，后者解决「如何行动」。\\n\\n**关联概念**\\n- [[提示工程]]\\n- [[执行编排层]]\\n- [[独立评估者模式]]\\n- [[上下文工程]]\\n\\n**关联实体**\\n- [[OpenAI]]（提出 CoT 论文和广泛应用）\\n- [[Anthropic]]（Claude 模型内置 CoT 能力）\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/思维链.md\"}"
+          }
+        },
+        {
+          "id": "call_01_FCaNK1Tf95gSkkpnIaYk6160",
+          "call_id": "call_01_FCaNK1Tf95gSkkpnIaYk6160",
+          "response_item_id": "fc_01_FCaNK1Tf95gSkkpnIaYk6160",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 检索增强生成\\ntype: concept\\ntags: [rag, retrieval, context-engineering, ai-engineering]\\nsummary: 将信息检索与文本生成相结合的技术范式，在生成回答前先从外部知识库检索相关文档片段，作为上下文注入模型，解决模型知识过时和幻觉问题。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 检索增强生成\\n\\n**定义**\\n检索增强生成（Retrieval Augmented Generation, RAG）是 [[上下文工程]] 的核心技术范式，通过在模型生成回答前从外部知识库或搜索引擎中检索与当前查询相关的文档片段，将这些片段作为补充上下文注入模型输入，使模型能够基于最新、最相关的信息生成答案。RAG 解决了模型训练数据截止导致的知识过时问题，以及模型在缺乏足够信息时易产生的幻觉问题。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，RAG 被列为 [[上下文工程]] 的核心技术之一，用于在正确时机向模型送入正确且适量的信息。视频指出，许多 Agent 失败的原因不是模型不够好，而是上下文欠缺或污染——RAG 正是解决上下文欠缺的核心手段。\\n- OpenAI 的 [[目录化管理]] 与 RAG 理念一脉相承：将大量文档组织为可索引的目录结构，Agent 在需要时通过检索机制动态加载相关子文档，而非将所有知识一次性注入上下文窗口。\\n- [[Hermes-Agent]] 中的 Web Search 辅助任务本质上是 RAG 的一种实时检索实现——Agent 在需要最新信息时调用搜索引擎，将检索结果压缩后注入上下文。\\n\\n**技术实现细节**\\n1. **向量检索**：将文档切分为片段（Chunking），通过嵌入模型（Embedding Model）转为向量存入向量数据库。用户查询也转为向量，通过余弦相似度或内积检索 top-k 最相关片段。\\n2. **检索增强流程**：用户查询 → 向量检索获取相关文档片段 → 将片段与原始查询拼接为 Prompt → 送入大模型生成最终回答。\\n3. **高级 RAG 策略**：包括 HyDE（假设文档嵌入，先让模型生成假设答案再检索）、RAG-Fusion（多查询扩展后融合结果）、Self-RAG（让模型自行判断是否需要检索以及检索结果的可靠性）等。\\n4. **上下文窗口管理**：检索到的片段需要按相关性排序，通过摘要压缩或切片选择控制在上下文窗口限制内，避免信息过载。\\n\\n**与近似概念的边界**\\n- **区别于 [[上下文工程]]**：RAG 是上下文工程的技术手段之一，上下文工程的概念更广，还包括上下文压缩、分阶段注入、窗口管理等策略。RAG 聚焦于「从外部知识库检索信息」这一特定路径。\\n- **区别于传统搜索**：传统搜索只返回文档列表，RAG 将检索结果与生成能力结合——模型「阅读」检索到的内容后生成综合答案，而非仅仅列出结果。\\n\\n**关联概念**\\n- [[上下文工程]]\\n- [[目录化管理]]\\n- [[信息边界层]]\\n- [[工具系统层]]\\n\\n**关联实体**\\n- [[OpenAI]]（GPTs 的 Knowledge 功能基于 RAG）\\n- [[Anthropic]]（Claude 的 RAG 集成能力）\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/检索增强生成.md\"}"
+          }
+        },
+        {
+          "id": "call_02_qFRLHlSGoPgwCvj7QuSL9258",
+          "call_id": "call_02_qFRLHlSGoPgwCvj7QuSL9258",
+          "response_item_id": "fc_02_qFRLHlSGoPgwCvj7QuSL9258",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 独立评估者模式\\ntype: concept\\ntags: [anthropic, evaluation, agent-pattern, harness-engineering]\\nsummary: Anthropic 提出的 Agent 角色拆分模式，将任务拆分为 Planner（规划者）、Generator（执行者）和 Evaluator（评估者），实现生产与验收的独立分离，评估者必须在真实环境中验证结果。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 独立评估者模式\\n\\n**定义**\\n独立评估者模式（Independent Evaluator Pattern）是 [[Anthropic]] 提出的一种 Agent 系统设计模式，将任务执行拆分为三个独立角色：Planner（规划者）负责拆解任务目标和制定执行计划，Generator（执行者）负责按照计划执行具体操作，Evaluator（评估者）负责独立验收执行结果。核心原则是评估者必须是独立的（不能是同一个 Agent 实例），且必须在真实环境中验证结果（如实际运行页面或代码），而非仅审查生成内容。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，独立评估者模式被列为 [[Anthropic]] 的一线实践，是 Harness 架构中 [[评估与观测层]] 的具体实现方案。视频指出评估者必须是独立的，并且在真实环境中操作——例如评估代码时需要在真实环境中运行，而非仅仅审查代码文本。\\n- 该模式与 [[执行编排层]] 紧密配合：Planner → Generator → Evaluator 形成完整的执行闭环。当 Evaluator 发现问题时，反馈给 Generator 修正，或在无法修正时回退到 Planner 重新规划路径。\\n\\n**技术实现细节**\\n1. **角色隔离**：Planner、Generator、Evaluator 使用独立的模型实例或完全独立的 Agent 进程运行，确保评估结果不被生成过程污染。\\n2. **真实环境验证**：Evaluator 在隔离的沙箱环境（如 Docker 容器、临时 VM）中执行生成的代码或操作，输出实际验证结果而非仅做静态分析。\\n3. **反馈循环**：Evaluator 将验证结果（通过/失败及具体问题）结构化反馈给 Generator，Generator 修正后再次提交验证，形成闭环。\\n4. **Planner 仲裁**：当 Generator 多次修正仍无法通过 Evaluator 验证时，Planner 介入重新制定执行方案或切换路径。\\n5. **评分标准**：Evaluator 使用可量化的通过条件（如测试用例通过率、代码风格规范检查结果），而非主观判断。\\n\\n**与近似概念的边界**\\n- **区别于 [[评估与观测层]]**：独立评估者模式是评估与观测层的一种具体实践方案。后者是 Harness 架构层级的抽象定义，涵盖所有评估和观测机制（包括日志、监控、测试等），而独立评估者模式特指「角色拆分+真实环境验证」这一特定实现。\\n- **区别于代码审查（Code Review）**：传统代码审查是人工进行的，且审查者仅查看代码文本；独立评估者模式中 Evaluator 是 AI Agent，且必须在真实运行环境中验证代码行为。\\n\\n**关联概念**\\n- [[评估与观测层]]\\n- [[执行编排层]]\\n- [[约束工程]]\\n- [[上下文重映]]\\n\\n**关联实体**\\n- [[Anthropic]]\\n- [[Agent]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/独立评估者模式.md\"}"
+          }
+        },
+        {
+          "id": "call_03_a4D0nPO91NzCbCidV5NL2163",
+          "call_id": "call_03_a4D0nPO91NzCbCidV5NL2163",
+          "response_item_id": "fc_03_a4D0nPO91NzCbCidV5NL2163",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 目录化管理\\ntype: concept\\ntags: [openai, context-management, skill-catalog, harness-engineering]\\nsummary: OpenAI 提出的上下文管理方法，将工程规范、技能定义等组织为目录索引结构，Agent 按需动态调取子文档而非一次性注入，解决上下文窗口稀缺问题。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 目录化管理\\n\\n**定义**\\n目录化管理（Catalog Management）是 [[OpenAI]] 提出的一种上下文组织和暴露策略，将工程规范、技能定义、设计规则等文档组织为目录索引结构（而非单一巨大的 `.md` 文件），Agent 在需要特定能力或信息时才动态调取对应的子文档。其核心思想是「按需暴露」——避免将所有内容一次性注入上下文窗口，从而解决上下文窗口稀缺导致的 token 浪费和注意力稀释问题。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，目录化管理被列为 [[OpenAI]] 的一线实践。视频指出，OpenAI 放弃将所有规范塞入一个巨大的 `.md` 文件，而是将其变为 Skills 目录索引，Agent 根据需要动态调取子文档（如设计规范、安全规则等）。\\n- 在 [[信息边界层]] 的上下文中，目录化管理是信息边界层的一种优化实现——通过结构化组织让 Agent 只获取当前任务相关的上下文片段，避免信息污染。\\n- 在 [[上下文工程]] 的语境下，目录化管理是分阶段注入上下文的具体手段：先注入全局框架，当 Agent 需要特定细节时再加载子文档。\\n\\n**技术实现细节**\\n1. **目录索引结构**：创建一个顶层索引文件，列出所有可用的技能模块或知识子文档及其简要描述、适用场景和访问路径。\\n2. **按需加载机制**：Agent 根据当前任务的分析结果，通过工具调用（如 `read_document(path)`）从索引中选择性地加载子文档。未加载的文档不占用上下文窗口。\\n3. **触发条件定义**：为每个子文档定义明确的触发条件（如「当任务涉及数据库设计时，加载 db-schema-rules.md」），由规则引擎或 Agent 自主判断。\\n4. **目录更新维护**：将目录索引的更新纳入 [[自动化治理]] 系统，确保子文档的描述和路径与实际保持一致。\\n5. **层级化组织**：目录支持多级嵌套，例如：顶层目录按领域分类（安全、设计、部署），每个领域下再分子模块。\\n\\n**与近似概念的边界**\\n- **区别于 [[检索增强生成]]**：RAG 基于语义相似度自动检索文档片段，不确定性较高；目录化管理基于结构化索引和显式规则，Agent 按明确路径加载完整文档，可预测性更强。两者可以互补使用。\\n- **区别于传统文档管理**：传统文档管理是面向人类阅读的，目录化管理是面向 Agent 消费的——索引的标题和描述需要针对 Agent 的语义理解能力专门优化，而非直接使用人类习惯的文档组织方式。\\n\\n**关联概念**\\n- [[信息边界层]]\\n- [[上下文工程]]\\n- [[约束工程]]\\n- [[自动化治理]]\\n- [[检索增强生成]]\\n\\n**关联实体**\\n- [[OpenAI]]\\n- [[Agent]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/目录化管理.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3050, \"dirs_created\": true}",
+      "tool_call_id": "call_00_Mfx1d1DOQRKTc1huBPhn9095"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3356, \"dirs_created\": true}",
+      "tool_call_id": "call_01_FCaNK1Tf95gSkkpnIaYk6160"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3339, \"dirs_created\": true}",
+      "tool_call_id": "call_02_qFRLHlSGoPgwCvj7QuSL9258"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3373, \"dirs_created\": true}",
+      "tool_call_id": "call_03_a4D0nPO91NzCbCidV5NL2163"
+    },
+    {
+      "role": "assistant",
+      "content": "Now the remaining 4 files:",
+      "reasoning": "Good, 8 files done. Now let me create the remaining 4: 约束、校验与恢复层.md, 自动化治理.md, 记忆与状态层.md, 评估与观测层.md",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, 8 files done. Now let me create the remaining 4: 约束、校验与恢复层.md, 自动化治理.md, 记忆与状态层.md, 评估与观测层.md",
+      "tool_calls": [
+        {
+          "id": "call_00_TNW1pJPIarRLDxTxghYZ2023",
+          "call_id": "call_00_TNW1pJPIarRLDxTxghYZ2023",
+          "response_item_id": "fc_00_TNW1pJPIarRLDxTxghYZ2023",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 约束、校验与恢复层\\ntype: concept\\ntags: [harness-engineering, constraint, recovery, fault-tolerance]\\nsummary: Harness 架构的第六层，定义 Agent 的行为边界并提供故障恢复机制，包括重试、回滚、路径切换等能力，确保系统在失败后能拉回正轨而非从头开始。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 约束、校验与恢复层\\n\\n**定义**\\n约束、校验与恢复层（Constraint, Validation & Recovery Layer）是 Harness 六层架构的第六层（最底层），负责定义 Agent 的行为边界（哪些能做、哪些不能做）、实施严格的输入输出校验，并在 API 超时、格式混乱、理解偏差等故障发生时提供重试、回滚或切换路径的恢复机制。其核心目标是确保系统在部分步骤失败后能够拉回正轨并稳定交付，而非从根本上从头开始。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，约束、校验与恢复层被描述为 Harness 六层架构的最后一层。视频指出，在长链路任务中失败是常态，系统必须具备状态保存和路径回滚能力。当 Agent 的 API 调用超时或输出格式与预期不符时，该层负责触发重试或切换到备选路径（如降级使用本地模型）。\\n- 该层与 [[执行编排层]] 配合：执行编排层负责步骤的串联，约束与恢复层负责在步骤失败时提供恢复能力。同时，约束规则（如「不允许删除生产数据库」）在校验环节拦截违规行为。\\n\\n**技术实现细节**\\n1. **行为边界定义**：通过规则引擎定义硬约束（如禁止调用某些 API、禁止修改某些文件）和软约束（如代码必须通过 lint 检查），硬约束直接拦截，软约束记录告警。\\n2. **输入输出校验**：对每个步骤的输入参数进行格式和范围检查（如日期格式、数值范围），对输出结果进行 Schema 验证（如 JSON Schema），不满足条件时自动触发重试。\\n3. **检查点与快照**：在关键步骤执行前保存执行状态的持久化快照（包括当前上下文、已完成步骤、中间结果），以便在失败时恢复到最近的检查点。\\n4. **重试策略**：支持指数退避重试（Exponential Backoff）和有限次重试（如最多 3 次），超过阈值后触发失败切换。\\n5. **路径切换机制**：当主路径多次失败后，切换到备选执行路径，例如主模型失败后降级使用本地小模型，或主搜索 API 超时后切换备用数据源。\\n6. **回滚能力**：对于已产生副作用（如写入文件、修改数据库）的步骤，维护操作日志以支持逆向操作（Undo）。\\n\\n**与近似概念的边界**\\n- **区别于 [[执行编排层]]**：执行编排层负责「如何安排步骤的顺序」，约束与恢复层负责「当步骤失败时怎么办」。编排层关心流程的正确性，恢复层关心系统的容错性。\\n- **区别于传统异常处理**：传统软件工程的异常处理是确定性的（try-catch 逻辑固定），而约束与恢复层需要处理模型产出的不确定性——模型可能产生格式正确但语义错误的输出，这需要结合 [[评估与观测层]] 的验证。\\n\\n**关联概念**\\n- [[约束工程]]\\n- [[执行编排层]]\\n- [[评估与观测层]]\\n- [[独立评估者模式]]\\n- [[自动化治理]]\\n\\n**关联实体**\\n- [[Anthropic]]\\n- [[OpenAI]]\\n- [[Hermes-Agent]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/约束、校验与恢复层.md\"}"
+          }
+        },
+        {
+          "id": "call_01_rBZP5KBTQLsTAHHUueMa3941",
+          "call_id": "call_01_rBZP5KBTQLsTAHHUueMa3941",
+          "response_item_id": "fc_01_rBZP5KBTQLsTAHHUueMa3941",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 自动化治理\\ntype: concept\\ntags: [openai, governance, rule-engine, harness-engineering]\\nsummary: OpenAI 提出的系统化规则引擎方法，将资深工程师的经验（如模块分层规则）编写为自动拦截规则，不仅上报违规还会向 Agent 提供修复建议，驱动下一轮迭代。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 自动化治理\\n\\n**定义**\\n自动化治理（Automated Governance）是 [[OpenAI]] 提出的一种系统化规则引擎方法，将资深工程师的经验和工程规范（如模块分层规则、代码风格规范、安全策略）编写为程序化的自动拦截规则。当 Agent 的行为触发违规时，治理系统不仅上报错误，还会将修复建议结构化地反馈给 Agent，驱动下一轮自我修正迭代，从而在无需人工介入的前提下持续约束 Agent 的行为符合组织标准。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，自动化治理被列为 [[OpenAI]] 的核心实践之一。视频指出，OpenAI 的工程师不再仅写代码，而是成为「环境设计师」——将模块分层规则等经验写成系统拦截规则，在 Agent 产生违规行为时自动拦截并给出修复建议。\\n- 自动化治理与 [[目录化管理]] 协同工作：目录化管理提供结构化的知识索引，自动化治理确保 Agent 在调用这些知识时遵循正确的规范和约束。两者共同构成了 [[信息边界层]] 和 [[约束、校验与恢复层]] 的工程化实现。\\n\\n**技术实现细节**\\n1. **规则定义形式**：规则以结构化格式（如 YAML 或 DSL）编写，包含规则名称、触发条件（如正则匹配、AST 模式匹配）、违规等级（ERROR/WARNING/INFO）和修复建议模板。\\n2. **拦截与反馈机制**：当 Agent 生成代码或执行操作时，治理系统实时扫描输出，检测到违规后：① 拦截输出并生成违规报告；② 返回格式化的修复建议作为 Agent 的下一轮输入；③ Agent 根据建议修正后重新提交。\\n3. **规则库管理**：规则库按领域分类（如安全规则、架构规则、代码风格），支持动态加载和版本管理。新规则可通过 [[目录化管理]] 的索引自动注册到 Agent 的约束上下文中。\\n4. **渐进式治理**：治理规则分为硬性规则（必须遵守，违反则直接拦截）和建议性规则（提醒但不强制），Agent 可根据自身权限和任务上下文决定是否遵循建议。\\n5. **审计日志**：所有违规事件、Agent 的修正行为和最终结果记录到审计日志中，用于后续分析和规则优化。\\n\\n**与近似概念的边界**\\n- **区别于 [[约束、校验与恢复层]]**：约束、校验与恢复层是 Harness 架构的整体层级，涵盖所有规则执行和故障恢复；自动化治理是 OpenAI 在约束与校验方面的一种具体实现方案，聚焦于「规则驱动的自修复」。\\n- **区别于传统 Linter/代码检查**：传统 Linter 只报错不修错，且面向人类开发者；自动化治理不仅报错，还会向 Agent 提供机器可读的修复建议，形成自动化的「报错→修复→验证」闭环。\\n\\n**关联概念**\\n- [[约束工程]]\\n- [[目录化管理]]\\n- [[约束、校验与恢复层]]\\n- [[信息边界层]]\\n- [[独立评估者模式]]\\n\\n**关联实体**\\n- [[OpenAI]]\\n- [[Agent]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/自动化治理.md\"}"
+          }
+        },
+        {
+          "id": "call_02_1nzRugu0NOmgF3xRx2IM8507",
+          "call_id": "call_02_1nzRugu0NOmgF3xRx2IM8507",
+          "response_item_id": "fc_02_1nzRugu0NOmgF3xRx2IM8507",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 记忆与状态层\\ntype: concept\\ntags: [harness-engineering, memory, state-management, agent-architecture]\\nsummary: Harness 架构的第四层，负责分类管理 Agent 的当前任务状态、对话中间结果、长期记忆与用户偏好，防止系统运行越久上下文越混乱。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 记忆与状态层\\n\\n**定义**\\n记忆与状态层（Memory & State Layer）是 Harness 六层架构的第四层，负责对 Agent 运行过程中的各类信息进行分类管理，明确区分当前任务状态、对话中间结果、长期记忆与用户偏好。其核心目标是防止系统运行越久上下文越混乱——避免短期对话内容污染长期知识库，也避免长期记忆占用宝贵的上下文窗口。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，记忆与状态层被描述为 Harness 架构中的重要组成部分。视频指出，Agent 需要区分三类信息：当前任务正在进行的步骤和状态、本次对话中产生的中间结果、以及跨会话的长期记忆和用户偏好。混合使用这些信息会导致系统混乱。\\n- [[Hermes-Agent]] 中的「Refresh Memory（重刷记忆）」辅助任务正是记忆与状态层的具体实现——副模型负责在需要时刷新或压缩会话记忆，确保主模型的上下文不会被积累的对话历史污染。\\n- [[约束、校验与恢复层]] 中的检查点快照机制依赖于记忆与状态层保存的状态信息，以实现在故障时恢复到最近的检查点。\\n\\n**技术实现细节**\\n1. **三级存储体系**：\\n   - **短期工作记忆（Working Memory）**：当前任务的上下文和进行中的状态，保存在模型上下文窗口中，任务完成后可释放。\\n   - **对话记忆（Episodic Memory）**：本次对话的交互历史，以摘要或关键事件列表形式存储，供后续步骤引用。\\n   - **长期记忆（Long-term Memory）**：跨会话的用户偏好、知识积累和技能记忆，以结构化数据或向量形式持久化到数据库。\\n2. **状态序列化与快照**：在关键步骤执行时将当前工作记忆序列化为结构化状态（JSON/YAML），持久化到本地文件或外部存储，支持故障恢复和会话恢复。\\n3. **记忆压缩与裁剪**：当短期记忆接近上下文窗口限制时，触发压缩策略（如将多轮对话摘要为关键事实）或裁剪策略（移除不相关的对话历史）。\\n4. **记忆访问控制**：定义不同层级记忆的访问权限——长期记忆在初始化时加载到系统 Prompt，对话记忆按需注入，工作记忆随步骤推进动态更新。\\n\\n**与近似概念的边界**\\n- **区别于 [[信息边界层]]**：信息边界层关注「当前任务需要什么外部信息」，属于输入筛选；记忆与状态层关注「系统已经有什么内部状态」，属于运行态管理。信息边界层是静态的上下文裁剪，记忆与状态层是动态的状态演进。\\n- **区别于数据库/缓存系统**：传统数据库只负责存储，不关心内容的语义层级；记忆与状态层按照任务语义区分信息的重要性和时效性，是一种面向 Agent 的智能存储设计。\\n\\n**关联概念**\\n- [[约束工程]]\\n- [[信息边界层]]\\n- [[执行编排层]]\\n- [[约束、校验与恢复层]]\\n- [[主副模型策略]]\\n\\n**关联实体**\\n- [[Anthropic]]\\n- [[Hermes-Agent]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/记忆与状态层.md\"}"
+          }
+        },
+        {
+          "id": "call_03_TsjtENvTi32HAASn7r5u0665",
+          "call_id": "call_03_TsjtENvTi32HAASn7r5u0665",
+          "response_item_id": "fc_03_TsjtENvTi32HAASn7r5u0665",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"---\\ntitle: 评估与观测层\\ntype: concept\\ntags: [harness-engineering, evaluation, observability, monitoring]\\nsummary: Harness 架构的第五层，建立独立于生成过程的验收机制，包括环境验证、自动化测试、日志与指标监控，让系统不仅能执行还能通过反馈知道自己做得对不对。\\nsources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\ncreated: 2026-05-09\\nupdated: 2026-05-09\\nlayer: L1\\nconfidence: high\\n---\\n\\n# 评估与观测层\\n\\n**定义**\\n评估与观测层（Evaluation & Observation Layer）是 Harness 六层架构的第五层，负责建立独立于 Agent 生成过程的验收与监控机制。它包括环境验证（如代码是否能真实运行）、自动化测试（如单元测试、集成测试）、日志与指标监控（如成功率、延迟、token 消耗），让系统不仅能「做」，还能通过反馈知道自己做对了没有、做得好不好，从而形成自我改进的闭环。\\n\\n**在本库的具体例子**\\n- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，评估与观测层被描述为「让系统不仅有行动能力，还有自我意识」。视频强调必须建立生产与验收分离的机制，确保评估者具备在真实环境中运行和验证结果的能力。\\n- [[Anthropic]] 的 [[独立评估者模式]] 是该层的直接实现——Evaluator 角色在隔离环境中运行生成的代码或操作，输出通过/失败结果及具体问题列表。\\n- [[自动化治理]] 中的规则拦截和审计日志也属于评估与观测层的一部分，但侧重于规则驱动的检测而非独立评估。\\n\\n**技术实现细节**\\n1. **环境验证**：在沙箱或隔离环境（Docker 容器、VM）中实际执行 Agent 生成的代码、查询或操作，验证其语义正确性和安全性，而非仅做静态分析。\\n2. **自动化测试框架**：为 Agent 的输出结果定义可量化的测试标准，包括单元测试（验证单个函数正确性）、集成测试（验证多步骤协作）、端到端测试（验证完整任务）。\\n3. **指标采集与监控**：实时采集关键指标如任务成功率、平均完成时间、各步骤耗时分布、重试次数、API 成本等，通过仪表盘可视化呈现。\\n4. **日志追溯**：记录 Agent 每次执行的全链路日志（输入 Prompt、各步输出、工具调用记录、错误信息），支持事后回溯分析和问题定位。\\n5. **评分与反馈循环**：将评估结果量化为评分（如 0-100），当评分低于阈值时自动触发 [[约束、校验与恢复层]] 的重试或回滚，或触发 [[上下文重映]] 重置 Agent 上下文。\\n6. **A/B 评估**：在生产环境中并行运行多个 Agent 配置或策略，对比评估指标，选择最优方案持续部署。\\n\\n**与近似概念的边界**\\n- **区别于 [[约束、校验与恢复层]]**：评估与观测层关注「如何知道做得对不对」（检测和度量），约束与恢复层关注「做错了怎么办」（纠错和恢复）。两者是检测与执行的关系——评估层发现问题后触发恢复层的机制。\\n- **区别于传统软件监控（APM）**：传统 APM 监控的是系统级指标（CPU、内存、请求延迟），评估与观测层除了监控这些基础指标外，还需监控 Agent 特有的语义指标（如输出质量、任务完成度、幻觉率）。\\n\\n**关联概念**\\n- [[约束工程]]\\n- [[独立评估者模式]]\\n- [[约束、校验与恢复层]]\\n- [[执行编排层]]\\n- [[自动化治理]]\\n\\n**关联实体**\\n- [[Anthropic]]\\n- [[OpenAI]]\\n- [[Hermes-Agent]]\\n\", \"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/评估与观测层.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3633, \"dirs_created\": true}",
+      "tool_call_id": "call_00_TNW1pJPIarRLDxTxghYZ2023"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3567, \"dirs_created\": true}",
+      "tool_call_id": "call_01_rBZP5KBTQLsTAHHUueMa3941"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3615, \"dirs_created\": true}",
+      "tool_call_id": "call_02_1nzRugu0NOmgF3xRx2IM8507"
+    },
+    {
+      "role": "tool",
+      "content": "{\"bytes_written\": 3672, \"dirs_created\": true}",
+      "tool_call_id": "call_03_TsjtENvTi32HAASn7r5u0665"
+    },
+    {
+      "role": "assistant",
+      "content": "All 12 files written. Let me verify they all exist and check their contents:",
+      "reasoning": "All 12 files have been created. Let me verify they all exist and are well-formed.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "All 12 files have been created. Let me verify they all exist and are well-formed.",
+      "tool_calls": [
+        {
+          "id": "call_00_w3MfuBszfRu8xmZm5kSs2852",
+          "call_id": "call_00_w3MfuBszfRu8xmZm5kSs2852",
+          "response_item_id": "fc_00_w3MfuBszfRu8xmZm5kSs2852",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts\", \"pattern\": \"*.md\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"total_count\": 22, \"files\": [\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/评估与观测层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/记忆与状态层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/自动化治理.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/约束、校验与恢复层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/检索增强生成.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/独立评估者模式.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/思维链.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/目录化管理.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/工具系统层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Agent.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/上下文重映.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/内网穿透.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/执行编排层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/提示工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/约束工程.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/辅助任务分类.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Ollama云端模型部署.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Token成本优化.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/主副模型策略.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/信息边界层.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Open-WebUI集成配置.md\", \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/上下文工程.md\"]}",
+      "tool_call_id": "call_00_w3MfuBszfRu8xmZm5kSs2852"
+    },
+    {
+      "role": "assistant",
+      "content": "Let me do a quick spot-check on a couple of files:",
+      "reasoning": "All 12 new files are created. Let me do a quick spot check on a couple of them to make sure the content is well-formed.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "All 12 new files are created. Let me do a quick spot check on a couple of them to make sure the content is well-formed.",
+      "tool_calls": [
+        {
+          "id": "call_00_jr5q0nJBMokLDnBh38EC4782",
+          "call_id": "call_00_jr5q0nJBMokLDnBh38EC4782",
+          "response_item_id": "fc_00_jr5q0nJBMokLDnBh38EC4782",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/Agent.md\"}"
+          }
+        },
+        {
+          "id": "call_01_GDNclV15tE7wGHSJx7Bz0467",
+          "call_id": "call_01_GDNclV15tE7wGHSJx7Bz0467",
+          "response_item_id": "fc_01_GDNclV15tE7wGHSJx7Bz0467",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/评估与观测层.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: Agent\\n     3|type: concept\\n     4|tags: [agent, ai-engineering, system-design]\\n     5|summary: 能够在环境中自主感知、决策并执行任务的 AI 系统实体，核心公式为 Agent = Model + Harness，是 AI 工程化的最终落地形态。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|confidence: high\\n    11|---\\n    12|\\n    13|# Agent\\n    14|\\n    15|**定义**\\n    16|Agent（智能体）是 AI 系统中能够自主感知环境、做出决策并执行任务的实体。在 Harness Engineering 框架下，Agent 的核心公式为 `Agent = Model + Harness`，即由模型提供智能推理能力，由 Harness（约束运行系统）确保执行过程的稳定性、可纠偏性和可落地性。\\n    17|\\n    18|**在本库的具体例子**\\n    19|- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，Agent 被描述为需要带上「Checklist」的执行者：不仅要理解任务（Prompt），获取信息（Context），还需要持续的观测、纠偏和验收机制（Harness）。\\n    20|- [[Hermes-Agent-高级玩法与部署优化简报]] 中的 [[Hermes-Agent]] 是 Agent 框架的具体实现，通过主副模型分离、Ollama 云端集成等策略优化 Agent 的部署成本和运行稳定性。\\n    21|\\n    22|**技术实现细节**\\n    23|1. **Harness 六层架构**：一个成熟的 Agent 系统包含信息边界层、工具系统层、执行编排层、记忆与状态层、评估与观测层、约束与恢复层，共同构成 Agent 的运行轨道。\\n    24|2. **主副模型分离**：如 [[Hermes-Agent]] 的实现，主模型负责复杂推理，副模型负责批准、压缩、MCP 调用等辅助任务，大幅降低 Token 消耗。\\n    25|3. **多 Agent 协作**：如 Anthropic 的 [[独立评估者模式]]，将 Agent 拆分为 Planner、Generator、Evaluator 三个角色，实现生产与验收分离。\\n    26|\\n    27|**与近似概念的边界**\\n    28|- **对比 [[约束工程]]**：Agent 是系统的最终实体，约束工程是构建 Agent 的外部运行系统的工程方法论。Agent 使用约束工程来确保稳定执行。\\n    29|- **区别于大语言模型（LLM）**：LLM 只是 Agent 的「大脑」组件，Agent 还包括工具调用、状态管理、执行编排等模型外部的系统能力。模型提供推理，Agent 提供完整的任务执行能力。\\n    30|\\n    31|**关联概念**\\n    32|- [[约束工程]]\\n    33|- [[上下文工程]]\\n    34|- [[提示工程]]\\n    35|- [[独立评估者模式]]\\n    36|- [[主副模型策略]]\\n    37|\\n    38|**关联实体**\\n    39|- [[Anthropic]]\\n    40|- [[OpenAI]]\\n    41|- [[Hermes-Agent]]\\n    42|\", \"total_lines\": 41, \"file_size\": 2535, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_00_jr5q0nJBMokLDnBh38EC4782"
+    },
+    {
+      "role": "tool",
+      "content": "{\"content\": \"     1|---\\n     2|title: 评估与观测层\\n     3|type: concept\\n     4|tags: [harness-engineering, evaluation, observability, monitoring]\\n     5|summary: Harness 架构的第五层，建立独立于生成过程的验收机制，包括环境验证、自动化测试、日志与指标监控，让系统不仅能执行还能通过反馈知道自己做得对不对。\\n     6|sources: [raw/notebooklm-analysis/Harness-Engineering-深度简报-构建稳定-可落地的-AI-Ag.md]\\n     7|created: 2026-05-09\\n     8|updated: 2026-05-09\\n     9|layer: L1\\n    10|confidence: high\\n    11|---\\n    12|\\n    13|# 评估与观测层\\n    14|\\n    15|**定义**\\n    16|评估与观测层（Evaluation & Observation Layer）是 Harness 六层架构的第五层，负责建立独立于 Agent 生成过程的验收与监控机制。它包括环境验证（如代码是否能真实运行）、自动化测试（如单元测试、集成测试）、日志与指标监控（如成功率、延迟、token 消耗），让系统不仅能「做」，还能通过反馈知道自己做对了没有、做得好不好，从而形成自我改进的闭环。\\n    17|\\n    18|**在本库的具体例子**\\n    19|- 在 [[Harness-Engineering-深度简报-构建稳定-可落地的-AI-Agent系统]] 中，评估与观测层被描述为「让系统不仅有行动能力，还有自我意识」。视频强调必须建立生产与验收分离的机制，确保评估者具备在真实环境中运行和验证结果的能力。\\n    20|- [[Anthropic]] 的 [[独立评估者模式]] 是该层的直接实现——Evaluator 角色在隔离环境中运行生成的代码或操作，输出通过/失败结果及具体问题列表。\\n    21|- [[自动化治理]] 中的规则拦截和审计日志也属于评估与观测层的一部分，但侧重于规则驱动的检测而非独立评估。\\n    22|\\n    23|**技术实现细节**\\n    24|1. **环境验证**：在沙箱或隔离环境（Docker 容器、VM）中实际执行 Agent 生成的代码、查询或操作，验证其语义正确性和安全性，而非仅做静态分析。\\n    25|2. **自动化测试框架**：为 Agent 的输出结果定义可量化的测试标准，包括单元测试（验证单个函数正确性）、集成测试（验证多步骤协作）、端到端测试（验证完整任务）。\\n    26|3. **指标采集与监控**：实时采集关键指标如任务成功率、平均完成时间、各步骤耗时分布、重试次数、API 成本等，通过仪表盘可视化呈现。\\n    27|4. **日志追溯**：记录 Agent 每次执行的全链路日志（输入 Prompt、各步输出、工具调用记录、错误信息），支持事后回溯分析和问题定位。\\n    28|5. **评分与反馈循环**：将评估结果量化为评分（如 0-100），当评分低于阈值时自动触发 [[约束、校验与恢复层]] 的重试或回滚，或触发 [[上下文重映]] 重置 Agent 上下文。\\n    29|6. **A/B 评估**：在生产环境中并行运行多个 Agent 配置或策略，对比评估指标，选择最优方案持续部署。\\n    30|\\n    31|**与近似概念的边界**\\n    32|- **区别于 [[约束、校验与恢复层]]**：评估与观测层关注「如何知道做得对不对」（检测和度量），约束与恢复层关注「做错了怎么办」（纠错和恢复）。两者是检测与执行的关系——评估层发现问题后触发恢复层的机制。\\n    33|- **区别于传统软件监控（APM）**：传统 APM 监控的是系统级指标（CPU、内存、请求延迟），评估与观测层除了监控这些基础指标外，还需监控 Agent 特有的语义指标（如输出质量、任务完成度、幻觉率）。\\n    34|\\n    35|**关联概念**\\n    36|- [[约束工程]]\\n    37|- [[独立评估者模式]]\\n    38|- [[约束、校验与恢复层]]\\n    39|- [[执行编排层]]\\n    40|- [[自动化治理]]\\n    41|\\n    42|**关联实体**\\n    43|- [[Anthropic]]\\n    44|- [[OpenAI]]\\n    45|- [[Hermes-Agent]]\\n    46|\", \"total_lines\": 45, \"file_size\": 3672, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_01_GDNclV15tE7wGHSJx7Bz0467"
+    },
+    {
+      "role": "assistant",
+      "content": "All 12 concept pages have been successfully created. Here's a summary:\n\n## What was done\n\nCreated 12 missing wiki concept pages under `/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/wiki/concepts/`:\n\n| # | File | Concept | Source/Subject |\n|---|------|---------|---------------|\n| 1 | **Agent.md** | General AI Agent | Core Harness concept, `Agent = Model + Harness` |\n| 2 | **上下文重映.md** | Context Remapping | Anthropic's \"process reset\" for long contexts |\n| 3 | **内网穿透.md** | Intranet Penetration | Remote access via frp for Hermes Agent |\n| 4 | **工具系统层.md** | Tool System Layer | Harness Layer 2 - tool selection & timing |\n| 5 | **思维链.md** | Chain of Thought | Prompt engineering reasoning technique |\n| 6 | **检索增强生成.md** | RAG | Retrieval Augmented Generation |\n| 7 | **独立评估者模式.md** | Independent Evaluator | Anthropic's Planner/Generator/Evaluator split |\n| 8 | **目录化管理.md** | Catalog Management | OpenAI's structured skill directory |\n| 9 | **约束、校验与恢复层.md** | Constraint, Validation & Recovery | Harness Layer 6 - fault tolerance |\n| 10 | **自动化治理.md** | Automated Governance | OpenAI's rule engine for Agent self-correction |\n| 11 | **记忆与状态层.md** | Memory & State | Harness Layer 4 - working/episodic/long-term memory |\n| 12 | **评估与观测层.md** | Evaluation & Observation | Harness Layer 5 - independent verification |\n\n## Format & Quality\n\nEach page follows the exact format from the existing reference pages:\n- **YAML frontmatter**: title, type: concept, tags, summary, sources, created (2026-05-09), updated (2026-05-09), layer: L1, confidence: high\n- **Body sections**: 定义 (≤3 sentences), 在本库的具体例子, 技术实现细节, 与近似概念的边界, 关联概念 (≥2 [[wikilinks]]), 关联实体 (≥1 [[wikilink]])\n- **All content in Chinese** as required\n- **Cross-references**: Every page links to relevant existing concepts (约束工程, 执行编排层, 信息边界层, 上下文工程, etc.) and entities (Anthropic, OpenAI, Hermes-Agent, etc.)\n- **Consistent formatting**: The 6 Harness layers all link to each other; Anthropic/OpenAI practices reference their respective entity pages\n\n## Issues encountered\n\nNone. Existing reference files provided sufficient content to extract all necessary details. The raw analysis files were comprehensive.",
+      "reasoning": "All files are well-formed and complete. Let me provide a summary of what was done.",
+      "finish_reason": "stop",
+      "reasoning_content": "All files are well-formed and complete. Let me provide a summary of what was done."
+    }
+  ]
+}

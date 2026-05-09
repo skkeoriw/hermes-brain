@@ -26,17 +26,17 @@ def call_llm(prompt: str) -> tuple:
         api_key = os.environ["DEEPSEEK_API_KEY"]
         base_url = "https://api.deepseek.com/v1"
         model_name = "deepseek-v4-flash"
-        max_tokens = 16000
+        max_tokens = 32000
     elif os.environ.get("DASHSCOPE_API_KEY"):
         api_key = os.environ["DASHSCOPE_API_KEY"]
         base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
         model_name = "qwen-plus"
-        max_tokens = 16000
+        max_tokens = 32000
     else:
         api_key = os.environ.get("OPENROUTER_API_KEY", "")
         base_url = "https://openrouter.ai/api/v1"
         model_name = "deepseek/deepseek-v4-flash:free"
-        max_tokens = 16000
+        max_tokens = 32000
 
     payload = json.dumps({
         "model": model_name,
@@ -103,6 +103,7 @@ def build_report_prompt(schema: str, report: dict, index_content: str) -> str:
 **Source 页**：执行摘要3-5句 + 核心要点5-10条（具体细节）+ 关键引言（原话+背景）+ 脑图节点列举 + 关联wikilinks
 **Entity 页**：≥5条核心特征/能力（具体技术细节）+ 2-3个应用场景 + 关系网络(≥2) + 关键事件/里程碑
 **Concept 页**：精确定义+技术实现 + 本库具体例子（文件路径/工具名/具体数据）+ 边界区分 + 关联≥2概念+≥1实体 + ≥250字
+**⚠️ 禁止提炼通用行业常识**：思维链、RAG、微调、向量数据库、API、Docker 等行业公知概念不得创建页面。只提炼视频中有独特视角或具体实现的概念。
 
 所有内容用中文，frontmatter字段名用英文，wikilink用[[slug]]格式。
 ⚠️ 文件路径slug必须使用中文语义名，禁止英文slug：
@@ -382,7 +383,7 @@ Reports: {len(report_files)} | Pages: {len(all_written)} | Time: {duration}s
         for _ in range(3):
             if git_run(["push", "origin", "main"], wiki_path).returncode == 0:
                 break
-            git_run(["pull", "--ff-only", "origin", "main"], wiki_path)
+            git_run(["pull", "--rebase", "origin", "main"], wiki_path)
 
     print(f"\n[wiki-builder] Done: {len(all_written)} pages | {len(report_files)} API calls | {duration}s")
     print(json.dumps({"status": "success", "pages": len(all_written),

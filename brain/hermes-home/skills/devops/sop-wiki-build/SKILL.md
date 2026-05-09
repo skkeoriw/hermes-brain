@@ -1,7 +1,7 @@
 ---
 name: sop-wiki-build
 description: "SOP Stage C: 三阶段增量知识图谱构建，基于 NotebookLM 分析结果构建 wiki，push 结果并发送 Telegram 通知。"
-version: 2.9.0
+version: 2.10.0
 ---
 
 # SOP Stage C: Wiki Incremental Build
@@ -184,6 +184,53 @@ webhook 收到 `stage=wiki-build`
     EOF
     # 重新提交
     git add -A && git commit -m "fix: rename truncated filenames and fix dead links [run:{run_id}]" && git push origin main
+    ```
+
+16. **修复后强制 recount（防止 index.md 和 pipeline-context.json 计数陈旧）**：
+    修复死链（创建缺失页面）后，原有的 Total pages、sources、entities、concepts 等计数不再准确。必须强制刷新：
+    ```bash
+    cd {wiki_local_path}
+    
+    # 重新统计实际页数
+    TOTAL=$(find wiki/ -type f -name '*.md' | wc -l)
+    SRC=$(ls wiki/sources/*.md 2>/dev/null | wc -l)
+    ENT=$(ls wiki/entities/*.md 2>/dev/null | wc -l)
+    CON=$(ls wiki/concepts/*.md 2>/dev/null | wc -l)
+    CMP=$(ls wiki/comparisons/*.md 2>/dev/null | wc -l)
+    OVR=$(ls wiki/overview/*.md 2>/dev/null | wc -l)
+    QRY=$(ls wiki/queries/*.md 2>/dev/null | wc -l)
+    echo "Recount: $TOTAL total (SRC=$SRC ENT=$ENT CON=$CON CMP=$CMP OVR=$OVR QRY=$QRY)"
+    
+    # 更新 index.md 的 Total pages 行
+    sed -i "s/Total pages: [0-9]*/Total pages: $TOTAL/" index.md
+    
+    # 更新 pipeline-context.json（如果存在）
+    if [ -f raw/pipeline-context.json ]; then
+      python3 -c "
+import json
+with open('raw/pipeline-context.json') as f:
+    ctx = json.load(f)
+if 'stage_c' in ctx:
+    ctx['stage_c'].update({
+        'pages_created': $TOTAL,
+        'sources': $SRC,
+        'entities': $ENT,
+        'concepts': $CON,
+        'comparisons': $CMP,
+        'overview': $OVR,
+        'queries': $QRY,
+        'note': 'counts updated after dead-link fix in Phase 3'
+    })
+with open('raw/pipeline-context.json', 'w') as f:
+    json.dump(ctx, f, indent=2, ensure_ascii=False)
+print('pipeline-context.json updated')
+"
+    fi
+    
+    # 重新提交计数修复
+    git add -A && git commit --amend --no-edit 2>/dev/null || \
+      git commit -m "fix: recount pages after Phase 3 fixes [run:{run_id}]" && git push origin main --force-with-lease 2>/dev/null || \
+      git push origin main
     ```
 
 ## 注意
@@ -570,15 +617,16 @@ with open('raw/pipeline-context.json', 'w') as f:
 
 **症状**：`index.md` 中的条目如 `- [[Codex Chrome 插件功能实测与深度解析简报]]`（空格）指向上不存在的文件（实际文件为全连字符 slug）。
 
-**检查方法**（Phase 3 新增步骤）：
+**检查方法**（Phase 3 新增步骤）：使用 `grep -o` 精确提取 wikilink（比 `sed 's/\[\[/,/'` 更准确，避免 `[[标题]] — 描述` 格式的假阳性）：
+
 ```bash
 cd {wiki_local_path}
-# 检查 index.md 和 log.md 中的 wikilink
-grep -n '\[\[.*\]\]' index.md log.md 2>/dev/null | sed 's/\[\[/,/' | while IFS=, read -r line slug; do
-  slug=$(echo "$slug" | sed 's/\[\[//;s/\]\]//;s/|.*//')
-  found=$(find wiki/ -path "*/${slug}.md" 2>/dev/null | head -1)
-  if [ -z "$found" ] && [ -n "$slug" ]; then
-    echo "  ❌ DEAD LINK in $line → [[${slug}]]"
-  fi
+for f in index.md log.md; do
+  [ ! -f "$f" ] && continue
+  echo "=== Checking $f ==="
+  grep -oP '\[\[[^\]]+\]\]' "$f" 2>/dev/null | while IFS= read -r match; do
+    slug=$(echo "$match" | sed 's/\[\[//;s/\]\]//;s/|.*//')
+    found=$(find wiki/ -path "*/${slug}.md" 2>/dev/null | head -1)
+    [ -z "$found" ] && echo "  ❌ DEAD LINK in $f: [[${slug}]]"
+  done
 done
-```

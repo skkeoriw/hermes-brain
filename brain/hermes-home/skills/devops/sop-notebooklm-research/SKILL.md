@@ -1,7 +1,7 @@
 ---
 name: sop-notebooklm-research
 description: "SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图，push 到仓库触发 Stage C。"
-version: 2.3.0
+version: 2.4.0
 ---
 
 # SOP Stage B: NotebookLM Research
@@ -164,6 +164,7 @@ api_calls: {从 hermes insights 查询本会话的 tool calls 数，若无法获
     }
     ```
     - **必须用 write_file 工具写入**，不用 shell echo/heredoc
+    - **write_file warning 处理**：若返回 `"modified by sibling subagent"` warning，不要假设数据丢失。用 `read_file` 读回验证内容是否与预期一致。若一致（同一 pipeline、相同 stage_b 数据），直接继续；若不一致，用 Python 合并新旧数据再写入。
     - 在 `git add` 命令里加上 `raw/pipeline-context.json`
 
 12. 用 write_file 工具写执行日志到 `{wiki_local_path}/logs/webhook-runs/{run_id}.md`，必须包含 frontmatter：
@@ -285,6 +286,35 @@ processor 返回的 JSON 中 `generated_files[].path` 声明的后缀是 `.json`
 - `read_file` 返回空或文件不存在 → 直接创建新的 pipeline-context.json（`write_file` 创建新文件是安全的）
 - 不要尝试解析空内容 → 避免 JSON 解析错误
 - 不需要预先用 `read_file` 验证文件存在性；如 skill 所述，直接用 `write_file` 写入
+
+### 12. execute_code 与 terminal 的文件系统行为差异
+**⚠️ 环境差异警告**：不同 Hermes 部署环境下，`execute_code` 文件系统行为可能不同。以下指导基于已观察到的两种模式：
+
+**模式 A（当前环境已验证）**：`execute_code` 的 Python 文件操作（`shutil.copy2()`、`open().write()`、`re.sub()` + write）**可以正常持久化到磁盘**，在 `git status` 和 `ls` 中可见。此环境下两种方式均可使用。
+
+**模式 B（其他环境/历史版本）**：`execute_code` 使用沙盒文件系统，文件操作不落盘。必须通过 terminal 工具执行所有文件操作。
+
+**避坑指南**：
+1. **优先使用 terminal heredoc**：`python3 << 'PYEOF'` 方式在所有环境下都可靠，是推荐做法
+2. **使用前验证**：如果不确定当前环境的行为模式，先做一个小测试——在 `execute_code` 中写一个临时文件，然后用 terminal 的 `ls` 检查是否存在
+3. **始终可用的安全工具**：`write_file` 工具在所有环境下都能可靠持久化（如 pipeline-context.json 和日志文件）
+
+### 13. 并发子 agent 先于本 agent 提交分析文件（文件已被提交，仅日志可 commit）
+当同一 pipeline 的多个 sibling subagent 并行执行时，可能发生另一个 subagent 已跑完 Phase 1-3、先提交了分析文件的情形。本 agent 进入 Phase 3 时发现：
+
+- `git status` 仅显示 `logs/webhook-runs/{run_id}.md` 为新文件
+- `git -c core.quotepath=false ls-files raw/notebooklm-analysis/` 显示文件**已在追踪**
+- `pipeline-context.json` 内容与 sibling 写入的一致
+
+**这不是错误**。Sibling 与本 agent 处理相同的 `raw/youtube-links/` 变更，生成相同的分析内容（NotebookLM 输出确定性强），谁先 push 谁就提交了文件。
+
+**正确做法**：
+1. **不要惊慌**——日志文件有唯一 `run_id`，是每个 subagent 的独特产出
+2. 仍然写入 pipeline-context.json（步骤 11b）。如果 `write_file` 返回 sibling 修改 warning，用 `read_file` 读回验证——内容通常一致，直接继续即可
+3. pipeline-context.json 验证一致后，用 `write_file` 写日志文件
+4. 执行 `git add raw/notebooklm-analysis/ raw/notebooklm-mindmaps/ raw/pipeline-context.json logs/` + `git commit`
+5. commit 仅包含日志文件（分析文件已无 diff），push 正常执行
+6. 这是正常的多 agent 并发行为，非功能性异常
 
 ### 12. execute_code 与 terminal 的文件系统行为差异
 **⚠️ 环境差异警告**：不同 Hermes 部署环境下，`execute_code` 文件系统行为可能不同。以下指导基于已观察到的两种模式：
