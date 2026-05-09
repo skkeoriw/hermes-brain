@@ -1,7 +1,7 @@
 ---
 name: sop-notebooklm-research
 description: "SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图，push 到仓库触发 Stage C。"
-version: 2.1.0
+version: 2.3.0
 ---
 
 # SOP Stage B: NotebookLM Research
@@ -20,11 +20,15 @@ webhook 收到 `stage=notebooklm-research`
 3. 保护性同步：
    ```bash
    git stash push -u -m "sop-b-{run_id}" 2>/dev/null || true
-   git fetch origin && git checkout main && git pull --ff-only origin main
+   # ⚠️ 使用 git fetch origin main（限制为 main 分支），防止 git fetch origin（取所有分支）
+   # 导致后续 git pull --ff-only 报 "Cannot fast-forward to multiple branches"
+   # 同时用 git reset --hard origin/main 替代 git pull，更稳定可靠
+   git fetch origin main && git checkout main && git reset --hard origin/main
    if ! git stash pop 2>/dev/null; then
-       git reset --hard origin/main && git stash drop 2>/dev/null || true
+       git stash drop 2>/dev/null || true
    fi
    ```
+   **坑**：`git fetch origin`（无分支限定）会 fetch 所有远程分支，当本地有多个远程跟踪分支时，后续的 `git pull --ff-only origin main` 可能因 refspec 模糊而报 `fatal: Cannot fast-forward to multiple branches`。修正：用 `git fetch origin main` 限定单个分支，并用 `git reset --hard origin/main` 而非 `git pull`。
 4. 用 `-c core.quotepath=false` 计算变更文件（防止中文路径被引号包装）：
    ```bash
    git -c core.quotepath=false diff --name-only {before}..{sha} -- 'raw/youtube-links/'
@@ -62,7 +66,21 @@ webhook 收到 `stage=notebooklm-research`
    - 0：全部成功（`status: success`）
    - 1：部分成功（`status: partial_success`）— 继续执行 Phase 3
    - 2：全部失败（`status: failed`）— 仍然执行 Phase 3 记录失败日志
-9. 对每个生成文件，按以下规则**重命名后**复制到仓库：
+9. 对每个生成文件，按以下规则**重命名后**复制到仓库（**推荐使用可复用脚本** `scripts/copy-and-rename-output.py`，也保留手动步骤供参考）：
+
+   ### 🚀 推荐方式：使用可复用脚本（一步完成步骤 9-10）
+
+   ```bash
+   echo "$PROC_OUTPUT" | python3 /home/zhouhuijuan1987/.hermes/skills/devops/sop-notebooklm-research/scripts/copy-and-rename-output.py \
+     - {wiki_local_path}
+   ```
+
+   脚本返回 JSON 摘要到 stdout，包含每个文件的状态、slug、路径和大小。若全部成功返回码 0，部分失败返回码 1。
+
+   ⚠️ **脚本自动处理**：标题提取（跳过 frontmatter）、slug 生成、文件复制、.canvas/.json 后缀检查、JSON 合法性验证、frontmatter 中 mindmap_file 字段更新。
+
+   ### 📝 手动方式（当脚本不适用时）
+
    - ⚠️ **文件操作必须在 terminal 中执行，不得使用 execute_code 工具**：Hermes 的 `execute_code` 工具（Python execute_code）文件系统与真实终端隔离——通过 `shutil.copy2()`、`open().write()` 等操作创建的文件不会持久化到磁盘。所有文件读写、复制、重命名、frontmatter 修改必须通过 terminal 命令完成（如 `python3 << 'PYEOF'` 或多行 bash）。
    - **推荐做法**：用 heredoc 方式嵌入 Python 脚本到 terminal 执行：
      ```bash
