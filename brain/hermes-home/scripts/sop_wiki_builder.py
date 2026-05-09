@@ -14,13 +14,22 @@ def read_file(path):
     except:
         return ""
 
-def call_deepseek(prompt: str, model: str = "deepseek-v4-flash") -> str:
-    """调用 DeepSeek API，返回文本响应"""
+def call_deepseek(prompt: str, model: str = "qwen-turbo") -> str:
+    """调用 LLM API，优先级：DashScope(Qwen) > DeepSeek > OpenRouter(free)"""
     import urllib.request
 
-    api_key = os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("OPENROUTER_API_KEY")
-    base_url = "https://api.deepseek.com/v1" if os.environ.get("DEEPSEEK_API_KEY") else "https://openrouter.ai/api/v1"
-    model_name = "deepseek-v4-flash" if os.environ.get("DEEPSEEK_API_KEY") else "deepseek/deepseek-v4-flash"
+    if os.environ.get("DASHSCOPE_API_KEY"):
+        api_key = os.environ["DASHSCOPE_API_KEY"]
+        base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        model_name = "qwen-turbo"
+    elif os.environ.get("DEEPSEEK_API_KEY"):
+        api_key = os.environ["DEEPSEEK_API_KEY"]
+        base_url = "https://api.deepseek.com/v1"
+        model_name = "deepseek-v4-flash"
+    else:
+        api_key = os.environ.get("OPENROUTER_API_KEY", "")
+        base_url = "https://openrouter.ai/api/v1"
+        model_name = "deepseek/deepseek-v4-flash:free"
 
     payload = json.dumps({
         "model": model_name,

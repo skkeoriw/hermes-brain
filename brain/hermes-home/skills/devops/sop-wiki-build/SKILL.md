@@ -47,15 +47,10 @@ webhook 收到 `stage=wiki-build`
    脚本通过 `os.environ` 读取 API 密钥，密钥存储在 `~/.hermes/.env` 中但不会自动导出到 shell。执行脚本前必须手工导出：
 
    ```bash
-   # 导出密钥环境变量（必须！否则脚本 401）
-   source ~/.hermes/.env
-   
-   # DeepSeek 密钥可能已过期，若遇到 401 则改用 OpenRouter：
-   # unset DEEPSEEK_API_KEY
-   # export OPENROUTER_API_KEY
+   # 导出 API 密钥（必须 export，否则 Python 子进程读不到）
+   # 优先级：DashScope(Qwen) > DeepSeek > OpenRouter(free)
+   source ~/.hermes/.env && export DASHSCOPE_API_KEY && export DEEPSEEK_API_KEY
    ```
-
-   > **坑**：脚本逻辑是 `DEEPSEEK_API_KEY` 优先（→ `api.deepseek.com`），回退 `OPENROUTER_API_KEY`（→ `openrouter.ai`）。DeepSeek 密钥过期时，必须 unset 它才能走 OpenRouter 路由。
 
 10. 调用 sop_wiki_builder.py（固定路径）：
    ```bash
@@ -104,14 +99,8 @@ Phase 2 完成后跳过 Phase 3 的 git 操作（脚本已处理），只执行 
 ### 1. API 密钥来源
 - API 密钥存储在 `~/.hermes/.env`，不是 shell env vars。
 - `sop_wiki_builder.py` 使用 `os.environ.get()` 读取，**不自动加载 `.env`**。
-- 每次执行前必须：`source ~/.hermes/.env`
-- **DeepSeek 密钥已过期**（2026-05-09 确认），返回 401。改用 OpenRouter：
-  ```bash
-  source ~/.hermes/.env
-  unset DEEPSEEK_API_KEY
-  export OPENROUTER_API_KEY
-  ```
-  脚本会回退到 `https://openrouter.ai/api/v1` + `deepseek/deepseek-v4-flash` 模型名。
+- 每次执行前必须：`source ~/.hermes/.env && export DEEPSEEK_API_KEY`
+- Hermes 配置（config.yaml）使用 `provider: deepseek`，脚本与 Hermes 走同一个 API。
 
 ### 2. LLM 生成的双 `.md.md` 扩展名
 - LLM 有时生成的文件名已包含 `.md`（如 `soul.md`），脚本再加 `.md` 导致 `soul.md.md`。
