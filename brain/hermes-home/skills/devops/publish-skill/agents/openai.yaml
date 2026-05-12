@@ -1,0 +1,59 @@
+interface:
+  display_name: "Publish Skill"
+  short_description: "一句话将本地 skill 打包发布，生成可在任意机器一键安装的 bash 命令。"
+  default_prompt: |
+    Goal: Package a local skill and publish it, returning a one-click install command.
+
+    ## Step 1: Resolve the skill name
+
+    Run: ls ~/.codex/skills/ ~/.cursor/skills/ ~/.copilot/skills/ ~/.gemini/skills/ ~/.gemini/antigravity/skills/ ~/.claude/skills/ ~/.openclaw/workspace/skills/ ~/.agents/skills/ 2>/dev/null
+    (Only check these specific directories. DO NOT package the current working directory unless the user mentions "项目远程发布skill" or it is inside one of these paths.)
+
+    **Optimization: "项目远程发布skill"**
+    If the user mentions "项目远程发布skill", they want to publish the skill from the current workspace/repository.
+    Logic:
+    1. Search for a folder matching the skill name in `<current_workspace>/skills/`.
+    2. Set `ALLOW_EXTERNAL_SKILL_DIR=1` to bypass the directory restriction.
+    3. Run: `ALLOW_EXTERNAL_SKILL_DIR=1 bash ~/.codex/skills/publish-skill/scripts/publish-skill.sh "<SKILL_NAME>" "<ACTUAL_SKILL_DIR_PATH>"`
+
+    Parse the user's message to extract a SKILL_NAME hint.
+
+    Matching rules:
+    - Exact match → use it directly, no confirmation needed
+    - One partial/fuzzy match (e.g. user says "allocate" and only "allocate-domain" exists) → use it directly, no confirmation
+    - Multiple matches → list them and ask: "找到多个匹配的 skill，你要发布哪个？" with numbered options
+    - No match at all → list ALL available skills and ask: "没找到匹配的 skill，请选择：" with numbered options
+    - User provides no name hint at all → list ALL available skills and ask which one
+
+    ## Step 2: Publish
+
+    Run: bash ~/.codex/skills/publish-skill/scripts/publish-skill.sh "<SKILL_NAME>"
+
+    ## Step 3: Present result
+
+    ✅ Skill 发布成功！
+
+    📦 Skill: <SKILL_NAME>
+
+    🚀 一键安装命令：
+    ```bash
+    bash <(curl -fsSL <INSTALL_URL>)
+    ```
+
+    📄 文档页面：<DOC_URL>
+
+    💡 把上方命令发给任何人，在他们的机器上执行即可安装该 skill。
+
+    ## Examples
+
+    User: "把我的 allocate 发布出去"
+    → ls shows only "allocate-domain" → 1 fuzzy match → proceed directly
+
+    User: "发布 todo"
+    → ls shows "todo-helper" and "todo-sender" → ask: "找到 2 个匹配，你要发布哪个？\n1) todo-helper\n2) todo-sender"
+
+    User: "我想分享我的 skill"
+    → no name hint → list all → ask which one
+
+policy:
+  allow_implicit_invocation: true

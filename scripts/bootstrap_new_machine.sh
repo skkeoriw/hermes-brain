@@ -30,6 +30,31 @@ fi
 
 python3 scripts/hermes_brain_sync.py repo-to-local
 
+# ── 路径适配：将 brain 里的旧机器路径替换为当前用户 home ──────────────────────
+# brain 里的 config.yaml / webhook_subscriptions.json 可能含有原机器的绝对路径
+# 找出 brain 里记录的旧 home（取第一个 /home/xxx 或 /Users/xxx 路径）
+OLD_HOME=$(grep -oE '/home/[^/]+|/Users/[^/]+' \
+  "$HOME/.hermes/config.yaml" "$HOME/.hermes/webhook_subscriptions.json" 2>/dev/null \
+  | grep -oE '/home/[^:]+|/Users/[^:]+' | head -1 | sed 's|/[^/]*$||' || true)
+
+if [ -n "$OLD_HOME" ] && [ "$OLD_HOME" != "$HOME" ]; then
+  echo "Adapting paths: $OLD_HOME → $HOME"
+  sed -i "s|$OLD_HOME|$HOME|g" "$HOME/.hermes/config.yaml"
+  sed -i "s|$OLD_HOME|$HOME|g" "$HOME/.hermes/webhook_subscriptions.json"
+  echo "Path substitution done."
+fi
+
+# ── 克隆 agent-brain-plugins（skills 来源）────────────────────────────────────
+BRAIN_REPO="https://github.com/skkeoriw/agent-brain-plugins.git"
+BRAIN_LOCAL="$HOME/agent-brain-plugins"
+if [ ! -d "$BRAIN_LOCAL/.git" ]; then
+  echo "Cloning agent-brain-plugins → $BRAIN_LOCAL"
+  git clone "$BRAIN_REPO" "$BRAIN_LOCAL"
+else
+  echo "agent-brain-plugins already exists, pulling latest..."
+  git -C "$BRAIN_LOCAL" pull --ff-only || true
+fi
+
 # New machines default to pull role. Only a deliberate
 # `./scripts/set_sync_role.sh push --git --push` makes a machine the single writer.
 if [ ! -f "$HOME/.config/hermes-brain/sync-role" ]; then

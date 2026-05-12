@@ -217,6 +217,104 @@ Rules:
 - Do not paste repo contents into public issues or logs.
 - If the repo becomes public, rotate all credentials.
 
+## Daily Sync Workflow (absorbed from brain-sync-workflow)
+
+This section codifies the end-to-end procedure for synchronizing the Hermes brain repo, extracting commit metadata, building GitHub navigation links, and generating a Telegram-friendly report.
+
+### Canonical Sync Steps
+
+1) **Sync the brain**
+   ```bash
+   cd ~/hermes-brain && ./scripts/auto_sync.sh
+   ```
+   Validate the sync completed (non-zero exit code indicates a problem).
+
+2) **Capture commit information**
+   ```bash
+   CURRENT=$(git log -1 --format "%H %h %s")
+   PREV=$(git log -1 HEAD~1 --format "%H")
+   ORIGIN=$(git remote get-url origin)
+   DIFF_STAT=$(git diff HEAD~1 HEAD --stat)
+   DIFF_CONTENT=$(git diff HEAD~1 HEAD --no-color | head -1000)
+   ```
+
+3) **Build GitHub links**
+   From ORIGIN, extract owner/repo, then:
+   - Compare: `https://github.com/OWNER/REPO/compare/PREV_SHA...CURRENT_SHA`
+   - Commit: `https://github.com/OWNER/REPO/commit/CURRENT_SHA`
+
+4) **Generate Telegram report (三个部分)**
+   - Section A: 核心摘要 — 2-3 bullets from diff content
+   - Section B: 详细变更 — file counts, new files, modified files
+   - Section C: 快速导航 — compare/commit links
+
+5) **Output** in Telegram-friendly format.
+
+### Pitfalls specific to the sync workflow
+
+- **Model deadlock (CRITICAL)**: If the cron job runs on the same model the fallback script tries first (currently `openrouter/owl-alpha`), the `hermes chat` call will hang indefinitely due to resource contention. The `timeout 45` wrapper may not kill the subprocess. Fix: reorder the model list in the script so the cron agent's own model is last, or add logic to skip `CRON_MODEL` in the fallback chain.
+- **Duplicate concurrent runs**: Multiple instances of `hermes_brain_sync_fallback.sh` can stack up if the cron interval is shorter than the script runtime. Each hung instance worsens the deadlock. Before starting a new run, kill orphans: `pkill -f hermes_brain_sync_fallback; pkill -f 'hermes chat'`.
+- **Fallback script runtime**: The full `hermes_brain_sync_fallback.sh` pipeline can take 4–10 minutes (jitter sleep 0-300s + AI model fallback chain with 45s timeout × up to 5 models). Always run in background (`background: true`) with a 600s+ timeout. Do NOT run inline in a cron job with a 300s timeout — this causes the script to be killed mid-flight. With 600s timeout, all observed runs (Sessions 2–5, 2026-05-10) completed successfully.
+- **`hermes chat` hangs indefinitely**: When a model/provider is unreachable, `hermes chat -m <model>` can hang forever — the `timeout 45` wrapper does NOT always kill the subprocess. Kill manually: `pkill -f 'hermes chat'`; `pkill -f hermes_brain_sync_fallback`. The `openrouter/owl-alpha` model in particular has been observed to hang on one run and succeed on the very next run (2026-05-10), confirming transient connectivity issues rather than permanent failure.
+- **GitHub repo may be deleted/renamed**: The remote can return "Repository not found". Check `git fetch origin 2>&1` first if sync fails repeatedly. As of 2026-05-11, `https://github.com/ChangfengHU/hermes-brain.git/` consistently returns this error — the repo may have been deleted, renamed, or made private for 3+ days. The sync script continues past this error (does not block the AI report or Telegram send), but no git push/pull happens until the remote is fixed. When git fails fast (no network timeout), the entire fallback pipeline can complete in ~2 minutes if the first AI model succeeds.
+- **Script is safe to re-run**: The fallback script is idempotent. If the first run is killed by a 300s cron timeout, a second run (with a fresh jitter value) often completes successfully. The jitter is re-randomized each invocation, so a second run may get a much shorter sleep.
+- **Always run in background with 600s+ timeout**: Running `hermes_brain_sync_fallback.sh` inline/foreground with a 300s timeout has failed consistently (Sessions 1 and 6, 2026-05-11). The jitter sleep alone can consume 279s+, leaving no time for the AI model chain. Use `background: true` with `timeout: 600` or higher. All 4 background runs (Sessions 2, 4, 5, 6) completed successfully.
+- **Jitter sleep**: `auto_sync.sh` includes a random 0-300s jitter. Expect this delay.
+- **Telegram bot separation**: Keep brain-sync TG notifications decoupled from wiki/webhook TG notifications by using a dedicated bot token + chat_id per flow. See `references/telegram-bot-separation.md`.
+
+### Telegram Report Format (absorbed from brain-sync-reporting)
+
+See `templates/telegram-report-template.md` for the full template.
+
+**Section A — 核心摘要** (2-3 concrete bullet points from the diff):
+```
+• Updated N files with M lines added, K lines removed
+• Major changes: [specific insight from diff content]
+• [Additional meaningful observation]
+```
+
+**Section B — 详细变更:**
+```
+📂 文件变更: X 个，+Y / -Z
+
+🆕 新增文件: N 个
+  - path/to/file1
+  - path/to/file2
+
+✏️ 修改文件: M 个
+  - path/to/updated1
+  - path/to/updated2
+```
+
+**Section C — 快速导航:**
+```
+🔗 查看本次详细变更: [COMPARE_LINK]
+🔍 查看提交详情: [COMMIT_LINK]
+🏠 HOSTNAME ⏰ TIMESTAMP
+```
+
+### Fallback: Direct Telegram Send (no hermes dependency)
+
+When `hermes_brain_sync_fallback.sh` hangs and you need to send a report NOW:
+
+```bash
+pkill -f hermes_brain_sync_fallback
+pkill -f 'hermes chat'
+cd ~/hermes-brain
+SHORT_SHA=$(git log -1 --format="%h")
+COMMIT_MSG=$(git log -1 --format="%s")
+DIFF_STAT=$(git diff HEAD~1 HEAD --stat 2>/dev/null || echo "N/A")
+HOSTNAME=$(hostname)
+ISO_TIME=$(date -Is)
+
+curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+  -d "chat_id=${TG_CHAT_ID}" \
+  -d "disable_web_page_preview=true" \
+  --data-urlencode "text@/tmp/hermes_brain_sync_tg.txt"
+```
+
+See `references/fallback-direct-telegram.md` for the complete procedure, and `references/fallback-script-runtime.md` for observed runtime measurements.
+
 ## Verification Checklist
 
 After bootstrap or restore:
