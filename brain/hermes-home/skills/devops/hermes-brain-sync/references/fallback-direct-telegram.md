@@ -38,6 +38,9 @@ ${DIFF_STAT}
 
 🏠 ${HOSTNAME} ⏰ ${ISO_TIME}"
 
+# CRITICAL: Truncate to avoid Telegram 4096-char limit
+REPORT="${REPORT:0:3800}"
+
 echo "$REPORT" > /tmp/hermes_brain_sync_tg.txt
 
 curl -sS -X POST "$TG_API_URL" \
@@ -45,6 +48,8 @@ curl -sS -X POST "$TG_API_URL" \
   -d "disable_web_page_preview=true" \
   --data-urlencode "text@/tmp/hermes_brain_sync_tg.txt"
 ```
+
+**⚠️ Telegram message length limit**: Telegram caps messages at ~4096 characters. Always truncate the report to ≤3800 chars before sending. The `hermes_brain_sync_fallback.sh` script does NOT do this — if the AI model succeeds and generates a long report, the TG send will fail with `400 Bad Request: message is too long`. This has occurred on 2026-05-12 and 2026-05-13.
 
 ## Verification
 

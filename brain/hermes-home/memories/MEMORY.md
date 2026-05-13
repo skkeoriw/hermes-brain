@@ -13,3 +13,5 @@ Updated sop-notebooklm-research skill to include timing logs, duration calculati
 Reviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.
 §
 webhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，无法精确到当前 session。写 `"api_calls": "unknown"`（不用 0 或空字符串）。交互式 session 中若知道 session ID 可用 `hermes insights --session-id {id}` 获取精确值。
+§
+sop-wiki-build 脚本超时（exit 124）2026-05-12: 生成 22 页时 LLM 调用累积超过 600s 超时。页面全部完整写入磁盘，仅 git/pipeline-context/log.md 未执行。手动补写 stage_c 到 pipeline-context.json + log.md 后 git push 即可。commit message 必须含 "wiki graph" 以触发 Stage D。
