@@ -14,6 +14,8 @@ Reviewed and updated sop-notebooklm-research skill based on execution experience
 §
 webhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，无法精确到当前 session。写 `"api_calls": "unknown"`（不用 0 或空字符串）。交互式 session 中若知道 session ID 可用 `hermes insights --session-id {id}` 获取精确值。
 §
-sop-wiki-build 脚本超时（exit 124）2026-05-12: 生成 22 页时 LLM 调用累积超过 600s 超时。手动补写 stage_c 到 pipeline-context.json + log.md 后 git push。2026-05-14 发现守卫竞态：sop_stage_guard.py 每 60s `git reset --hard origin/main`，可能清除主脚本本地 commit 致 push 假成功。修复：完成后先杀守卫再 push。
+sop-wiki-build 超时 + 守卫竞态: LLM累积超600s (2026-05-12)。守卫每60s git reset --hard origin/main，清主脚本本地commit致push假成功。修复：完成后先杀守卫再push。commit含"wiki graph"触发Stage D。
 §
 sop-notebooklm-research Pitfall #16 2026-05-13: pipeline-context.json 可能为空 `{}`（processor 自动写入静默失败或前序占位）。处理方式：视作新 pipeline，直接覆写完整版。不要在此空对象上做合并。
+§
+sop-tg-notify Step 9: 必须用 stage_c.run_id 做脚本 --run-id 参数（不是 webhook run_id）。我 2026-05-14 用错 webhook run_id。
