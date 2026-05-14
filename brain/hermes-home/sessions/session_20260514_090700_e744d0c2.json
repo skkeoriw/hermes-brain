@@ -1,0 +1,1121 @@
+{
+  "session_id": "20260514_090700_e744d0c2",
+  "model": "deepseek-v4-flash",
+  "base_url": "https://api.deepseek.com/v1",
+  "platform": "webhook",
+  "session_start": "2026-05-14T09:07:01.091515",
+  "last_updated": "2026-05-14T09:07:48.960783",
+  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. When the user references something from a past conversation or you suspect relevant cross-session context exists, use session_search to recall it before asking them to repeat themselves. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [98% — 2,158/2,200 chars]\n══════════════════════════════════════════════\n【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。\n§\nSOP wiki-build 脚本超时 2026-05-12: LLM 调用累积超 600s。页面写完仅缺 git/context/log，手动补写 stage_c 到 pipeline-context.json + log.md 后 git push。commit 必须含 \"wiki graph\" 以触发 Stage D。\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.\n§\n2026-05-09: 修复 sop-notebooklm-research skill 的 Pitfall #2。原版错误引用 `rm -f` 清理旧文件，与 Step 7\"不要删除\"矛盾。修正为：遗留旧文件被捎带提交是预期行为（装饰性 bloat），Stage C 通过 diff 过滤；不删除以避免并发竞态。\n§\nReviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.\n§\nwebhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，无法精确到当前 session。写 `\"api_calls\": \"unknown\"`（不用 0 或空字符串）。交互式 session 中若知道 session ID 可用 `hermes insights --session-id {id}` 获取精确值。\n§\nsop-wiki-build 脚本超时（exit 124）2026-05-12: 生成 22 页时 LLM 调用累积超过 600s 超时。手动补写 stage_c 到 pipeline-context.json + log.md 后 git push。2026-05-14 发现守卫竞态：sop_stage_guard.py 每 60s `git reset --hard origin/main`，可能清除主脚本本地 commit 致 push 假成功。修复：完成后先杀守卫再 push。\n§\nsop-notebooklm-research Pitfall #16 2026-05-13: pipeline-context.json 可能为空 `{}`（processor 自动写入静默失败或前序占位）。处理方式：视作新 pipeline，直接覆写完整版。不要在此空对象上做合并。\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [100% — 1,427/1,375 chars]\n══════════════════════════════════════════════\n【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。\n§\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - publish-skill: 当用户说\"我想分享我的 skill\"、\"给我的 skill 生成安装脚本\"、\"publish skill\"、 \"g...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n  devops/video-summarizer-local/vendor/summarize/.agent/skills:\n    - summarize: Transcribe and summarize videos from YouTube, local files...\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube video full pipeline: transcript extraction → Whis...\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  sop-douyin-fetch:\n    - sop-douyin-fetch: ⚠️ MOCK: 抖音视频采集与分析。接收 raw/douyin-links/ 下的抖音链接，生成分析报告到 ra...\n  sop-douyin-publish:\n    - sop-douyin-publish: ⚠️ MOCK: 将二创视频发布到抖音平台，更新 index.md。真实实现需接入抖音开放平台 API。\n  sop-intent-router:\n    - sop-intent-router: 意图路由 skill：解析用户自然语言意图，匹配或创建对应 pipeline，自动触发执行。支持 YouTube/...\n  sop-notebooklm-auth:\n    - sop-notebooklm-auth: NotebookLM 认证管理：检查有效性、从 AdsPower 刷新、安装 notebooklm-py。新机器初...\n  sop-notebooklm-login:\n    - sop-notebooklm-login: 通过 VNC 启动浏览器，引导用户完成 NotebookLM Google 登录，自动保存凭证并上传到 skill...\n  sop-notebooklm-research:\n    - sop-notebooklm-research: SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图...\n  sop-output-check:\n    - sop-output-check: Output Check: Stage C 完成后对产出物做纯规则质量检查，三档判断 PASS/WARN/FAIL...\n  sop-pipeline-creator:\n    - sop-pipeline-creator: Meta skill：根据用户意图创建新的 wiki pipeline（repo + sop.yaml + web...\n  sop-pipeline-watchdog:\n    - sop-pipeline-watchdog: YouTube Wiki pipeline 巡防员：调脚本判断状态、发 TG 报告、推送 brain。uncert...\n  sop-retry:\n    - sop-retry: 处理用户通过 TG 发出的重跑指令：retryB（重新研究）或 retryC（重建 wiki）。换策略重跑，归档旧内容。\n  sop-skill-author:\n    - sop-skill-author: Skill 创作规范：创建任何新 skill 前必须读取本文件。规定 lean skill 格式、存放路径、脚本优...\n  sop-tg-notify:\n    - sop-tg-notify: SOP Stage D: 读取 pipeline-context.json，组装完整 pipeline 运行报告，...\n  sop-video-create:\n    - sop-video-create: ⚠️ MOCK: 基于抖音分析报告进行 AI 二次创作，生成新视频脚本/素材。真实实现需接入 AI 视频生成能力（...\n  sop-wiki-build:\n    - sop-wiki-build: SOP Stage C: 增量知识图谱构建，调用脚本生成 wiki 页面并 push 触发 Stage D。\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Thursday, May 14, 2026 09:07 AM\nModel: deepseek-v4-flash\nProvider: deepseek",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_back",
+        "description": "Navigate back to the previous page in browser history. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_click",
+        "description": "Click on an element identified by its ref ID from the snapshot (e.g., '@e5'). The ref IDs are shown in square brackets in the snapshot output. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e5', '@e12')"
+            }
+          },
+          "required": [
+            "ref"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_console",
+        "description": "Get browser console output and JavaScript errors from the current page. Returns console.log/warn/error/info messages and uncaught JS exceptions. Use this to detect silent JavaScript errors, failed API calls, and application warnings. Requires browser_navigate to be called first. When 'expression' is provided, evaluates JavaScript in the page context and returns the result — use this for DOM inspection, reading page state, or extracting data programmatically.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clear": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, clear the message buffers after reading"
+            },
+            "expression": {
+              "type": "string",
+              "description": "JavaScript expression to evaluate in the page context. Runs in the browser like DevTools console — full access to DOM, window, document. Return values are serialized to JSON. Example: 'document.title' or 'document.querySelectorAll(\"a\").length'"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_get_images",
+        "description": "Get a list of all images on the current page with their URLs and alt text. Useful for finding images to analyze with the vision tool. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_navigate",
+        "description": "Navigate to a URL in the browser. Initializes the session and loads the page. Must be called before other browser tools. For plain-text endpoints — URLs ending in .md, .txt, .json, .yaml, .yml, .csv, .xml, raw.githubusercontent.com, or any documented API endpoint — prefer curl via the terminal tool or web_extract; the browser stack is overkill and much slower for these. Use browser tools when you need to interact with a page (click, fill forms, dynamic content). Returns a compact page snapshot with interactive elements and ref IDs — no need to call browser_snapshot separately after navigating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL to navigate to (e.g., 'https://example.com')"
+            }
+          },
+          "required": [
+            "url"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_press",
+        "description": "Press a keyboard key. Useful for submitting forms (Enter), navigating (Tab), or keyboard shortcuts. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown')"
+            }
+          },
+          "required": [
+            "key"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_scroll",
+        "description": "Scroll the page in a direction. Use this to reveal more content that may be below or above the current viewport. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "direction": {
+              "type": "string",
+              "enum": [
+                "up",
+                "down"
+              ],
+              "description": "Direction to scroll"
+            }
+          },
+          "required": [
+            "direction"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_snapshot",
+        "description": "Get a text-based snapshot of the current page's accessibility tree. Returns interactive elements with ref IDs (like @e1, @e2) for browser_click and browser_type. full=false (default): compact view with interactive elements. full=true: complete page content. Snapshots over 8000 chars are truncated or LLM-summarized. Requires browser_navigate first. Note: browser_navigate already returns a compact snapshot — use this to refresh after interactions that change the page, or with full=true for complete content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "full": {
+              "type": "boolean",
+              "description": "If true, returns complete page content. If false (default), returns compact view with interactive elements only.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_type",
+        "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "The element reference from the snapshot (e.g., '@e3')"
+            },
+            "text": {
+              "type": "string",
+              "description": "The text to type into the field"
+            }
+          },
+          "required": [
+            "ref",
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_vision",
+        "description": "Take a screenshot of the current page and analyze it with vision AI. Use this when you need to visually understand what's on the page - especially useful for CAPTCHAs, visual verification challenges, complex layouts, or when the text snapshot doesn't capture important visual information. Returns both the AI analysis and a screenshot_path that you can share with the user by including MEDIA:<screenshot_path> in your response. Requires browser_navigate to be called first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "What you want to know about the page visually. Be specific about what you're looking for."
+            },
+            "annotate": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, overlay numbered [N] labels on interactive elements. Each [N] maps to ref @eN for subsequent browser commands. Useful for QA and spatial reasoning about page layout."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "clarify",
+        "description": "Ask the user a question when you need clarification, feedback, or a decision before proceeding. Supports two modes:\n\n1. **Multiple choice** — provide up to 4 choices. The user picks one or types their own answer via a 5th 'Other' option.\n2. **Open-ended** — omit choices entirely. The user types a free-form response.\n\nUse this tool when:\n- The task is ambiguous and you need the user to choose an approach\n- You want post-task feedback ('How did that work out?')\n- You want to offer to save a skill or update memory\n- A decision has meaningful trade-offs the user should weigh in on\n\nDo NOT use this tool for simple yes/no confirmation of dangerous commands (the terminal tool handles that). Prefer making a reasonable default choice yourself when the decision is low-stakes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "The question to present to the user."
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 4,
+              "description": "Up to 4 answer choices. Omit this parameter entirely to ask an open-ended question. When provided, the UI automatically appends an 'Other (type your answer)' option."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "cronjob",
+        "description": "Manage scheduled cron jobs with a single compressed tool.\n\nUse action='create' to schedule a new job from a prompt or one or more skills.\nUse action='list' to inspect jobs.\nUse action='update', 'pause', 'resume', 'remove', or 'run' to manage an existing job.\n\nTo stop a job the user no longer wants: first action='list' to find the job_id, then action='remove' with that job_id. Never guess job IDs — always list first.\n\nJobs run in a fresh session with no current-chat context, so prompts must be self-contained.\nIf skills are provided on create, the future cron run loads those skills in order, then follows the prompt as the task instruction.\nOn update, passing skills=[] clears attached skills.\n\nNOTE: The agent's final response is auto-delivered to the target. Put the primary\nuser-facing content in the final response. Cron jobs run autonomously with no user\npresent — they cannot ask questions or request clarification.\n\nImportant safety rule: cron-run sessions should not recursively schedule more cron jobs.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "description": "One of: create, list, update, pause, resume, remove, run"
+            },
+            "job_id": {
+              "type": "string",
+              "description": "Required for update/pause/resume/remove/run"
+            },
+            "prompt": {
+              "type": "string",
+              "description": "For create: the full self-contained prompt. If skills are also provided, this becomes the task instruction paired with those skills."
+            },
+            "schedule": {
+              "type": "string",
+              "description": "For create/update: '30m', 'every 2h', '0 9 * * *', or ISO timestamp"
+            },
+            "name": {
+              "type": "string",
+              "description": "Optional human-friendly name"
+            },
+            "repeat": {
+              "type": "integer",
+              "description": "Optional repeat count. Omit for defaults (once for one-shot, forever for recurring)."
+            },
+            "deliver": {
+              "type": "string",
+              "description": "Omit this parameter to auto-deliver back to the current chat and topic (recommended). Auto-detection preserves thread/topic context. Only set explicitly when the user asks to deliver somewhere OTHER than the current conversation. Values: 'origin' (same as omitting), 'local' (no delivery, save only), or platform:chat_id:thread_id for a specific destination. Examples: 'telegram:-1001234567890:17585', 'discord:#engineering', 'sms:+15551234567'. WARNING: 'platform:chat_id' without :thread_id loses topic targeting."
+            },
+            "skills": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional ordered list of skill names to load before executing the cron prompt. On update, pass an empty array to clear attached skills."
+            },
+            "model": {
+              "type": "object",
+              "description": "Optional per-job model override. If provider is omitted, the current main provider is pinned at creation time so the job stays stable.",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "description": "Provider name (e.g. 'openrouter', 'anthropic'). Omit to use and pin the current provider."
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Model name (e.g. 'anthropic/claude-sonnet-4', 'claude-sonnet-4')"
+                }
+              },
+              "required": [
+                "model"
+              ]
+            },
+            "script": {
+              "type": "string",
+              "description": "Optional path to a Python script that runs before each cron job execution. Its stdout is injected into the prompt as context. Use for data collection and change detection. Relative paths resolve under ~/.hermes/scripts/. On update, pass empty string to clear."
+            },
+            "context_from": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional job ID or list of job IDs whose most recent completed output is injected into the prompt as context before each run. Use this to chain cron jobs: job A collects data, job B processes it. Each entry must be a valid job ID (from cronjob action='list'). Note: injects the most recent completed output — does not wait for upstream jobs running in the same tick. On update, pass an empty array to clear."
+            },
+            "enabled_toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional list of toolset names to restrict the job's agent to (e.g. [\"web\", \"terminal\", \"file\", \"delegation\"]). When set, only tools from these toolsets are loaded, significantly reducing input token overhead. When omitted, all default tools are loaded. Infer from the job's prompt — e.g. use \"web\" if it calls web_search, \"terminal\" if it runs scripts, \"file\" if it reads files, \"delegation\" if it calls delegate_task. On update, pass an empty array to clear."
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Optional absolute path to run the job from. When set, AGENTS.md / CLAUDE.md / .cursorrules from that directory are injected into the system prompt, and the terminal/file/code_exec tools use it as their working directory — useful for running a job inside a specific project repo. Must be an absolute path that exists. When unset (default), preserves the original behaviour: no project context files, tools use the scheduler's cwd. On update, pass an empty string to clear. Jobs with workdir run sequentially (not parallel) to keep per-job directories isolated."
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "delegate_task",
+        "description": "Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window.\n\nTWO MODES (one of 'goal' or 'tasks' is required):\n1. Single task: provide 'goal' (+ optional context, toolsets)\n2. Batch (parallel): provide 'tasks' array with up to delegation.max_concurrent_children items (default 3, configurable via config.yaml, no hard ceiling). All run concurrently and results are returned together. Nested delegation requires role='orchestrator' and delegation.max_spawn_depth >= 2.\n\nWHEN TO USE delegate_task:\n- Reasoning-heavy subtasks (debugging, code review, research synthesis)\n- Tasks that would flood your context with intermediate data\n- Parallel independent workstreams (research A and B simultaneously)\n\nWHEN NOT TO USE (use these instead):\n- Mechanical multi-step work with no reasoning needed -> use execute_code\n- Single tool call -> just call the tool directly\n- Tasks needing user interaction -> subagents cannot use clarify\n- Durable long-running work that must outlive the current turn -> use cronjob (action='create') or terminal(background=True, notify_on_complete=True) instead. delegate_task runs SYNCHRONOUSLY inside the parent turn: if the parent is interrupted (user sends a new message, /stop, /new) the child is cancelled with status='interrupted' and its work is discarded. Children cannot continue in the background.\n\nIMPORTANT:\n- Subagents have NO memory of your conversation. Pass all relevant info (file paths, error messages, constraints) via the 'context' field.\n- If the user is writing in a non-English language, or asked for output in a specific language / tone / style, say so in 'context' (e.g. \"respond in Chinese\", \"return output in Japanese\"). Otherwise subagents default to English and their summaries will contaminate your final reply with the wrong language.\n- Subagent summaries are SELF-REPORTS, not verified facts. A subagent that claims \"uploaded successfully\" or \"file written\" may be wrong. For operations with external side-effects (HTTP POST/PUT, remote writes, file creation at shared paths, publishing), require the subagent to return a verifiable handle (URL, ID, absolute path, HTTP status) and verify it yourself — fetch the URL, stat the file, read back the content — before telling the user the operation succeeded.\n- Leaf subagents (role='leaf', the default) CANNOT call: delegate_task, clarify, memory, send_message, execute_code.\n- Orchestrator subagents (role='orchestrator') retain delegate_task so they can spawn their own workers, but still cannot use clarify, memory, send_message, or execute_code. Orchestrators are bounded by delegation.max_spawn_depth (default 2) and can be disabled globally via delegation.orchestrator_enabled=false.\n- Each subagent gets its own terminal session (separate working directory and state).\n- Results are always returned as an array, one entry per task.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "goal": {
+              "type": "string",
+              "description": "What the subagent should accomplish. Be specific and self-contained -- the subagent knows nothing about your conversation history."
+            },
+            "context": {
+              "type": "string",
+              "description": "Background information the subagent needs: file paths, error messages, project structure, constraints. The more specific you are, the better the subagent performs."
+            },
+            "toolsets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Toolsets to enable for this subagent. Default: inherits your enabled toolsets. Available toolsets: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Common patterns: ['terminal', 'file'] for code work, ['web'] for research, ['browser'] for web interaction, ['terminal', 'file', 'web'] for full-stack tasks."
+            },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "goal": {
+                    "type": "string",
+                    "description": "Task goal"
+                  },
+                  "context": {
+                    "type": "string",
+                    "description": "Task-specific context"
+                  },
+                  "toolsets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Toolsets for this specific task. Available: 'browser', 'cronjob', 'discord', 'discord_admin', 'feishu_doc', 'feishu_drive', 'file', 'homeassistant', 'image_gen', 'kanban', 'search', 'session_search', 'skills', 'spotify', 'terminal', 'todo', 'tts', 'vision', 'web', 'yuanbao'. Use 'web' for network access, 'terminal' for shell, 'browser' for web interaction."
+                  },
+                  "acp_command": {
+                    "type": "string",
+                    "description": "Per-task ACP command override (e.g. 'claude'). Overrides the top-level acp_command for this task only."
+                  },
+                  "acp_args": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Per-task ACP args override."
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "leaf",
+                      "orchestrator"
+                    ],
+                    "description": "Per-task role override. See top-level 'role' for semantics."
+                  }
+                },
+                "required": [
+                  "goal"
+                ]
+              },
+              "description": "Batch mode: tasks to run in parallel (limit configurable via delegation.max_concurrent_children, default 3). Each gets its own subagent with isolated context and terminal session. When provided, top-level goal/context/toolsets are ignored."
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "leaf",
+                "orchestrator"
+              ],
+              "description": "Role of the child agent. 'leaf' (default) = focused worker, cannot delegate further. 'orchestrator' = can use delegate_task to spawn its own workers. Requires delegation.max_spawn_depth >= 2 in config; ignored (treated as 'leaf') when the child would exceed max_spawn_depth or when delegation.orchestrator_enabled=false."
+            },
+            "acp_command": {
+              "type": "string",
+              "description": "Override ACP command for child agents (e.g. 'claude', 'copilot'). When set, children use ACP subprocess transport instead of inheriting the parent's transport. Enables spawning Claude Code (claude --acp --stdio) or other ACP-capable agents from any parent, including Discord/Telegram/CLI."
+            },
+            "acp_args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Arguments for the ACP command (default: ['--acp', '--stdio']). Only used when acp_command is set. Example: ['--acp', '--stdio', '--model', 'claude-opus-4-6']"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "execute_code",
+        "description": "Run a Python script that can call Hermes tools programmatically. Use this when you need 3+ tool calls with processing logic between them, need to filter/reduce large tool outputs before they enter your context, need conditional branching (if X then Y else Z), or need to loop (fetch N pages, process N files, retry on failure).\n\nUse normal tool calls instead when: single tool call with no processing, you need to see the full result and apply complex reasoning, or the task requires interactive user input.\n\nAvailable via `from hermes_tools import ...`:\n\n  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n    Lines are 1-indexed. Returns {\"content\": \"...\", \"total_lines\": N}\n  write_file(path: str, content: str) -> dict\n    Always overwrites the entire file.\n  search_files(pattern: str, target=\"content\", path=\".\", file_glob=None, limit=50) -> dict\n    target: \"content\" (search inside files) or \"files\" (find files by name). Returns {\"matches\": [...]}\n  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n    Replaces old_string with new_string in the file.\n  terminal(command: str, timeout=None, workdir=None) -> dict\n    Foreground only (no background/pty). Returns {\"output\": \"...\", \"exit_code\": N}\n\nLimits: 5-minute timeout, 50KB stdout cap, max 50 tool calls per script. terminal() is foreground-only (no background or pty).\n\nScripts run in the session's working directory with the active venv's python, so project deps (pandas, etc.) and relative paths work like in terminal().\n\nPrint your final result to stdout. Use Python stdlib (json, re, math, csv, datetime, collections, etc.) for processing between tool calls.\n\nAlso available (no import needed — built into hermes_tools):\n  json_parse(text: str) — json.loads with strict=False; use for terminal() output with control chars\n  shell_quote(s: str) — shlex.quote(); use when interpolating dynamic strings into shell commands\n  retry(fn, max_attempts=3, delay=2) — retry with exponential backoff for transient failures",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Python code to execute. Import tools with `from hermes_tools import terminal, ...` and print your final result to stdout."
+            }
+          },
+          "required": [
+            "code"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "image_generate",
+        "description": "Generate high-quality images from text prompts. The underlying backend (FAL, OpenAI, etc.) and model are user-configured and not selectable by the agent. Returns either a URL or an absolute file path in the `image` field; display it with markdown ![description](url-or-path) and the gateway will deliver it.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "The text prompt describing the desired image. Be detailed and descriptive."
+            },
+            "aspect_ratio": {
+              "type": "string",
+              "enum": [
+                "landscape",
+                "square",
+                "portrait"
+              ],
+              "description": "The aspect ratio of the generated image. 'landscape' is 16:9 wide, 'portrait' is 16:9 tall, 'square' is 1:1.",
+              "default": "landscape"
+            }
+          },
+          "required": [
+            "prompt"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "memory",
+        "description": "Save durable information to persistent memory that survives across sessions. Memory is injected into future turns, so keep it compact and focused on facts that will still matter later.\n\nWHEN TO SAVE (do this proactively, don't wait to be asked):\n- User corrects you or says 'remember this' / 'don't do that again'\n- User shares a preference, habit, or personal detail (name, role, timezone, coding style)\n- You discover something about the environment (OS, installed tools, project structure)\n- You learn a convention, API quirk, or workflow specific to this user's setup\n- You identify a stable fact that will be useful again in future sessions\n\nPRIORITY: User preferences and corrections > environment facts > procedural knowledge. The most valuable memory prevents the user from having to repeat themselves.\n\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts.\nIf you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\n\nTWO TARGETS:\n- 'user': who the user is -- name, role, preferences, communication style, pet peeves\n- 'memory': your notes -- environment facts, project conventions, tool quirks, lessons learned\n\nACTIONS: add (new entry), replace (update existing -- old_text identifies it), remove (delete -- old_text identifies it).\n\nSKIP: trivial/obvious info, things easily re-discovered, raw data dumps, and temporary task state.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "add",
+                "replace",
+                "remove"
+              ],
+              "description": "The action to perform."
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "memory",
+                "user"
+              ],
+              "description": "Which memory store: 'memory' for personal notes, 'user' for user profile."
+            },
+            "content": {
+              "type": "string",
+              "description": "The entry content. Required for 'add' and 'replace'."
+            },
+            "old_text": {
+              "type": "string",
+              "description": "Short unique substring identifying the entry to replace or remove."
+            }
+          },
+          "required": [
+            "action",
+            "target"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "patch",
+        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nReplace mode (default): find a unique string and replace it.\nPatch mode: apply V4A multi-file patches for bulk changes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "replace",
+                "patch"
+              ],
+              "description": "Edit mode: 'replace' for targeted find-and-replace, 'patch' for V4A multi-file patches",
+              "default": "replace"
+            },
+            "path": {
+              "type": "string",
+              "description": "File path to edit (required for 'replace' mode)"
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'replace' mode). Must be unique in the file unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'replace' mode). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
+              "default": false
+            },
+            "patch": {
+              "type": "string",
+              "description": "V4A format patch content (required for 'patch' mode). Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "send_message",
+        "description": "Send a message to a connected messaging platform, or list available targets.\n\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "send",
+                "list"
+              ],
+              "description": "Action to perform. 'send' (default) sends a message. 'list' returns all available channels/contacts across connected platforms."
+            },
+            "target": {
+              "type": "string",
+              "description": "Delivery target. Format: 'platform' (uses home channel), 'platform:#channel-name', 'platform:chat_id', or 'platform:chat_id:thread_id' for Telegram topics and Discord threads. Examples: 'telegram', 'telegram:-1001234567890:17585', 'discord:999888777:555444333', 'discord:#bot-home', 'slack:#engineering', 'signal:+155****4567', 'matrix:!roomid:server.org', 'matrix:@user:server.org', 'yuanbao:direct:<account_id>' (DM), 'yuanbao:group:<group_code>' (group chat)"
+            },
+            "message": {
+              "type": "string",
+              "description": "The message text to send. To send an image or file, include MEDIA:<local_path> (e.g. 'MEDIA:/tmp/hermes/cache/img_xxx.jpg') in the message — the platform will deliver it as a native media attachment."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "session_search",
+        "description": "Search your long-term memory of past conversations, or browse recent sessions. This is your recall -- every past session is searchable, and this tool summarizes what happened.\n\nTWO MODES:\n1. Recent sessions (no query): Call with no arguments to see what was worked on recently. Returns titles, previews, and timestamps. Zero LLM cost, instant. Start here when the user asks what were we working on or what did we do recently.\n2. Keyword search (with query): Search for specific topics across all past sessions. Returns LLM-generated summaries of matching sessions.\n\nUSE THIS PROACTIVELY when:\n- The user says 'we did this before', 'remember when', 'last time', 'as I mentioned'\n- The user asks about a topic you worked on before but don't have in current context\n- The user references a project, person, or concept that seems familiar but isn't in memory\n- You want to check if you've solved a similar problem before\n- The user asks 'what did we do about X?' or 'how did we fix Y?'\n\nDon't hesitate to search when it is actually cross-session -- it's fast and cheap. Better to search and confirm than to guess or ask the user to repeat themselves.\n\nSearch syntax: keywords joined with OR for broad recall (elevenlabs OR baseten OR funding), phrases for exact match (\"docker networking\"), boolean (python NOT java), prefix (deploy*). IMPORTANT: Use OR between keywords for best results — FTS5 defaults to AND which misses sessions that only mention some terms. If a broad OR query returns nothing, try individual keyword searches in parallel. Returns summaries of the top matching sessions.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query — keywords, phrases, or boolean expressions to find in past sessions. Omit this parameter entirely to browse recent sessions instead (returns titles, previews, timestamps with no LLM cost)."
+            },
+            "role_filter": {
+              "type": "string",
+              "description": "Optional: only search messages from specific roles (comma-separated). E.g. 'user,assistant' to skip tool outputs."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max sessions to summarize (default: 3, max: 5).",
+              "default": 3
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_manage",
+        "description": "Manage skills (create, update, delete). Skills are your procedural memory — reusable approaches for recurring task types. New skills go to ~/.hermes/skills/; existing skills can be modified wherever they live.\n\nActions: create (full SKILL.md + optional category), patch (old_string/new_string — preferred for fixes), edit (full SKILL.md rewrite — major overhauls only), delete, write_file, remove_file.\n\nOn delete, pass `absorbed_into=<umbrella>` when you're merging this skill's content into another one, or `absorbed_into=\"\"` when you're pruning it with no forwarding target. This lets the curator tell consolidation from pruning without guessing, so downstream consumers (cron jobs that reference the old skill name, etc.) get updated correctly. The target you name in `absorbed_into` must already exist — create/patch the umbrella first, then delete.\n\nCreate when: complex task succeeded (5+ calls), errors overcome, user-corrected approach worked, non-trivial workflow discovered, or user asks you to remember a procedure.\nUpdate when: instructions stale/wrong, OS-specific failures, missing steps or pitfalls found during use. If you used a skill and hit issues not covered by it, patch it immediately.\n\nAfter difficult/iterative tasks, offer to save as a skill. Skip for simple one-offs. Confirm with user before creating/deleting.\n\nGood skills: trigger conditions, numbered steps with exact commands, pitfalls section, verification steps. Use skill_view() to see format examples.\n\nPinned skills are off-limits — all write actions refuse with a message pointing the user to `hermes curator unpin <name>`. Don't try to route around this by renaming or recreating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "create",
+                "patch",
+                "edit",
+                "delete",
+                "write_file",
+                "remove_file"
+              ],
+              "description": "The action to perform."
+            },
+            "name": {
+              "type": "string",
+              "description": "Skill name (lowercase, hyphens/underscores, max 64 chars). Must match an existing skill for patch/edit/delete/write_file/remove_file."
+            },
+            "content": {
+              "type": "string",
+              "description": "Full SKILL.md content (YAML frontmatter + markdown body). Required for 'create' and 'edit'. For 'edit', read the skill first with skill_view() and provide the complete updated text."
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'patch'). Must be unique unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'patch'). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "For 'patch': replace all occurrences instead of requiring a unique match (default: false)."
+            },
+            "category": {
+              "type": "string",
+              "description": "Optional category/domain for organizing the skill (e.g., 'devops', 'data-science', 'mlops'). Creates a subdirectory grouping. Only used with 'create'."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "Path to a supporting file within the skill directory. For 'write_file'/'remove_file': required, must be under references/, templates/, scripts/, or assets/. For 'patch': optional, defaults to SKILL.md if omitted."
+            },
+            "file_content": {
+              "type": "string",
+              "description": "Content for the file. Required for 'write_file'."
+            },
+            "absorbed_into": {
+              "type": "string",
+              "description": "For 'delete' only — declares intent so the curator can tell consolidation from pruning without guessing. Pass the umbrella skill name when this skill's content was merged into another (the target must already exist). Pass an empty string when the skill is truly stale and being pruned with no forwarding target. Omitting the arg on delete is supported for backward compatibility but downstream tooling (e.g. cron-job skill reference rewriting) will have to guess at intent."
+            }
+          },
+          "required": [
+            "action",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_view",
+        "description": "Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans')."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skills_list",
+        "description": "List available skills (name + description). Use skill_view(name) to load full content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional category filter to narrow results"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "text_to_speech",
+        "description": "Convert text to speech audio. Returns a MEDIA: path that the platform delivers as native audio. Compatible providers render as a voice bubble on Telegram; otherwise audio is sent as a regular attachment. In CLI mode, saves to ~/voice-memos/. Voice and provider are user-configured (built-in providers like edge/openai or custom command providers under tts.providers.<name>), not model-selected.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The text to convert to speech. Provider-specific character caps apply and are enforced automatically (OpenAI 4096, xAI 15000, MiniMax 10000, ElevenLabs 5k-40k depending on model); over-long input is truncated."
+            },
+            "output_path": {
+              "type": "string",
+              "description": "Optional custom file path to save the audio. Defaults to ~/.hermes/audio_cache/<timestamp>.mp3"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "todo",
+        "description": "Manage your task list for the current session. Use for complex tasks with 3+ steps or when the user provides multiple tasks. Call with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "todos": {
+              "type": "array",
+              "description": "Task items to write. Omit to read current list.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique item identifier"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Task description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ],
+                    "description": "Current status"
+                  }
+                },
+                "required": [
+                  "id",
+                  "content",
+                  "status"
+                ]
+              }
+            },
+            "merge": {
+              "type": "boolean",
+              "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "vision_analyze",
+        "description": "Inspect an image from a URL, file path, or tool output when you need closer detail than what's visible in the conversation. If the user's image is already attached to the conversation and you can see it, just answer directly — only call this tool for images referenced by URL/path, images returned inside other tool results (browser screenshots, search thumbnails), or when you need a deeper look at a specific region the main model's vision may have missed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "description": "Image URL (http/https) or local file path to analyze."
+            },
+            "question": {
+              "type": "string",
+              "description": "Your specific question or request about the image to resolve. The AI will automatically provide a complete image description AND answer your specific question."
+            }
+          },
+          "required": [
+            "image_url",
+            "question"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Complete content to write to the file"
+            }
+          },
+          "required": [
+            "path",
+            "content"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 10,
+  "messages": [
+    {
+      "role": "user",
+      "content": "执行 sop-intent-router skill。关键变量（直接使用）：intent=翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents | tg_chat_id=6938920500 | 完整payload={payload}"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "The user wants me to execute the sop-intent-router skill. Let me first load the skill to understand what it does and how to handle this intent.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The user wants me to execute the sop-intent-router skill. Let me first load the skill to understand what it does and how to handle this intent.",
+      "tool_calls": [
+        {
+          "id": "call_00_TCQ3gNB8mPUPI8ZiV8FM4634",
+          "call_id": "call_00_TCQ3gNB8mPUPI8ZiV8FM4634",
+          "response_item_id": "fc_00_TCQ3gNB8mPUPI8ZiV8FM4634",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"sop-intent-router\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"sop-intent-router\", \"description\": \"意图路由 skill：解析用户自然语言意图，匹配或创建对应 pipeline，自动触发执行。支持 YouTube/GitHub/arXiv/Reddit/Web 等任意来源。\", \"tags\": [], \"related_skills\": [], \"content\": \"---\\nname: sop-intent-router\\ndescription: \\\"意图路由 skill：解析用户自然语言意图，匹配或创建对应 pipeline，自动触发执行。支持 YouTube/GitHub/arXiv/Reddit/Web 等任意来源。\\\"\\nversion: 1.0.0\\n---\\n\\n# SOP Intent Router\\n\\n## 触发条件\\nwebhook 收到 `stage=intent-router`，payload 包含：\\n- `intent`: 用户意图文本（必填），例如：\\n  - `\\\"帮我研究这个视频 https://youtube.com/watch?v=xxx\\\"`\\n  - `\\\"翻译研究这个文章 https://www.anthropic.com/engineering/xxx\\\"`\\n  - `\\\"分析这个 GitHub 项目 https://github.com/xxx/yyy\\\"`\\n- `tg_chat_id`（可选）：TG chat ID，用于通知\\n\\n---\\n\\n## Phase 1: 执行\\n\\n```bash\\nset -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a\\nset -a && source ~/.hermes/.env 2>/dev/null; set +a\\n\\npython3 __SKILL_DIR__/scripts/route_intent.py \\\\\\n  --intent \\\"{intent}\\\" \\\\\\n  --tg-chat-id \\\"{tg_chat_id}\\\"\\n```\\n\\n脚本自动完成：\\n- 从意图文本提取 URL\\n- 识别 source_type（youtube/github/arxiv/reddit/web/...）\\n- 扫描 ~/wiki/ 找匹配 pipeline\\n- 找到 → 写内容到 raw/ + git push 触发\\n- 未找到 → 调 sop-pipeline-creator 创建 pipeline 再触发\\n\\n---\\n\\n## Phase 2: 确认结果\\n\\n脚本输出 JSON：\\n```json\\n{\\n  \\\"status\\\": \\\"triggered\\\",        // triggered / created_and_triggered / error\\n  \\\"pipeline\\\": \\\"github-auto-research\\\",\\n  \\\"url\\\": \\\"https://...\\\",\\n  \\\"source_type\\\": \\\"github\\\",\\n  \\\"title\\\": \\\"...\\\"\\n}\\n```\\n\\n- `triggered` = 成功推送到已有 pipeline\\n- `created_and_triggered` = 新建 pipeline 并触发\\n- `error` = 失败，检查日志\\n\\n---\\n\\n## Phase 3: 异常处理\\n\\n### URL 未找到\\n意图文本中无有效 URL，脚本退出码 1。请确认 intent 包含完整 URL。\\n\\n### pipeline 创建超时\\nsop-pipeline-creator 超时未完成，可手动执行：\\n```bash\\n~/agent-brain-plugins/youtube-wiki/pipeline.sh create {source_type}-wiki {source_type}\\n```\\n\\n### git push 失败\\n```bash\\ncd ~/wiki/{pipeline_name} && git pull --rebase origin main && git push origin main\\n```\\n\\n---\\n\\n## 支持的来源类型\\n\\n| source_type | 匹配规则 | 现有 pipeline |\\n|-------------|---------|--------------|\\n| youtube | youtube.com / youtu.be | youtube-video-research-wiki |\\n| github | github.com | github-auto-research |\\n| arxiv | arxiv.org | arxiv-wiki |\\n| reddit | reddit.com | reddit-wiki |\\n| douyin | douyin.com / tiktok.com | douyin-wiki |\\n| web | 其他任意 URL | 自动创建 web-wiki |\\n\", \"path\": \"sop-intent-router/SKILL.md\", \"skill_dir\": \"/home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router\", \"linked_files\": {\"scripts\": [\"scripts/route_intent.py\", \"scripts/web_fetch.py\"]}, \"usage_hint\": \"To view linked files, call skill_view(name, file_path) where file_path is e.g. 'references/api.md' or 'assets/config.yaml'\", \"required_environment_variables\": [], \"required_commands\": [], \"missing_required_environment_variables\": [], \"missing_credential_files\": [], \"missing_required_commands\": [], \"setup_needed\": false, \"setup_skipped\": false, \"readiness_status\": \"available\"}",
+      "tool_call_id": "call_00_TCQ3gNB8mPUPI8ZiV8FM4634"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "The intent is \"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\" and tg_chat_id is \"6938920500\". Let me look at the route_intent.py script to understand what it does, and also check the web_fetch.py since this is a web source type.\n\nActually, the skill says to run:\n```bash\nset -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a\nset -a && source ~/.hermes/.env 2>/dev/null; set +a\n\npython3 __SKILL_DIR__/scripts/route_intent.py \\\n  --intent \"{intent}\" \\\n  --tg-chat-id \"{tg_chat_id}\"\n```\n\nLet me first check the script to understand what it does, then execute it.\n\nThe intent is \"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\" - this is a web article that needs translation/research. Let me run the script.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The intent is \"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\" and tg_chat_id is \"6938920500\". Let me look at the route_intent.py script to understand what it does, and also check the web_fetch.py since this is a web source type.\n\nActually, the skill says to run:\n```bash\nset -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a\nset -a && source ~/.hermes/.env 2>/dev/null; set +a\n\npython3 __SKILL_DIR__/scripts/route_intent.py \\\n  --intent \"{intent}\" \\\n  --tg-chat-id \"{tg_chat_id}\"\n```\n\nLet me first check the script to understand what it does, then execute it.\n\nThe intent is \"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\" - this is a web article that needs translation/research. Let me run the script.",
+      "tool_calls": [
+        {
+          "id": "call_00_duhUJCagVtBL4vvMCAqf9842",
+          "call_id": "call_00_duhUJCagVtBL4vvMCAqf9842",
+          "response_item_id": "fc_00_duhUJCagVtBL4vvMCAqf9842",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"sop-intent-router\", \"file_path\": \"scripts/route_intent.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"sop-intent-router\", \"file\": \"scripts/route_intent.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"\\nsop-intent-router: 解析用户意图，路由到正确的 pipeline。\\n\\n流程：\\n1. 从意图文本提取 URL 和 source_type\\n2. 扫描本机 ~/wiki/ 下所有 sop.yaml 找匹配 pipeline\\n3. 找到 → 写文件到 raw/ + git push 触发\\n4. 未找到 → 调 sop-pipeline-creator 创建新 pipeline 再触发\\n\\\"\\\"\\\"\\n\\nimport argparse\\nimport json\\nimport os\\nimport re\\nimport subprocess\\nimport sys\\nimport urllib.request\\nfrom pathlib import Path\\n\\nimport yaml\\n\\nWIKI_BASE = Path.home() / \\\"wiki\\\"\\nAGENT_BRAIN = Path.home() / \\\"agent-brain-plugins\\\" / \\\"youtube-wiki\\\"\\nREGISTRY = AGENT_BRAIN / \\\"registry.yaml\\\"\\n\\n\\ndef log(msg):\\n    print(f\\\"[intent-router] {msg}\\\", flush=True)\\n\\n\\n# ── URL 提取 ──────────────────────────────────────────────\\nURL_RE = re.compile(r'https?://[^\\\\s一-鿿\\\"\\\\']+')\\n\\nSOURCE_PATTERNS = [\\n    (\\\"youtube\\\",  re.compile(r'youtube\\\\.com|youtu\\\\.be')),\\n    (\\\"github\\\",   re.compile(r'github\\\\.com')),\\n    (\\\"arxiv\\\",    re.compile(r'arxiv\\\\.org')),\\n    (\\\"reddit\\\",   re.compile(r'reddit\\\\.com')),\\n    (\\\"douyin\\\",   re.compile(r'douyin\\\\.com|tiktok\\\\.com')),\\n    (\\\"web\\\",      re.compile(r'https?://')),  # fallback\\n]\\n\\n\\ndef extract_url(text: str) -> str:\\n    m = URL_RE.search(text)\\n    return m.group(0).rstrip(\\\".,。，\\\") if m else \\\"\\\"\\n\\n\\ndef detect_source_type(url: str) -> str:\\n    for name, pat in SOURCE_PATTERNS:\\n        if pat.search(url):\\n            return name\\n    return \\\"web\\\"\\n\\n\\n# ── Pipeline 匹配 ─────────────────────────────────────────\\ndef find_pipeline(source_type: str) -> dict | None:\\n    \\\"\\\"\\\"扫描本机 wiki 目录，找 source_type 匹配的 pipeline\\\"\\\"\\\"\\n    for sop_file in WIKI_BASE.glob(\\\"*/sop.yaml\\\"):\\n        try:\\n            sop = yaml.safe_load(sop_file.read_text())\\n            for stage in sop.get(\\\"pipeline\\\", []):\\n                trigger = stage.get(\\\"trigger\\\", \\\"\\\")\\n                # trigger 如 raw/github-links/** 或 raw/youtube-links/**\\n                if source_type in trigger or f\\\"{source_type}-links\\\" in trigger:\\n                    source_dir = stage.get(\\\"params\\\", {}).get(\\\"source_dir\\\") or \\\\\\n                                 trigger.split(\\\"/**\\\")[0]\\n                    return {\\n                        \\\"pipeline_name\\\": sop[\\\"name\\\"],\\n                        \\\"wiki_local_path\\\": sop[\\\"wiki_local_path\\\"],\\n                        \\\"source_dir\\\": source_dir,\\n                        \\\"repo\\\": sop.get(\\\"repo\\\", \\\"\\\"),\\n                    }\\n        except Exception:\\n            continue\\n    return None\\n\\n\\n# ── 触发已有 pipeline ─────────────────────────────────────\\ndef trigger_pipeline(pipeline: dict, url: str, content: str,\\n                     source_type: str, title: str) -> bool:\\n    wiki_path = Path(pipeline[\\\"wiki_local_path\\\"]).expanduser()\\n    source_dir = Path(pipeline[\\\"source_dir\\\"])\\n    if not source_dir.is_absolute():\\n        source_dir = wiki_path / source_dir\\n\\n    source_dir.mkdir(parents=True, exist_ok=True)\\n\\n    # 文件名：从 URL 生成 slug\\n    slug = re.sub(r'[^\\\\w-]', '-', url.split(\\\"//\\\")[-1].split(\\\"/\\\")[-1] or\\n                  url.split(\\\"//\\\")[-1].replace(\\\"/\\\", \\\"-\\\"))[:60] or \\\"content\\\"\\n    slug = slug.strip(\\\"-\\\") or \\\"content\\\"\\n    dest = source_dir / f\\\"{slug}.md\\\"\\n\\n    dest.write_text(content, encoding=\\\"utf-8\\\")\\n    log(f\\\"写入 {dest}\\\")\\n\\n    # git add + commit + push\\n    try:\\n        subprocess.run([\\\"git\\\", \\\"add\\\", str(dest)], cwd=wiki_path, check=True,\\n                       capture_output=True)\\n        subprocess.run([\\\"git\\\", \\\"commit\\\", \\\"-m\\\",\\n                        f\\\"feat: add {slug} [{source_type}]\\\"],\\n                       cwd=wiki_path, check=True, capture_output=True)\\n        r = subprocess.run([\\\"git\\\", \\\"push\\\", \\\"origin\\\", \\\"main\\\"],\\n                           cwd=wiki_path, capture_output=True, text=True)\\n        if r.returncode != 0:\\n            # non-fast-forward → pull rebase\\n            subprocess.run([\\\"git\\\", \\\"pull\\\", \\\"--rebase\\\", \\\"origin\\\", \\\"main\\\"],\\n                           cwd=wiki_path, capture_output=True)\\n            subprocess.run([\\\"git\\\", \\\"push\\\", \\\"origin\\\", \\\"main\\\"],\\n                           cwd=wiki_path, check=True, capture_output=True)\\n        log(f\\\"✅ push 成功 → {pipeline['pipeline_name']}\\\")\\n        return True\\n    except subprocess.CalledProcessError as e:\\n        log(f\\\"git 操作失败: {e}\\\")\\n        return False\\n\\n\\n# ── 创建新 pipeline（调 sop-pipeline-creator） ─────────────\\ndef create_and_trigger(source_type: str, url: str, content: str, title: str,\\n                       tg_chat_id: str) -> bool:\\n    pipeline_name = f\\\"{source_type}-wiki\\\"\\n    log(f\\\"未找到 {source_type} pipeline，创建 {pipeline_name}...\\\")\\n\\n    secret = \\\"L84zG48C1OeuwNXz8d7myEttQGjWkXrfOfWBJAHXMJs\\\"\\n    payload = json.dumps({\\n        \\\"pipeline_name\\\": pipeline_name,\\n        \\\"source_type\\\": source_type,\\n        \\\"stages\\\": \\\"wiki-build,tg-notify\\\",\\n        \\\"github_account\\\": \\\"divanoo65\\\",\\n        \\\"tg_chat_id\\\": tg_chat_id,\\n        \\\"source_dir\\\": f\\\"{source_type}-links\\\",\\n    })\\n\\n    r = subprocess.run([\\n        \\\"curl\\\", \\\"-s\\\", \\\"-X\\\", \\\"POST\\\",\\n        \\\"http://localhost:8644/webhooks/sop-pipeline-creator\\\",\\n        \\\"-H\\\", \\\"Content-Type: application/json\\\",\\n        \\\"-H\\\", f\\\"X-Gitlab-Token: {secret}\\\",\\n        \\\"-d\\\", payload,\\n    ], capture_output=True, text=True)\\n\\n    try:\\n        resp = json.loads(r.stdout)\\n        if resp.get(\\\"status\\\") == \\\"accepted\\\":\\n            log(f\\\"sop-pipeline-creator 已接受，等待 pipeline 创建...\\\")\\n            # 等待 pipeline 创建完成（最多 90s）\\n            import time\\n            wiki_path = Path.home() / \\\"wiki\\\" / pipeline_name\\n            for _ in range(18):\\n                time.sleep(5)\\n                if (wiki_path / \\\"sop.yaml\\\").exists():\\n                    log(f\\\"pipeline 创建完成：{wiki_path}\\\")\\n                    # 重新 find + trigger\\n                    pipeline = find_pipeline(source_type)\\n                    if pipeline:\\n                        return trigger_pipeline(pipeline, url, content,\\n                                                source_type, title)\\n                    break\\n    except Exception as e:\\n        log(f\\\"创建 pipeline 失败: {e}\\\")\\n    return False\\n\\n\\n# ── Web 内容抓取 ──────────────────────────────────────────\\ndef fetch_web_content(url: str) -> tuple[str, str]:\\n    \\\"\\\"\\\"抓取网页，返回 (title, markdown_content)\\\"\\\"\\\"\\n    web_fetch = Path(__file__).parent / \\\"web_fetch.py\\\"\\n    if web_fetch.exists():\\n        r = subprocess.run(\\n            [sys.executable, str(web_fetch), url],\\n            capture_output=True, text=True, timeout=30\\n        )\\n        if r.returncode == 0:\\n            lines = r.stdout.strip().split(\\\"\\\\n\\\")\\n            title = lines[0].lstrip(\\\"# \\\").strip() if lines else url\\n            return title, r.stdout\\n    # fallback：只返回 URL 作为内容\\n    return url, f\\\"# {url}\\\\n\\\\n来源: {url}\\\\n\\\"\\n\\n\\n# ── 生成内容 ──────────────────────────────────────────────\\ndef build_content(url: str, source_type: str, intent: str) -> tuple[str, str]:\\n    \\\"\\\"\\\"根据 URL 和 source_type 生成要写入 raw/ 的 markdown 内容\\\"\\\"\\\"\\n    if source_type == \\\"web\\\":\\n        title, content = fetch_web_content(url)\\n        return title, content\\n    elif source_type == \\\"youtube\\\":\\n        return url, f\\\"# YouTube\\\\n\\\\nhttps://www.youtube.com/watch?v={url.split('v=')[-1].split('&')[0]}\\\\n\\\"\\n    else:\\n        # github/arxiv/reddit：直接写 URL，stage C 的 source md 会处理\\n        slug = url.split(\\\"/\\\")[-1] or url.split(\\\"/\\\")[-2]\\n        title = f\\\"{source_type.title()} — {slug}\\\"\\n        content = f\\\"# {title}\\\\n\\\\n**来源**: {url}\\\\n\\\\n**意图**: {intent}\\\\n\\\"\\n        return title, content\\n\\n\\ndef main():\\n    parser = argparse.ArgumentParser()\\n    parser.add_argument(\\\"--intent\\\", required=True, help=\\\"用户意图文本\\\")\\n    parser.add_argument(\\\"--tg-chat-id\\\", default=\\\"\\\")\\n    args = parser.parse_args()\\n\\n    intent = args.intent.strip()\\n    tg_chat_id = args.tg_chat_id or os.environ.get(\\\"YOUTUBE_WIKI_TG_CHAT_ID\\\", \\\"\\\")\\n\\n    log(f\\\"意图: {intent}\\\")\\n\\n    # 1. 提取 URL\\n    url = extract_url(intent)\\n    if not url:\\n        log(\\\"❌ 未找到 URL，退出\\\")\\n        print(json.dumps({\\\"status\\\": \\\"error\\\", \\\"message\\\": \\\"未找到 URL\\\"}))\\n        sys.exit(1)\\n\\n    source_type = detect_source_type(url)\\n    log(f\\\"URL: {url} | source_type: {source_type}\\\")\\n\\n    # 2. 生成要写入的内容\\n    title, content = build_content(url, source_type, intent)\\n    log(f\\\"内容标题: {title}\\\")\\n\\n    # 3. 查找匹配 pipeline\\n    pipeline = find_pipeline(source_type)\\n\\n    result = {}\\n    if pipeline:\\n        log(f\\\"匹配到 pipeline: {pipeline['pipeline_name']}\\\")\\n        ok = trigger_pipeline(pipeline, url, content, source_type, title)\\n        result = {\\n            \\\"status\\\": \\\"triggered\\\" if ok else \\\"error\\\",\\n            \\\"pipeline\\\": pipeline[\\\"pipeline_name\\\"],\\n            \\\"url\\\": url,\\n            \\\"source_type\\\": source_type,\\n            \\\"title\\\": title,\\n        }\\n    else:\\n        log(f\\\"未找到 {source_type} pipeline，创建中...\\\")\\n        ok = create_and_trigger(source_type, url, content, title, tg_chat_id)\\n        result = {\\n            \\\"status\\\": \\\"created_and_triggered\\\" if ok else \\\"error\\\",\\n            \\\"pipeline\\\": f\\\"{source_type}-wiki\\\",\\n            \\\"url\\\": url,\\n            \\\"source_type\\\": source_type,\\n        }\\n\\n    print(json.dumps(result, ensure_ascii=False, indent=2))\\n    sys.exit(0 if result[\\\"status\\\"] != \\\"error\\\" else 1)\\n\\n\\nif __name__ == \\\"__main__\\\":\\n    main()\\n\", \"file_type\": \".py\"}",
+      "tool_call_id": "call_00_duhUJCagVtBL4vvMCAqf9842"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me understand the flow:\n\n1. The intent is \"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\"\n2. The URL is https://www.anthropic.com/engineering/managed-agents\n3. source_type will be \"web\" (since it's anthropic.com, not any of the other patterns)\n4. The script will:\n   - Extract URL → https://www.anthropic.com/engineering/managed-agents\n   - Detect source_type → \"web\"\n   - Try to find a matching pipeline in ~/wiki/\n   - If found: write content to raw/ + git push\n   - If not found: call sop-pipeline-creator to create one, then trigger\n\nLet me also check the web_fetch.py script to understand how content is fetched.\n\nLet me first run the script with the given parameters. But I should also check if there's an existing web-wiki pipeline already.\n\nActually, let me just run the script as the skill instructs. Let me first check if the environment file exists and then run the command.\n\nWait, looking more carefully, the script fetches the web content first. Let me just run it directly.\n\nLet me also check the web_fetch.py to understand what it does.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me understand the flow:\n\n1. The intent is \"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\"\n2. The URL is https://www.anthropic.com/engineering/managed-agents\n3. source_type will be \"web\" (since it's anthropic.com, not any of the other patterns)\n4. The script will:\n   - Extract URL → https://www.anthropic.com/engineering/managed-agents\n   - Detect source_type → \"web\"\n   - Try to find a matching pipeline in ~/wiki/\n   - If found: write content to raw/ + git push\n   - If not found: call sop-pipeline-creator to create one, then trigger\n\nLet me also check the web_fetch.py script to understand how content is fetched.\n\nLet me first run the script with the given parameters. But I should also check if there's an existing web-wiki pipeline already.\n\nActually, let me just run the script as the skill instructs. Let me first check if the environment file exists and then run the command.\n\nWait, looking more carefully, the script fetches the web content first. Let me just run it directly.\n\nLet me also check the web_fetch.py to understand what it does.",
+      "tool_calls": [
+        {
+          "id": "call_00_ypDDIdJkmlUuvgqbpBbA1891",
+          "call_id": "call_00_ypDDIdJkmlUuvgqbpBbA1891",
+          "response_item_id": "fc_00_ypDDIdJkmlUuvgqbpBbA1891",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"file_path\": \"scripts/web_fetch.py\", \"name\": \"sop-intent-router\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"sop-intent-router\", \"file\": \"scripts/web_fetch.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"\\nweb_fetch.py: 抓取网页正文，输出 Markdown 格式。\\n支持：普通 HTML 页面、技术博客（Anthropic/OpenAI engineering 等）\\n\\\"\\\"\\\"\\n\\nimport html\\nimport json\\nimport os\\nimport re\\nimport subprocess\\nimport sys\\nimport urllib.request\\nfrom pathlib import Path\\n\\n\\ndef fetch_raw(url: str) -> str:\\n    \\\"\\\"\\\"用 curl 抓取 HTML，绕过简单反爬\\\"\\\"\\\"\\n    result = subprocess.run([\\n        \\\"curl\\\", \\\"-s\\\", \\\"-L\\\",\\n        \\\"-H\\\", \\\"User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \\\"\\n              \\\"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\\\",\\n        \\\"-H\\\", \\\"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\\\",\\n        \\\"-H\\\", \\\"Accept-Language: zh-CN,zh;q=0.9,en;q=0.8\\\",\\n        \\\"--max-time\\\", \\\"20\\\",\\n        \\\"--compressed\\\",\\n        url,\\n    ], capture_output=True, text=True)\\n    return result.stdout\\n\\n\\ndef extract_meta(html_text: str) -> dict:\\n    \\\"\\\"\\\"提取 og:title, og:description, title\\\"\\\"\\\"\\n    def find(pattern):\\n        m = re.search(pattern, html_text, re.IGNORECASE | re.DOTALL)\\n        return html.unescape(m.group(1).strip()) if m else \\\"\\\"\\n\\n    title = (find(r'<meta[^>]+property=[\\\"\\\\']og:title[\\\"\\\\'][^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\']') or\\n             find(r'<meta[^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\'][^>]+property=[\\\"\\\\']og:title[\\\"\\\\']') or\\n             find(r'<title[^>]*>([^<]+)</title>'))\\n    desc = (find(r'<meta[^>]+property=[\\\"\\\\']og:description[\\\"\\\\'][^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\']') or\\n            find(r'<meta[^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\'][^>]+property=[\\\"\\\\']og:description[\\\"\\\\']') or\\n            find(r'<meta[^>]+name=[\\\"\\\\']description[\\\"\\\\'][^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\']') or\\n            find(r'<meta[^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\'][^>]+name=[\\\"\\\\']description[\\\"\\\\']'))\\n    return {\\\"title\\\": title, \\\"description\\\": desc}\\n\\n\\ndef clean_html(text: str) -> str:\\n    \\\"\\\"\\\"去除 HTML 标签，保留基本结构\\\"\\\"\\\"\\n    # 去掉 script/style/nav/footer\\n    text = re.sub(r'<(script|style|nav|footer|header|aside)[^>]*>.*?</\\\\1>',\\n                  '', text, flags=re.DOTALL | re.IGNORECASE)\\n    # h1-h6 → markdown 标题\\n    text = re.sub(r'<h([1-6])[^>]*>(.*?)</h\\\\1>',\\n                  lambda m: '\\\\n' + '#' * int(m.group(1)) + ' ' +\\n                  re.sub(r'<[^>]+>', '', m.group(2)).strip() + '\\\\n',\\n                  text, flags=re.DOTALL | re.IGNORECASE)\\n    # p → 段落\\n    text = re.sub(r'<p[^>]*>(.*?)</p>',\\n                  lambda m: '\\\\n' + re.sub(r'<[^>]+>', '', m.group(1)).strip() + '\\\\n',\\n                  text, flags=re.DOTALL | re.IGNORECASE)\\n    # li → 列表\\n    text = re.sub(r'<li[^>]*>(.*?)</li>',\\n                  lambda m: '- ' + re.sub(r'<[^>]+>', '', m.group(1)).strip() + '\\\\n',\\n                  text, flags=re.DOTALL | re.IGNORECASE)\\n    # code → backtick\\n    text = re.sub(r'<code[^>]*>(.*?)</code>',\\n                  lambda m: '`' + re.sub(r'<[^>]+>', '', m.group(1)) + '`',\\n                  text, flags=re.DOTALL | re.IGNORECASE)\\n    # 去掉剩余标签\\n    text = re.sub(r'<[^>]+>', ' ', text)\\n    text = html.unescape(text)\\n    # 清理多余空行\\n    text = re.sub(r'\\\\n{3,}', '\\\\n\\\\n', text)\\n    text = re.sub(r'[ \\\\t]+', ' ', text)\\n    return text.strip()\\n\\n\\ndef try_json_ld(html_text: str) -> str:\\n    \\\"\\\"\\\"尝试从 JSON-LD 提取文章内容（Anthropic 等 Next.js 站点）\\\"\\\"\\\"\\n    matches = re.findall(\\n        r'<script[^>]+type=[\\\"\\\\']application/ld\\\\+json[\\\"\\\\'][^>]*>(.*?)</script>',\\n        html_text, re.DOTALL | re.IGNORECASE\\n    )\\n    for m in matches:\\n        try:\\n            data = json.loads(m.strip())\\n            if isinstance(data, list):\\n                data = data[0]\\n            body = data.get(\\\"articleBody\\\") or data.get(\\\"description\\\") or \\\"\\\"\\n            if len(body) > 200:\\n                return body\\n        except Exception:\\n            continue\\n    return \\\"\\\"\\n\\n\\ndef try_next_data(html_text: str) -> str:\\n    \\\"\\\"\\\"从 Next.js __NEXT_DATA__ 提取内容\\\"\\\"\\\"\\n    m = re.search(r'<script[^>]+id=[\\\"\\\\']__NEXT_DATA__[\\\"\\\\'][^>]*>(.*?)</script>',\\n                  html_text, re.DOTALL | re.IGNORECASE)\\n    if not m:\\n        return \\\"\\\"\\n    try:\\n        data = json.loads(m.group(1))\\n        # 递归搜索 content/body/text 字段\\n        def search(obj, keys=(\\\"content\\\", \\\"body\\\", \\\"text\\\", \\\"description\\\"), depth=0):\\n            if depth > 5:\\n                return \\\"\\\"\\n            if isinstance(obj, dict):\\n                for k in keys:\\n                    if k in obj and isinstance(obj[k], str) and len(obj[k]) > 300:\\n                        return obj[k]\\n                for v in obj.values():\\n                    r = search(v, keys, depth + 1)\\n                    if r:\\n                        return r\\n            elif isinstance(obj, list):\\n                for item in obj:\\n                    r = search(item, keys, depth + 1)\\n                    if r:\\n                        return r\\n            return \\\"\\\"\\n        return search(data)\\n    except Exception:\\n        return \\\"\\\"\\n\\n\\ndef extract_main_content(html_text: str) -> str:\\n    \\\"\\\"\\\"主内容提取：优先 article/main 标签，fallback body\\\"\\\"\\\"\\n    # 优先 <article> 或 <main>\\n    for tag in ['article', 'main', 'div[^>]+class=[\\\"\\\\'][^\\\"\\\\']*(?:content|post|article|body)[^\\\"\\\\']*[\\\"\\\\']']:\\n        m = re.search(f'<{tag}>(.*?)</{tag.split(\\\"[\\\")[0]}>', html_text,\\n                      re.DOTALL | re.IGNORECASE)\\n        if m and len(m.group(1)) > 500:\\n            return clean_html(m.group(1))\\n    return clean_html(html_text)\\n\\n\\ndef fetch_and_convert(url: str) -> str:\\n    \\\"\\\"\\\"主函数：抓取 URL，转换为 Markdown\\\"\\\"\\\"\\n    html_text = fetch_raw(url)\\n    if not html_text.strip():\\n        return f\\\"# {url}\\\\n\\\\n无法抓取内容。\\\\n\\\"\\n\\n    meta = extract_meta(html_text)\\n    title = meta[\\\"title\\\"] or url.split(\\\"/\\\")[-1] or url\\n\\n    # 尝试结构化内容\\n    content = try_json_ld(html_text) or try_next_data(html_text)\\n    if len(content) < 300:\\n        content = extract_main_content(html_text)\\n\\n    # 截断过长内容（避免超出 LLM context）\\n    if len(content) > 8000:\\n        content = content[:8000] + \\\"\\\\n\\\\n...[内容已截断]\\\"\\n\\n    lines = [\\n        f\\\"# {title}\\\",\\n        \\\"\\\",\\n        f\\\"**来源**: {url}\\\",\\n    ]\\n    if meta[\\\"description\\\"]:\\n        lines += [\\\"\\\", f\\\"**摘要**: {meta['description']}\\\"]\\n    lines += [\\\"\\\", \\\"---\\\", \\\"\\\", content]\\n\\n    return \\\"\\\\n\\\".join(lines)\\n\\n\\nif __name__ == \\\"__main__\\\":\\n    if len(sys.argv) < 2:\\n        print(\\\"用法: web_fetch.py <url>\\\")\\n        sys.exit(1)\\n    print(fetch_and_convert(sys.argv[1]))\\n\", \"file_type\": \".py\"}",
+      "tool_call_id": "call_00_ypDDIdJkmlUuvgqbpBbA1891"
+    },
+    {
+      "role": "assistant",
+      "content": "好的，我来执行意图路由。意图解析完成：\n- **URL**: `https://www.anthropic.com/engineering/managed-agents`\n- **source_type**: `web`（Anthropic 工程博客）\n\n现在运行路由脚本：",
+      "reasoning": "Good, I understand the full flow now. The script will:\n\n1. Parse the intent \"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\"\n2. Extract URL → https://www.anthropic.com/engineering/managed-agents\n3. Detect source_type → \"web\" (since it's not youtube/github/arxiv/reddit/douyin, it falls through to the web pattern which matches `https?://`)\n4. Call web_fetch.py to fetch the content and convert it to markdown\n5. Look for an existing pipeline matching \"web\" or \"web-links\" in ~/wiki/\n6. If found → write to raw/ + git push\n7. If not → call sop-pipeline-creator to create one\n\nLet me run the script. First, let me check if the env file exists and then execute.\n\nActually, let me just run it directly.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, I understand the full flow now. The script will:\n\n1. Parse the intent \"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\"\n2. Extract URL → https://www.anthropic.com/engineering/managed-agents\n3. Detect source_type → \"web\" (since it's not youtube/github/arxiv/reddit/douyin, it falls through to the web pattern which matches `https?://`)\n4. Call web_fetch.py to fetch the content and convert it to markdown\n5. Look for an existing pipeline matching \"web\" or \"web-links\" in ~/wiki/\n6. If found → write to raw/ + git push\n7. If not → call sop-pipeline-creator to create one\n\nLet me run the script. First, let me check if the env file exists and then execute.\n\nActually, let me just run it directly.",
+      "tool_calls": [
+        {
+          "id": "call_00_rCBRpVM5GxUciAvuThf10628",
+          "call_id": "call_00_rCBRpVM5GxUciAvuThf10628",
+          "response_item_id": "fc_00_rCBRpVM5GxUciAvuThf10628",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"set -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a\\nset -a && source ~/.hermes/.env 2>/dev/null; set +a\\n\\npython3 ~/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/route_intent.py \\\\\\n  --intent \\\"翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\\\" \\\\\\n  --tg-chat-id \\\"6938920500\\\"\", \"timeout\": 120}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"[intent-router] 意图: 翻译研究这个文章 https://www.anthropic.com/engineering/managed-agents\\n[intent-router] URL: https://www.anthropic.com/engineering/managed-agents | source_type: web\\n[intent-router] 内容标题: Scaling Managed Agents: Decoupling the brain from the hands\\n[intent-router] 未找到 web pipeline，创建中...\\n[intent-router] 未找到 web pipeline，创建 web-wiki...\\n[intent-router] sop-pipeline-creator 已接受，等待 pipeline 创建...\\n[intent-router] pipeline 创建完成：/home/zhouhuijuan1987/wiki/web-wiki\\n[intent-router] 写入 /home/zhouhuijuan1987/wiki/web-wiki/raw/web-links/managed-agents.md\\n[intent-router] ✅ push 成功 → web-wiki\\n{\\n  \\\"status\\\": \\\"created_and_triggered\\\",\\n  \\\"pipeline\\\": \\\"web-wiki\\\",\\n  \\\"url\\\": \\\"https://www.anthropic.com/engineering/managed-agents\\\",\\n  \\\"source_type\\\": \\\"web\\\"\\n}\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_rCBRpVM5GxUciAvuThf10628"
+    },
+    {
+      "role": "assistant",
+      "content": "✅ **意图路由完成！**\n\n## 路由结果\n\n| 字段 | 值 |\n|------|-----|\n| **状态** | ✅ `created_and_triggered` |\n| **URL** | https://www.anthropic.com/engineering/managed-agents |\n| **来源类型** | `web` |\n| **新 pipeline** | `web-wiki`（首次创建） |\n| **写入路径** | `~/wiki/web-wiki/raw/web-links/managed-agents.md` |\n\n### 流程说明\n\n1. **意图解析** → 提取 URL 为 `https://www.anthropic.com/engineering/managed-agents`\n2. **内容抓取** → web_fetch.py 成功抓取文章，标题：*\"Scaling Managed Agents: Decoupling the brain from the hands\"*\n3. **Pipeline 创建** → 未找到现有 web pipeline，自动调起 `sop-pipeline-creator` 创建了 `web-wiki`\n4. **内容写入** → 抓取的文章内容写入 `raw/web-links/managed-agents.md`\n5. **Git push** → 成功推送到 `web-wiki` 仓库，将自动触发 Stage C（wiki 构建）和 Stage D（TG 通知）\n\n现在 pipeline 已触发，Stage C 会自动构建知识图谱 wiki 页面，完成后会通过 Telegram 通知你。",
+      "reasoning": "The script ran successfully. Let me summarize what happened:\n\n1. The intent was parsed successfully\n2. URL extracted: https://www.anthropic.com/engineering/managed-agents\n3. Source type: web\n4. No existing web pipeline was found, so the script called sop-pipeline-creator to create one\n5. A new pipeline \"web-wiki\" was created at ~/wiki/web-wiki\n6. The content was fetched and written to ~/wiki/web-wiki/raw/web-links/managed-agents.md\n7. Git push was successful\n8. Status: created_and_triggered\n\nThe pipeline is now \"web-wiki\" and it should trigger Stage C (wiki-build) and Stage D (tg-notify) automatically via the git push webhook.\n\nLet me also send a notification to Telegram to inform the user about the pipeline creation and trigger.",
+      "finish_reason": "stop",
+      "reasoning_content": "The script ran successfully. Let me summarize what happened:\n\n1. The intent was parsed successfully\n2. URL extracted: https://www.anthropic.com/engineering/managed-agents\n3. Source type: web\n4. No existing web pipeline was found, so the script called sop-pipeline-creator to create one\n5. A new pipeline \"web-wiki\" was created at ~/wiki/web-wiki\n6. The content was fetched and written to ~/wiki/web-wiki/raw/web-links/managed-agents.md\n7. Git push was successful\n8. Status: created_and_triggered\n\nThe pipeline is now \"web-wiki\" and it should trigger Stage C (wiki-build) and Stage D (tg-notify) automatically via the git push webhook.\n\nLet me also send a notification to Telegram to inform the user about the pipeline creation and trigger."
+    }
+  ]
+}
