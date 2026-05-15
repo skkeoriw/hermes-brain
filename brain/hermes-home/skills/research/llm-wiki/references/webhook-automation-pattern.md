@@ -86,27 +86,38 @@ For `full_build`, additionally record:
   - Run-log file path
 
 ## Session-Specific Learnings (May 8, 2026)
+
+### Source & Entity Page Creation
 - **Source page creation:** When creating a new source page from raw content, include comprehensive metadata (stars, language, update time) and structured sections (项目信息, 核心功能, 适用场景, 价值评估, 与同类项目对比)
 - **Entity page mirroring:** Entity pages should mirror source page content but focus on the entity's role in the knowledge graph, using the same core information but potentially different emphasis
-## Session-Specific Learnings (May 8, 2026)
-- **Source page creation:** When creating a new source page from raw content, include comprehensive metadata (stars, language, update time) and structured sections (项目信息, 核心功能, 适用场景, 价值评估, 与同类项目对比)
-- **Entity page mirroring:** Entity pages should mirror source page content but focus on the entity's role in the knowledge graph, using the same core information but potentially different emphasis
-- **Relationship mapping:** For new entity additions, create explicit relationships: \n  - Source file → Source page (documentation)\n  - Source page → Entity page (description)\n  - Entity page → Related concepts (based on content analysis)
-- **Index updates:** When adding new source and entity entries, maintain alphabetical ordering within sections and update counters accurately
-- **Log consistency:** Both wiki/log.md and webhook run logs should be updated - the former for wiki operations history, the latter for detailed automation audit
-- **Overview updates:** Relationship overview pages (like wiki/overview/知识图谱关系.md) should be updated to reflect new entity-concept connections
-- **Raw file frontmatter:** When processing raw file changes, always add/update frontmatter with source_url, ingested date, and SHA256 hash for drift detection on future ingests
+- **Source/entity pairing:** For each new raw source processed, create both a source summary page (in wiki/sources/) and an entity page (in wiki/entities/) to capture both the source metadata and the entity's role in the knowledge graph
+- **Relationship mapping:** For new entity additions, create explicit relationships:
+  1. Source file → Source page (documentation)
+  2. Source page → Entity page (description)
+  3. Entity page → Related concepts (based on content analysis)
+
+### Index & Log Maintenance
+- **Alphabetical ordering:** When adding new source and entity entries, maintain alphabetical ordering within sections and update counters accurately
+- **Log consistency:** Both root `log.md` and `wiki/log.md` must be updated — root for wiki operations history, wiki/ for subdirectory audit
+- **Overview updates:** Relationship overview pages (like `wiki/overview/知识图谱关系.md`) must reflect new entity-concept connections
+
+### Raw File Handling
+- **Raw file frontmatter:** When processing raw file changes, always add/update frontmatter with `source_url`, `ingested` date, and SHA256 hash for drift detection on future ingests
 - **Entity page updates:** When updating existing entity pages, preserve the original creation date, update the modified date, and incrementally improve content based on new source information (e.g., correcting star counts, updating feature descriptions)
-- **Cross-linking discipline:** Every new or updated wiki page must link to at least 2 other wiki pages via [[wikilinks]] and verify reciprocal links exist
-- **Filename encoding handling:** When processing git diff output for raw file changes, properly handle escaped unicode sequences in filenames. The output may appear as quoted strings with escaped unicode (e.g., \\\"raw/Self-RAG-\\\\\\\\350\\\\\\\\207\\\\\\\\252...md\\\") that requires decoding to get the actual filename.
-- **Change detection robustness:** When payload-provided `before` SHA is missing, invalid, or malformed, immediately fallback to `git diff --name-only HEAD~1 HEAD -- 'raw/**/*.md'` rather than assuming no changes based on \"up-to-date\" status.
-- **Git operations verification:** After commit, always run verification guard: `git show --name-only --oneline -n 1 HEAD` to confirm expected files are actually in the commit before considering the operation successful.
-- **Telegram notification discipline:** Use the independent Bot Token from environment variable `QA_WIKI_TELEGRAM_BOT_TOKEN` for direct Telegram Bot API sends (not via Hermes webhook route), targeting fixed chat_id `6938920500`.
-- **Working directory state management:** At the start of webhook runs, expect modified files from previous runs (especially logs and entity pages that may have been edited manually). Execute the protective stash sequence BEFORE assessing raw changes to avoid false positives. After stash/pop, reassess the clean state for accurate change detection.
-- **Untracked file accumulation:** Webhook runs will accumulate untracked log files over time. These should be left alone unless they interfere with operations (like run-log filename conflicts). The stash/pop process handles them safely.
-- **Relationship maintenance:** When adding new entities that relate to existing concepts (like Agent, LLM, RAG, etc.), verify those concept pages exist and create bidirectional links. In this run, hello-agents was linked to existing concept pages for Agent, LLM, RAG, MCP, Agentic-RL, and GRPO.
-- **Source/entity pairing:** For each new raw source processed, create both a source summary page (in wiki/sources/) and an entity page (in wiki/entities/) to capture both the source metadata and the entity's role in the knowledge graph.
-- **Working directory state management:** At the start of webhook runs, expect modified files from previous runs (especially logs and entity pages that may have been edited manually). Execute the protective stash sequence BEFORE assessing raw changes to avoid false positives. After stash/pop, reassess the clean state for accurate change detection.
-- **Untracked file accumulation:** Webhook runs will accumulate untracked log files over time. These should be left alone unless they interfere with operations (like run-log filename conflicts). The stash/pop process handles them safely.
-- **Relationship maintenance:** When adding new entities that relate to existing concepts (like Agent, LLM, RAG, etc.), verify those concept pages exist and create bidirectional links. In this run, hello-agents was linked to existing concept pages for Agent, LLM, RAG, MCP, Agentic-RL, and GRPO.
-- **Source/entity pairing:** For each new raw source processed, create both a source summary page (in wiki/sources/) and an entity page (in wiki/entities/) to capture both the source metadata and the entity's role in the knowledge graph.
+- **Cross-linking discipline:** Every new or updated wiki page must link to at least 2 other wiki pages via `[[wikilinks]]` and verify reciprocal links exist
+
+### Git & Environment Quirks
+- **Filename encoding handling:** When processing git diff output for raw file changes, properly handle escaped unicode sequences in filenames (e.g., `\350\207\252` patterns). Decode before matching against filesystem.
+- **Change detection robustness:** When payload-provided `before` SHA is missing, invalid, or malformed, fallback to `git diff --name-only HEAD~1 HEAD -- 'raw/**/*.md'` rather than assuming no changes based on "up-to-date" status
+- **Git operations verification:** After commit, always run `git show --name-only --oneline -n 1 HEAD` guard to confirm expected files are in the commit
+- **Working directory state management:** At start of webhook runs, expect modified files from previous runs. Execute protective stash BEFORE assessing raw changes to avoid false positives. After stash/pop, reassess the clean state.
+- **Untracked file accumulation:** Webhook runs accumulate untracked log files. Leave them alone unless they interfere with operations (like run-log filename conflicts). The stash/pop process handles them safely.
+
+### Telegram & Notification
+- **Telegram delivery:** Use the independent Bot Token from environment variable `QA_WIKI_TELEGRAM_BOT_TOKEN` for direct Telegram Bot API sends (not via Hermes webhook route), targeting fixed chat_id `6938920500`
+- **Relationship maintenance:** When adding new entities, verify related concept pages exist and create bidirectional links (e.g., linking hello-agents to Agent, LLM, RAG, MCP, Agentic-RL, and GRPO concept pages)
+
+### Auth Failure Recovery (May 15, 2026)
+- See `references/push-auth-fallback.md` for the systematic auth discovery chain when `git push` fails with 403
+- Key principle: commit locally first, then try multiple credential sources (env vars, ~/.git-credentials, alternative PATs) before classifying as `error:push_failed`
+- When all tokens fail: restore original remote URL, suppress Telegram, and report with manual recovery instructions

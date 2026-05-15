@@ -1,7 +1,7 @@
 ---
 name: llm-wiki
 description: "Karpathy's LLM Wiki: build/query interlinked markdown KB."
-version: 2.1.0
+version: 2.2.0
 author: Hermes Agent
 license: MIT
 metadata:
@@ -393,9 +393,10 @@ When the wiki lives in a remote Git repository rather than an already-local fold
    - If `git pull --ff-only` fails with local/remote divergence (e.g. `ahead X, behind Y`), classify as `aborted:sync_ff_only_failed` and stop wiki processing. For operator remediation in unattended environments, use: create a safety branch from local `main` (`backup/local-main-before-reset-<utc>`), then `git reset --hard origin/main`, then re-trigger webhook/job.
 3. For full builds, scan all markdown and repair/init `SCHEMA.md`, `index.md`, `log.md`, entity/concept/comparison/query pages, frontmatter, backlinks, and graph structure.
 4. For incremental builds, diff against the pulled baseline or recent commits to identify changed markdown, then update only affected pages plus `index.md` and `log.md`.
-   - **Do not infer “no changes” from `git pull` output** (`Already up to date` is sync status, not content-diff status).
+   - **Do not infer "no changes" from `git pull` output** (`Already up to date` is sync status, not content-diff status).
    - Prefer payload-provided `before..sha` when both are valid. If the computed command yields an empty set because the range is malformed/degenerate (e.g., leading `..sha` with missing base), immediately fallback to `HEAD~1..HEAD` and log both commands + why fallback was used.
    - After diffing, hard-filter to `raw/**/*.md`; if none remain, record `skipped:no_raw_changes` and stop without wiki writes/commit/push.
+   - **Pre-existing-output guard:** Before creating new wiki pages for a raw change, check if the expected output pages already exist in HEAD. If they do (e.g., a previous run committed them locally but failed to push, leaving origin behind), log the finding, skip duplicate page creation, and only fix any formatting/consistency issues found. Stale `before..sha` diffs from unpushed upstream commits are a false positive — the work is already done. Blindly re-creating pages risks duplicate entries, broken formatting from concurrent writes, and index inconsistencies.
    - If the webhook contract requires a fixed run-log path (e.g., `logs/webhook-runs/gh-<run_id>-<attempt>.md`) on **every** run, create/append that file even when skipped; record skip reason explicitly.
 5. For queries, orient first (schema/index/log), answer from wiki pages, and if the user wants query capture, write a `queries/` page and update navigation/log.
 6. After write operations: `git status`, then commit only when changes exist. Default to `git add -A && git commit -m "chore: update llm wiki graph"`, **but if the repo already contains unrelated untracked files from other runs, stage only the files touched by this run** to avoid accidentally bundling stale artifacts. Push to the user-approved target branch; direct `main` pushes are acceptable only when explicitly requested.
@@ -574,10 +575,65 @@ vault in Obsidian on your laptop/phone — changes appear within seconds.
   The agent should check log size during lint.
 - **Handle contradictions explicitly** — don't silently overwrite. Note both claims with dates,
   mark in frontmatter, flag for user review.
+- **Pre-existing-output false positive (incremental webhook runs):** When a previous run committed
+  wiki pages locally but failed to push (e.g., 403), and a new run triggers with the same `before..sha`
+  diff range on the same local HEAD, the diff still shows the raw file as "new". Always check if the
+  target wiki pages already exist in HEAD before creating them. Stale `origin/main` + new local commits
+  = diff false positive. Log the finding as `skipped:work_already_done` rather than re-creating pages.
 
-## References\n\n- `references/incremental-build-gate-checklist.md` — strict webhook incremental gate runbook (`before..sha` diff precedence, skip semantics, Telegram gating, fixed run-log behavior).\n- `references/webhook-run-logging.md` — two-commit run-log finalization pattern and reporting expectations.\n- `references/webhook-automation-pattern.md` — canonical webhook automation pattern for llm-wiki (precedence order, stash/sync workflow, run-log requirements, git discipline).\n- `references/notebooklm-integration.md` — pattern for integrating NotebookLM-generated outputs (reports, mindmaps) into llm-wiki knowledge base.\n\n## Related Tools\n\n[llm-wiki-compiler](https://github.com/atomicmemory/llm-wiki-compiler) is a Node.js CLI that\ncompiles sources into a concept wiki with the same Karpathy inspiration. It's Obsidian-compatible,\nso users who want a scheduled/CLI-driven compile pipeline can point it at the same vault this\nskill maintains. Trade-offs: it owns page generation (replaces the agent's judgment on page\ncreation) and is tuned for small corpora. Use this skill when you want agent-in-the-loop curation;\nuse llmwiki when you want batch compile of a source directory.\n\n## YouTube Wiki Processing Pattern\n\nSee `references/youtube-wiki-processing.md` for the pattern used to process YouTube video links\ninto a structured wiki using NotebookLM for analysis and llm-wiki for knowledge graph construction.
+## References
 
-## YouTube Wiki Processing Pattern\n\nSee `references/youtube-wiki-processing.md` for the pattern used to process YouTube video links\ninto a structured wiki using NotebookLM for analysis and llm-wiki for knowledge graph construction.\n\n### YouTube-Specific Processing Guidelines (MANDATORY)\n\nWhen processing YouTube video links in a webhook context, the following rules are **strictly enforced**:\n\n1. **Two-Stage Processing** (from TheSchema.md):\n   - Stage B: NotebookLM processing ONLY (triggered by changes in `raw/youtube-links/`)\n   - Stage C: llm-wiki incremental build ONLY (triggered by changes in `raw/notebooklm-analysis/` or `raw/notebooklm-mindmaps/`)\n   - **CRITICAL: Do NOT send Telegram notifications after Stage B** - Telegram is sent ONLY after Stage C completion with actual wiki updates\n\n2. **Source-Scoped Generation** (NON-NEGOTIABLE):\n   - When generating reports/mindmaps from NotebookLM, use ONLY the newly added source(s)\n   - NEVER use whole-notebook context for generation\n   - This ensures insights are traceable to specific videos and prevents contamination\n\n3. **Language Enforcement** (MUST BE zh_Hans):\n   - All generated content MUST be in Chinese (zh_Hans)\n   - Set language explicitly: `notebooklm language set zh_Hans`\n   - ALWAYS use `--language zh_Hans` flag on generate commands\n\n4. **File Organization** (STRICT FORMAT):\n   - YouTube links: `raw/youtube-links/<video-id>.md` (containing just the URL)\n   - NotebookLM outputs: \n     - Reports: `raw/notebooklm-analysis/<video-id>_<source-id>_<timestamp>_report.md`\n     - Mindmaps: `raw/notebooklm-mindmaps/<video-id>_<source-id>_<timestamp>_mindmap.json`\n   - Wiki outputs follow standard llm-wiki structure in `wiki/` directory\n\n5. **Telegram Notification Requirements** (Stage C ONLY):\n   - Sent ONLY after Stage C when raw changes occurred AND wiki updates succeeded\n   - **MUST include quantitative metrics**:\n     - New entity count + names (≤5 listed)\n     - Changed/new raw source count + file list\n     - Relation changes grouped by type (with ≥3 sample edges)\n     - Affected concept-page list (≤5 listed)\n   - **MUST include**: build commit hash and run-log file path\n   - **MUST USE FORMAT**: `[YOUTUBE-WIKI-RUN]` prefix with key=value pairs\n\n6. **Quality Controls** (HARD REQUIREMENTS):\n   - Every wiki page MUST have minimum 2 outgoing `[[wikilinks]]`\n   - Source pages: ≥300 Chinese characters\n   - Entity/concept pages: ≥200 Chinese characters\n   - Frontmatter MUST be complete: type/tags/summary/sources/updated/layer\n   - For L2/L3 layers: confidence AND reasoning fields are REQUIRED\n\n### YouTube-Specific Processing Guidelines\n\nWhen processing YouTube video links in a webhook context:\n\n1. **Two-Stage Processing** (as defined in TheSchema.md):\n   - Stage B: NotebookLM processing (triggered by changes in `raw/youtube-links/`)\n   - Stage C: llm-wiki incremental build (triggered by changes in `raw/notebooklm-analysis/` or `raw/notebooklm-mindmaps/`)\n   - **Do not send Telegram notifications after Stage B** - only after Stage C with actual wiki updates\n\n2. **Source-Scoped Generation**:\n   - When generating reports/mindmaps from NotebookLM, use ONLY the newly added source(s)\n   - Do not use whole-notebook context for generation\n   - This ensures insights are traceable to specific videos\n\n3. **Language Enforcement**:\n   - All generated content must be in Chinese (zh_Hans)\n   - Set language explicitly: `notebooklm language set zh_Hans`\n   - Use `--language zh_Hans` flag on generate commands\n\n4. **File Organization**:\n   - YouTube links: `raw/youtube-links/<video-id>.md` (containing just the URL)\n   - NotebookLM outputs: \n     - Reports: `raw/notebooklm-analysis/<video-id>_<source-id>_<timestamp>_report.md`\n     - Mindmaps: `raw/notebooklm-mindmaps/<video-id>_<source-id>_<timestamp>_mindmap.json`\n   - Wiki outputs follow standard llm-wiki structure\n\n5. **Telegram Notification Requirements** (only after Stage C):\n   - Must include quantitative metrics:\n     - New entity count + names (≤5 listed)\n     - Changed/new raw source count + file list\n     - Relation changes grouped by type (with ≥3 sample edges)\n     - Affected concept-page list (≤5 listed)\n   - Must include build commit hash and run-log file path\n   - Format: `[YOUTUBE-WIKI-RUN]` prefix with key=value pairs\n\n6. **Quality Controls**:\n   - Every wiki page must have minimum 2 outgoing `[[wikilinks]]`\n   - Source pages: ≥300字, entity/concept pages: ≥200字\n   - Frontmatter must be complete (type/tags/summary/sources/updated/layer, with confidence+reasoning for L2/L3)
+- `references/incremental-build-gate-checklist.md` — strict webhook incremental gate runbook (`before..sha` diff precedence, skip semantics, Telegram gating, fixed run-log behavior).
+- `references/webhook-run-logging.md` — two-commit run-log finalization pattern and reporting expectations.
+- `references/webhook-automation-pattern.md` — canonical webhook automation pattern for llm-wiki (precedence order, stash/sync workflow, run-log requirements, git discipline).
+- `references/notebooklm-integration.md` — pattern for integrating NotebookLM-generated outputs (reports, mindmaps) into llm-wiki knowledge base.
+## YouTube Wiki Processing Pattern
+
+See `references/youtube-wiki-processing.md` for the pattern used to process YouTube video links
+into a structured wiki using NotebookLM for analysis and llm-wiki for knowledge graph construction.
+
+### YouTube-Specific Processing Guidelines (MANDATORY)
+
+When processing YouTube video links in a webhook context, the following rules are **strictly enforced**:
+
+1. **Two-Stage Processing** (from TheSchema.md):
+   - Stage B: NotebookLM processing ONLY (triggered by changes in `raw/youtube-links/`)
+   - Stage C: llm-wiki incremental build ONLY (triggered by changes in `raw/notebooklm-analysis/` or `raw/notebooklm-mindmaps/`)
+   - **CRITICAL: Do NOT send Telegram notifications after Stage B** — Telegram is sent ONLY after Stage C completion with actual wiki updates
+
+2. **Source-Scoped Generation** (NON-NEGOTIABLE):
+   - When generating reports/mindmaps from NotebookLM, use ONLY the newly added source(s)
+   - NEVER use whole-notebook context for generation
+   - This ensures insights are traceable to specific videos and prevents contamination
+
+3. **Language Enforcement** (MUST BE zh_Hans):
+   - All generated content MUST be in Chinese (zh_Hans)
+   - Set language explicitly: `notebooklm language set zh_Hans`
+   - ALWAYS use `--language zh_Hans` flag on generate commands
+
+4. **File Organization** (STRICT FORMAT):
+   - YouTube links: `raw/youtube-links/<video-id>.md` (containing just the URL)
+   - NotebookLM outputs:
+     - Reports: `raw/notebooklm-analysis/<video-id>_<source-id>_<timestamp>_report.md`
+     - Mindmaps: `raw/notebooklm-mindmaps/<video-id>_<source-id>_<timestamp>_mindmap.json`
+   - Wiki outputs follow standard llm-wiki structure in `wiki/` directory
+
+5. **Telegram Notification Requirements** (Stage C ONLY):
+   - Sent ONLY after Stage C when raw changes occurred AND wiki updates succeeded
+   - **MUST include quantitative metrics**:
+     - New entity count + names (≤5 listed)
+     - Changed/new raw source count + file list
+     - Relation changes grouped by type (with ≥3 sample edges)
+     - Affected concept-page list (≤5 listed)
+   - **MUST include**: build commit hash and run-log file path
+   - **MUST USE FORMAT**: `[YOUTUBE-WIKI-RUN]` prefix with key=value pairs
+
+6. **Quality Controls** (HARD REQUIREMENTS):
+   - Every wiki page MUST have minimum 2 outgoing `[[wikilinks]]`
+   - Source pages: ≥300 Chinese characters
+   - Entity/concept pages: ≥200 Chinese characters
+   - Frontmatter MUST be complete: type/tags/summary/sources/updated/layer
+   - For L2/L3 layers: confidence AND reasoning fields are REQUIRED
 
 ### YouTube-Specific Processing Guidelines
 
