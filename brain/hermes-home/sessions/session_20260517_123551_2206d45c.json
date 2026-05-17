@@ -1,0 +1,521 @@
+{
+  "session_id": "20260517_123551_2206d45c",
+  "model": "deepseek-v4-flash",
+  "base_url": "https://api.deepseek.com/v1",
+  "platform": "webhook",
+  "session_start": "2026-05-17T12:35:52.453979",
+  "last_updated": "2026-05-17T12:36:41.418948",
+  "system_prompt": "# Hermes Agent Persona\n\n<!--\nThis file defines the agent's personality and tone.\nThe agent will embody whatever you write here.\nEdit this to customize how Hermes communicates with you.\n\nExamples:\n  - \"You are a warm, playful assistant who uses kaomoji occasionally.\"\n  - \"You are a concise technical expert. No fluff, just facts.\"\n  - \"You speak like a friendly coworker who happens to know everything.\"\n\nThis file is loaded fresh each message -- no restart needed.\nDelete the contents (or this file) to use the default personality.\n-->\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nAfter completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [94% — 2,085/2,200 chars]\n══════════════════════════════════════════════\n【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。\n§\nSOP wiki-build 超时/守卫竞态: 脚本超600s缺git收尾 或 守卫杀前reset清commit。杀守卫再push。commit含\"stage-c done\"触发Stage D。Phase 3.A.1 fallback陷阱：先export WIKI_LLM_PROVIDER=deepseek再跑Phase 1会失效——Phase 1第一条source env覆盖回gemini。必须先source env再export override。\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.\n§\n2026-05-09: 修复 sop-notebooklm-research skill 的 Pitfall #2。原版错误引用 `rm -f` 清理旧文件，与 Step 7\"不要删除\"矛盾。修正为：遗留旧文件被捎带提交是预期行为（装饰性 bloat），Stage C 通过 diff 过滤；不删除以避免并发竞态。\n§\nReviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.\n§\nwebhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，无法精确到当前 session。写 `\"api_calls\": \"unknown\"`（不用 0 或空字符串）。交互式 session 中若知道 session ID 可用 `hermes insights --session-id {id}` 获取精确值。\n§\nsop-notebooklm-research Pitfall #16 2026-05-13: pipeline-context.json 可能为空 `{}`（processor 自动写入静默失败或前序占位）。处理方式：视作新 pipeline，直接覆写完整版。不要在此空对象上做合并。\n§\nsop-tg-notify Step 9: 必须用 stage_c.run_id 做脚本 --run-id 参数（不是 webhook run_id）。我 2026-05-14 用错 webhook run_id。\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [100% — 1,427/1,375 chars]\n══════════════════════════════════════════════\n【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。\n§\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - publish-skill: 当用户说\"我想分享我的 skill\"、\"给我的 skill 生成安装脚本\"、\"publish skill\"、 \"g...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube video full pipeline: transcript extraction → Whis...\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  sop-content-transform:\n    - sop-content-transform: 原子 Skill：读取 raw/ 文件的 frontmatter action，执行内容变换（翻译/总结/提炼），...\n  sop-douyin-fetch:\n    - sop-douyin-fetch: ⚠️ MOCK: 抖音视频采集与分析。接收 raw/douyin-links/ 下的抖音链接，生成分析报告到 ra...\n  sop-douyin-publish:\n    - sop-douyin-publish: ⚠️ MOCK: 将二创视频发布到抖音平台，更新 index.md。真实实现需接入抖音开放平台 API。\n  sop-intent-router:\n    - sop-intent-router: 意图路由 Agent（含 Planner 能力）：理解任意复杂意图，单任务直接路由，多任务/无URL自动分解执行。\n  sop-notebooklm-auth:\n    - sop-notebooklm-auth: NotebookLM 认证管理：检查有效性、从 AdsPower 刷新、安装 notebooklm-py。新机器初...\n  sop-notebooklm-login:\n    - sop-notebooklm-login: 通过 VNC 启动浏览器，引导用户完成 NotebookLM Google 登录，自动保存凭证并上传到 skill...\n  sop-notebooklm-research:\n    - sop-notebooklm-research: SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图...\n  sop-output-check:\n    - sop-output-check: Output Check: Stage C 完成后对产出物做纯规则质量检查，三档判断 PASS/WARN/FAIL...\n  sop-pipeline-creator:\n    - sop-pipeline-creator: Meta skill：根据用户意图创建新的 wiki pipeline（repo + sop.yaml + web...\n  sop-pipeline-watchdog:\n    - sop-pipeline-watchdog: YouTube Wiki pipeline 巡防员：调脚本判断状态、发 TG 报告、推送 brain。uncert...\n  sop-retry:\n    - sop-retry: 处理用户通过 TG 发出的重跑指令：retryB（重新研究）或 retryC（重建 wiki）。换策略重跑，归档旧内容。\n  sop-skill-author:\n    - sop-skill-author: Skill 创作规范：创建任何新 skill 前必须读取本文件。规定 lean skill 格式、存放路径、脚本优...\n  sop-tg-notify:\n    - sop-tg-notify: SOP Stage D: 读取 pipeline-context.json，组装完整 pipeline 运行报告，...\n  sop-video-create:\n    - sop-video-create: ⚠️ MOCK: 基于抖音分析报告进行 AI 二次创作，生成新视频脚本/素材。真实实现需接入 AI 视频生成能力（...\n  sop-wiki-build:\n    - sop-wiki-build: SOP Stage C: 增量知识图谱构建，调用脚本生成 wiki 页面并 push 触发 Stage D。\n  sop-wiki-evaluate:\n    - sop-wiki-evaluate: 独立 Evaluator Skill：在 wiki-build 之后评估页面质量，写入 pipeline-cont...\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Sunday, May 17, 2026 12:35 PM\nModel: deepseek-v4-flash\nProvider: deepseek",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "send_message",
+        "description": "Send a message to a connected messaging platform, or list available targets.\n\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "send",
+                "list"
+              ],
+              "description": "Action to perform. 'send' (default) sends a message. 'list' returns all available channels/contacts across connected platforms."
+            },
+            "target": {
+              "type": "string",
+              "description": "Delivery target. Format: 'platform' (uses home channel), 'platform:#channel-name', 'platform:chat_id', or 'platform:chat_id:thread_id' for Telegram topics and Discord threads. Examples: 'telegram', 'telegram:-1001234567890:17585', 'discord:999888777:555444333', 'discord:#bot-home', 'slack:#engineering', 'signal:+155****4567', 'matrix:!roomid:server.org', 'matrix:@user:server.org', 'yuanbao:direct:<account_id>' (DM), 'yuanbao:group:<group_code>' (group chat)"
+            },
+            "message": {
+              "type": "string",
+              "description": "The message text to send. To send an image or file, include MEDIA:<local_path> (e.g. 'MEDIA:/tmp/hermes/cache/img_xxx.jpg') in the message — the platform will deliver it as a native media attachment."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_manage",
+        "description": "Manage skills (create, update, delete). Skills are your procedural memory — reusable approaches for recurring task types. New skills go to ~/.hermes/skills/; existing skills can be modified wherever they live.\n\nActions: create (full SKILL.md + optional category), patch (old_string/new_string — preferred for fixes), edit (full SKILL.md rewrite — major overhauls only), delete, write_file, remove_file.\n\nOn delete, pass `absorbed_into=<umbrella>` when you're merging this skill's content into another one, or `absorbed_into=\"\"` when you're pruning it with no forwarding target. This lets the curator tell consolidation from pruning without guessing, so downstream consumers (cron jobs that reference the old skill name, etc.) get updated correctly. The target you name in `absorbed_into` must already exist — create/patch the umbrella first, then delete.\n\nCreate when: complex task succeeded (5+ calls), errors overcome, user-corrected approach worked, non-trivial workflow discovered, or user asks you to remember a procedure.\nUpdate when: instructions stale/wrong, OS-specific failures, missing steps or pitfalls found during use. If you used a skill and hit issues not covered by it, patch it immediately.\n\nAfter difficult/iterative tasks, offer to save as a skill. Skip for simple one-offs. Confirm with user before creating/deleting.\n\nGood skills: trigger conditions, numbered steps with exact commands, pitfalls section, verification steps. Use skill_view() to see format examples.\n\nPinned skills are off-limits — all write actions refuse with a message pointing the user to `hermes curator unpin <name>`. Don't try to route around this by renaming or recreating.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "create",
+                "patch",
+                "edit",
+                "delete",
+                "write_file",
+                "remove_file"
+              ],
+              "description": "The action to perform."
+            },
+            "name": {
+              "type": "string",
+              "description": "Skill name (lowercase, hyphens/underscores, max 64 chars). Must match an existing skill for patch/edit/delete/write_file/remove_file."
+            },
+            "content": {
+              "type": "string",
+              "description": "Full SKILL.md content (YAML frontmatter + markdown body). Required for 'create' and 'edit'. For 'edit', read the skill first with skill_view() and provide the complete updated text."
+            },
+            "old_string": {
+              "type": "string",
+              "description": "Text to find in the file (required for 'patch'). Must be unique unless replace_all=true. Include enough surrounding context to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text (required for 'patch'). Can be empty string to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "For 'patch': replace all occurrences instead of requiring a unique match (default: false)."
+            },
+            "category": {
+              "type": "string",
+              "description": "Optional category/domain for organizing the skill (e.g., 'devops', 'data-science', 'mlops'). Creates a subdirectory grouping. Only used with 'create'."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "Path to a supporting file within the skill directory. For 'write_file'/'remove_file': required, must be under references/, templates/, scripts/, or assets/. For 'patch': optional, defaults to SKILL.md if omitted."
+            },
+            "file_content": {
+              "type": "string",
+              "description": "Content for the file. Required for 'write_file'."
+            },
+            "absorbed_into": {
+              "type": "string",
+              "description": "For 'delete' only — declares intent so the curator can tell consolidation from pruning without guessing. Pass the umbrella skill name when this skill's content was merged into another (the target must already exist). Pass an empty string when the skill is truly stale and being pruned with no forwarding target. Omitting the arg on delete is supported for backward compatibility but downstream tooling (e.g. cron-job skill reference rewriting) will have to guess at intent."
+            }
+          },
+          "required": [
+            "action",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skill_view",
+        "description": "Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans')."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "skills_list",
+        "description": "List available skills (name + description). Use skill_view(name) to load full content.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional category filter to narrow results"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 24,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[IMPORTANT: The user has invoked the \"sop-intent-router\" skill, indicating they want you to follow its instructions. The full skill content is loaded below.]\n\n---\nname: sop-intent-router\ndescription: \"意图路由 Agent（含 Planner 能力）：理解任意复杂意图，单任务直接路由，多任务/无URL自动分解执行。\"\nversion: 4.0.0\n---\n\n# SOP Intent Router（含 Planner 能力）\n\n## 触发条件\nwebhook 收到 `stage=intent-router`，payload 包含：\n- `intent`: 用户意图文本（必填）\n- `tg_chat_id`（可选）\n\n---\n\n## 你的职责（Hermes LLM）\n\n**理解用户意图，决定执行路径。你同时是 Router 和 Planner。**\n\n---\n\n## Phase 1: 加载环境\n\n```bash\nset -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a\nset -a && source ~/.hermes/.env 2>/dev/null; set +a\n```\n\n---\n\n## Phase 2: 分析意图，判断复杂度\n\n分析 `{intent}`，判断属于哪种情况：\n\n### 情况 A：单任务 + 有 URL（最常见）\n```\n\"翻译这篇文章 https://...\"\n\"分析这个项目 https://github.com/...\"\n```\n→ 直接执行，跳到 Phase 3\n\n### 情况 B：多任务 + 有多个 URL\n```\n\"翻译这两篇文章 https://... 和 https://...\"\n```\n→ 拆成多个单任务，对每个 URL 分别执行 Phase 3\n\n### 情况 C：有主题但没有 URL（需要搜索）\n```\n\"研究 Anthropic 所有关于 Harness Engineering 的文章\"\n\"帮我找 LLM scaling laws 相关的最新论文\"\n```\n→ 先搜索获取 URL 列表，再对每个 URL 执行 Phase 3\n\n---\n\n## Phase 3: 单任务执行（每个 URL 执行一次）\n\n### Step 3.1: 抓取内容\n**web 来源：**\n```bash\npython3 __SKILL_DIR__/scripts/web_fetch.py {url} > /tmp/intent-raw.md\n```\n\n**非 web（github/arxiv/reddit）：**\n```bash\npython3 -c \"print('# {url}\\n\\n**来源**: {url}\\n**意图**: {intent}')\" > /tmp/intent-raw.md\n```\n\n### Step 3.2: 写入并触发 pipeline\n```bash\npython3 __SKILL_DIR__/scripts/write_and_trigger.py \\\n  --content-file /tmp/intent-raw.md \\\n  --url \"{url}\" \\\n  --source-type {来源类型} \\\n  --action \"{动作: translate/summarize/extract_key_points/translate_and_extract，无则留空}\" \\\n  --intent \"{intent}\" \\\n  --tg-chat-id \"{tg_chat_id}\"\n```\n\n---\n\n## Phase 4: 情况 C 搜索步骤\n\n当没有具体 URL 时：\n\n```bash\n# 用 Gemini 搜索相关 URL\npython3 -c \"\nimport json, os, urllib.request\n\napi_key = os.environ.get('GOOGLE_CLOUD_API_KEY', '')\nprompt = '''请找出关于「{topic}」的权威技术文章 URL 列表（3-5个），\n只返回 JSON 数组: [\\\"url1\\\", \\\"url2\\\", ...]'''\n\npayload = json.dumps({{'contents': [{{'role': 'user', 'parts': [{{'text': prompt}}]}}]}}).encode()\nurl = f'https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.0-flash-lite:generateContent?key={api_key}'\nreq = urllib.request.Request(url, data=payload, headers={{'Content-Type': 'application/json'}})\nwith urllib.request.urlopen(req, timeout=30) as r:\n    data = json.loads(r.read())\ntext = data['candidates'][0]['content']['parts'][0]['text']\nimport re\nurls = re.findall(r'https?://[^\\s\\\"\\']+', text)\nprint(json.dumps(urls))\n\" > /tmp/search-urls.json\n\n# 对每个 URL 执行 Phase 3\n```\n\n---\n\n## 动作判断规则\n\n| 用户说的 | action 参数 |\n|---------|------------|\n| 翻译 / translate / 中文 | `translate` |\n| 总结 / summarize / 摘要 | `summarize` |\n| 提炼 / 关键论点 / 核心 | `extract_key_points` |\n| 翻译 + 提炼 | `translate_and_extract` |\n| 研究 / 分析 / 看看 / 默认 | （空）|\n\n---\n\n## 多任务 TG 通知格式\n\n多个任务时，在开始和结束发 TG 汇总：\n\n开始时：\n```\n🧭 [INTENT-ROUTER] 多任务计划\n   共 N 个任务\n   Task 1: 翻译 https://...\n   Task 2: 研究 https://...\n   ...\n```\n\n全部提交后：\n```\n✅ [INTENT-ROUTER] N 个任务已提交\n   各 pipeline 将自动执行，完成后分别通知\n```\n\n---\n\n## 异常处理\n\n- URL 无法抓取 → 用 URL 本身作为内容继续\n- Pipeline 不存在 → write_and_trigger.py 自动创建\n- 搜索返回空 → TG 告知用户无法找到相关内容\n\n[Skill directory: /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router]\nResolve any relative paths in this skill (e.g. `scripts/foo.js`, `templates/config.yaml`) against that directory, then run them with the terminal tool using the absolute path.\n\n[This skill has supporting files:]\n- scripts/transform.py  ->  /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/transform.py\n- scripts/route_intent.py  ->  /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/route_intent.py\n- scripts/web_fetch.py  ->  /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/web_fetch.py\n- scripts/write_and_trigger.py  ->  /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/write_and_trigger.py\n\nLoad any of these with skill_view(name=\"sop-intent-router\", file_path=\"<path>\"), or run scripts directly by absolute path (e.g. `node /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/foo.js`).\n\nThe user has provided the following instruction alongside the skill invocation: 执行 sop-intent-router skill。关键变量（直接使用）：intent=研究这个视频 https://www.youtube.com/watch?v=78YQMfgPlwA | tg_chat_id={tg_chat_id} | 完整payload={payload}"
+    },
+    {
+      "role": "assistant",
+      "content": "收到，开始执行 **sop-intent-router**。\n\n## 意图分析\n\n- **意图**: 研究这个视频\n- **URL**: `https://www.youtube.com/watch?v=78YQMfgPlwA`\n- **判断**: ✅ **情况 A** — 单任务 + 有 URL，直接执行\n- **动作**: `(空)` — \"研究/分析/看看\" → 默认动作\n\n### Phase 1: 加载环境",
+      "reasoning": "The user has invoked the sop-intent-router skill with the intent to \"研究这个视频 https://www.youtube.com/watch?v=78YQMfgPlwA\" (research this video). This is a single task with a URL, so it falls under Case A - direct execution.\n\nLet me follow the SOP:\n\nPhase 1: Load environment variables\nPhase 2: Single task + URL → direct execution\nPhase 3: Single task execution\n\nThe action is \"研究\" (research), which according to the action judgment rules, maps to empty action (default).\n\nLet me start with Phase 1.\n\nThe skill directory is: /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router\n\nSo scripts are at: /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/\n\nLet me proceed step by step.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The user has invoked the sop-intent-router skill with the intent to \"研究这个视频 https://www.youtube.com/watch?v=78YQMfgPlwA\" (research this video). This is a single task with a URL, so it falls under Case A - direct execution.\n\nLet me follow the SOP:\n\nPhase 1: Load environment variables\nPhase 2: Single task + URL → direct execution\nPhase 3: Single task execution\n\nThe action is \"研究\" (research), which according to the action judgment rules, maps to empty action (default).\n\nLet me start with Phase 1.\n\nThe skill directory is: /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router\n\nSo scripts are at: /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/\n\nLet me proceed step by step.",
+      "tool_calls": [
+        {
+          "id": "call_00_FKO6AmF2OWlfnhEyHAcA3426",
+          "call_id": "call_00_FKO6AmF2OWlfnhEyHAcA3426",
+          "response_item_id": "fc_00_FKO6AmF2OWlfnhEyHAcA3426",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"set -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a\\nset -a && source ~/.hermes/.env 2>/dev/null; set +a\\necho \\\"ENV LOADED\\\"\\necho \\\"GOOGLE_CLOUD_API_KEY: ${GOOGLE_CLOUD_API_KEY:0:10}...\\\"\\necho \\\"OPENAI_API_KEY: ${OPENAI_API_KEY:0:10}...\\\"\", \"timeout\": 10}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"ENV LOADED\\nGOOGLE_CLOUD_API_KEY: AQ.Ab8RN6I...\\nOPENAI_API_KEY: ...\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_FKO6AmF2OWlfnhEyHAcA3426"
+    },
+    {
+      "role": "assistant",
+      "content": "### Phase 3 Step 3.1: 抓取内容\n\n这是一个 YouTube 视频 URL，先看看 `web_fetch.py` 是否支持处理：",
+      "reasoning": "Environment loaded. Now Phase 3 Step 3.1: Since this is a YouTube URL (not a regular web article), I need to think about how to handle it.\n\nThe skill says for web sources:\n```bash\npython3 __SKILL_DIR__/scripts/web_fetch.py {url} > /tmp/intent-raw.md\n```\n\nFor non-web (github/arxiv/reddit):\n```bash\npython3 -c \"print('# {url}\\n\\n**来源**: {url}\\n**意图**: {intent}')\" > /tmp/intent-raw.md\n```\n\nA YouTube video is a web source, but web_fetch.py likely just fetches HTML content from the page. That's not the best approach for a YouTube video - we'd want to get the transcript or description. However, the SOP says to follow the steps as written.\n\nLet me first look at the web_fetch.py to understand what it does.\n\nActually, let me just run it as instructed for now and see what happens. If it works well enough for YouTube, great. Otherwise we can adjust.\n\nWait, actually let me check what web_fetch.py does first.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Environment loaded. Now Phase 3 Step 3.1: Since this is a YouTube URL (not a regular web article), I need to think about how to handle it.\n\nThe skill says for web sources:\n```bash\npython3 __SKILL_DIR__/scripts/web_fetch.py {url} > /tmp/intent-raw.md\n```\n\nFor non-web (github/arxiv/reddit):\n```bash\npython3 -c \"print('# {url}\\n\\n**来源**: {url}\\n**意图**: {intent}')\" > /tmp/intent-raw.md\n```\n\nA YouTube video is a web source, but web_fetch.py likely just fetches HTML content from the page. That's not the best approach for a YouTube video - we'd want to get the transcript or description. However, the SOP says to follow the steps as written.\n\nLet me first look at the web_fetch.py to understand what it does.\n\nActually, let me just run it as instructed for now and see what happens. If it works well enough for YouTube, great. Otherwise we can adjust.\n\nWait, actually let me check what web_fetch.py does first.",
+      "tool_calls": [
+        {
+          "id": "call_00_IrjyX3xefVn1ByQi0vQU5360",
+          "call_id": "call_00_IrjyX3xefVn1ByQi0vQU5360",
+          "response_item_id": "fc_00_IrjyX3xefVn1ByQi0vQU5360",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"name\": \"sop-intent-router\", \"file_path\": \"scripts/web_fetch.py\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"sop-intent-router\", \"file\": \"scripts/web_fetch.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"\\nweb_fetch.py: 抓取网页正文，输出 Markdown 格式。\\n支持：普通 HTML 页面、技术博客（Anthropic/OpenAI engineering 等）\\n\\\"\\\"\\\"\\n\\nimport html\\nimport json\\nimport os\\nimport re\\nimport subprocess\\nimport sys\\nimport urllib.request\\nfrom pathlib import Path\\n\\n\\ndef fetch_raw(url: str) -> str:\\n    \\\"\\\"\\\"用 curl 抓取 HTML，绕过简单反爬\\\"\\\"\\\"\\n    result = subprocess.run([\\n        \\\"curl\\\", \\\"-s\\\", \\\"-L\\\",\\n        \\\"-H\\\", \\\"User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \\\"\\n              \\\"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\\\",\\n        \\\"-H\\\", \\\"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\\\",\\n        \\\"-H\\\", \\\"Accept-Language: zh-CN,zh;q=0.9,en;q=0.8\\\",\\n        \\\"--max-time\\\", \\\"20\\\",\\n        \\\"--compressed\\\",\\n        url,\\n    ], capture_output=True, text=True)\\n    return result.stdout\\n\\n\\ndef extract_meta(html_text: str) -> dict:\\n    \\\"\\\"\\\"提取 og:title, og:description, title\\\"\\\"\\\"\\n    def find(pattern):\\n        m = re.search(pattern, html_text, re.IGNORECASE | re.DOTALL)\\n        return html.unescape(m.group(1).strip()) if m else \\\"\\\"\\n\\n    title = (find(r'<meta[^>]+property=[\\\"\\\\']og:title[\\\"\\\\'][^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\']') or\\n             find(r'<meta[^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\'][^>]+property=[\\\"\\\\']og:title[\\\"\\\\']') or\\n             find(r'<title[^>]*>([^<]+)</title>'))\\n    desc = (find(r'<meta[^>]+property=[\\\"\\\\']og:description[\\\"\\\\'][^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\']') or\\n            find(r'<meta[^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\'][^>]+property=[\\\"\\\\']og:description[\\\"\\\\']') or\\n            find(r'<meta[^>]+name=[\\\"\\\\']description[\\\"\\\\'][^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\']') or\\n            find(r'<meta[^>]+content=[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\'][^>]+name=[\\\"\\\\']description[\\\"\\\\']'))\\n    return {\\\"title\\\": title, \\\"description\\\": desc}\\n\\n\\ndef clean_html(text: str) -> str:\\n    \\\"\\\"\\\"去除 HTML 标签，保留基本结构\\\"\\\"\\\"\\n    # 去掉 script/style/nav/footer\\n    text = re.sub(r'<(script|style|nav|footer|header|aside)[^>]*>.*?</\\\\1>',\\n                  '', text, flags=re.DOTALL | re.IGNORECASE)\\n    # h1-h6 → markdown 标题\\n    text = re.sub(r'<h([1-6])[^>]*>(.*?)</h\\\\1>',\\n                  lambda m: '\\\\n' + '#' * int(m.group(1)) + ' ' +\\n                  re.sub(r'<[^>]+>', '', m.group(2)).strip() + '\\\\n',\\n                  text, flags=re.DOTALL | re.IGNORECASE)\\n    # p → 段落\\n    text = re.sub(r'<p[^>]*>(.*?)</p>',\\n                  lambda m: '\\\\n' + re.sub(r'<[^>]+>', '', m.group(1)).strip() + '\\\\n',\\n                  text, flags=re.DOTALL | re.IGNORECASE)\\n    # li → 列表\\n    text = re.sub(r'<li[^>]*>(.*?)</li>',\\n                  lambda m: '- ' + re.sub(r'<[^>]+>', '', m.group(1)).strip() + '\\\\n',\\n                  text, flags=re.DOTALL | re.IGNORECASE)\\n    # code → backtick\\n    text = re.sub(r'<code[^>]*>(.*?)</code>',\\n                  lambda m: '`' + re.sub(r'<[^>]+>', '', m.group(1)) + '`',\\n                  text, flags=re.DOTALL | re.IGNORECASE)\\n    # 去掉剩余标签\\n    text = re.sub(r'<[^>]+>', ' ', text)\\n    text = html.unescape(text)\\n    # 清理多余空行\\n    text = re.sub(r'\\\\n{3,}', '\\\\n\\\\n', text)\\n    text = re.sub(r'[ \\\\t]+', ' ', text)\\n    return text.strip()\\n\\n\\ndef try_json_ld(html_text: str) -> str:\\n    \\\"\\\"\\\"尝试从 JSON-LD 提取文章内容（Anthropic 等 Next.js 站点）\\\"\\\"\\\"\\n    matches = re.findall(\\n        r'<script[^>]+type=[\\\"\\\\']application/ld\\\\+json[\\\"\\\\'][^>]*>(.*?)</script>',\\n        html_text, re.DOTALL | re.IGNORECASE\\n    )\\n    for m in matches:\\n        try:\\n            data = json.loads(m.strip())\\n            if isinstance(data, list):\\n                data = data[0]\\n            body = data.get(\\\"articleBody\\\") or data.get(\\\"description\\\") or \\\"\\\"\\n            if len(body) > 200:\\n                return body\\n        except Exception:\\n            continue\\n    return \\\"\\\"\\n\\n\\ndef try_next_data(html_text: str) -> str:\\n    \\\"\\\"\\\"从 Next.js __NEXT_DATA__ 提取内容\\\"\\\"\\\"\\n    m = re.search(r'<script[^>]+id=[\\\"\\\\']__NEXT_DATA__[\\\"\\\\'][^>]*>(.*?)</script>',\\n                  html_text, re.DOTALL | re.IGNORECASE)\\n    if not m:\\n        return \\\"\\\"\\n    try:\\n        data = json.loads(m.group(1))\\n        # 递归搜索 content/body/text 字段\\n        def search(obj, keys=(\\\"content\\\", \\\"body\\\", \\\"text\\\", \\\"description\\\"), depth=0):\\n            if depth > 5:\\n                return \\\"\\\"\\n            if isinstance(obj, dict):\\n                for k in keys:\\n                    if k in obj and isinstance(obj[k], str) and len(obj[k]) > 300:\\n                        return obj[k]\\n                for v in obj.values():\\n                    r = search(v, keys, depth + 1)\\n                    if r:\\n                        return r\\n            elif isinstance(obj, list):\\n                for item in obj:\\n                    r = search(item, keys, depth + 1)\\n                    if r:\\n                        return r\\n            return \\\"\\\"\\n        return search(data)\\n    except Exception:\\n        return \\\"\\\"\\n\\n\\ndef extract_main_content(html_text: str) -> str:\\n    \\\"\\\"\\\"主内容提取：优先 article/main 标签，fallback body\\\"\\\"\\\"\\n    # 优先 <article> 或 <main>\\n    for tag in ['article', 'main', 'div[^>]+class=[\\\"\\\\'][^\\\"\\\\']*(?:content|post|article|body)[^\\\"\\\\']*[\\\"\\\\']']:\\n        m = re.search(f'<{tag}>(.*?)</{tag.split(\\\"[\\\")[0]}>', html_text,\\n                      re.DOTALL | re.IGNORECASE)\\n        if m and len(m.group(1)) > 500:\\n            return clean_html(m.group(1))\\n    return clean_html(html_text)\\n\\n\\ndef fetch_and_convert(url: str) -> str:\\n    \\\"\\\"\\\"主函数：抓取 URL，转换为 Markdown\\\"\\\"\\\"\\n    html_text = fetch_raw(url)\\n    if not html_text.strip():\\n        return f\\\"# {url}\\\\n\\\\n无法抓取内容。\\\\n\\\"\\n\\n    meta = extract_meta(html_text)\\n    title = meta[\\\"title\\\"] or url.split(\\\"/\\\")[-1] or url\\n\\n    # 尝试结构化内容\\n    content = try_json_ld(html_text) or try_next_data(html_text)\\n    if len(content) < 300:\\n        content = extract_main_content(html_text)\\n\\n    # 截断过长内容（避免超出 LLM context）\\n    if len(content) > 8000:\\n        content = content[:8000] + \\\"\\\\n\\\\n...[内容已截断]\\\"\\n\\n    lines = [\\n        f\\\"# {title}\\\",\\n        \\\"\\\",\\n        f\\\"**来源**: {url}\\\",\\n    ]\\n    if meta[\\\"description\\\"]:\\n        lines += [\\\"\\\", f\\\"**摘要**: {meta['description']}\\\"]\\n    lines += [\\\"\\\", \\\"---\\\", \\\"\\\", content]\\n\\n    return \\\"\\\\n\\\".join(lines)\\n\\n\\nif __name__ == \\\"__main__\\\":\\n    if len(sys.argv) < 2:\\n        print(\\\"用法: web_fetch.py <url>\\\")\\n        sys.exit(1)\\n    print(fetch_and_convert(sys.argv[1]))\\n\", \"file_type\": \".py\"}",
+      "tool_call_id": "call_00_IrjyX3xefVn1ByQi0vQU5360"
+    },
+    {
+      "role": "assistant",
+      "content": "好的，`web_fetch.py` 可以抓取 YouTube 页面元数据（标题、描述）。运行它：",
+      "reasoning": "`web_fetch.py` is a general web scraping tool - it'll fetch the HTML of the YouTube page and extract metadata. For a YouTube video, this will get the page title, description, and some content. It should work for basic info extraction.\n\nLet me run it.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "`web_fetch.py` is a general web scraping tool - it'll fetch the HTML of the YouTube page and extract metadata. For a YouTube video, this will get the page title, description, and some content. It should work for basic info extraction.\n\nLet me run it.",
+      "tool_calls": [
+        {
+          "id": "call_00_0yLceZtwg9wokBMu6AjD6790",
+          "call_id": "call_00_0yLceZtwg9wokBMu6AjD6790",
+          "response_item_id": "fc_00_0yLceZtwg9wokBMu6AjD6790",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"python3 /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/web_fetch.py \\\"https://www.youtube.com/watch?v=78YQMfgPlwA\\\" > /tmp/intent-raw.md 2>/tmp/intent-error.log; echo \\\"EXIT: $?\\\"\", \"timeout\": 30}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"EXIT: 0\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_0yLceZtwg9wokBMu6AjD6790"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me check the output to see what we got.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me check the output to see what we got.",
+      "tool_calls": [
+        {
+          "id": "call_00_ahmUuH2Fn82PCehtaUtd2231",
+          "call_id": "call_00_ahmUuH2Fn82PCehtaUtd2231",
+          "response_item_id": "fc_00_ahmUuH2Fn82PCehtaUtd2231",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"head -50 /tmp/intent-raw.md\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"# 8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台\\n\\n**来源**: https://www.youtube.com/watch?v=78YQMfgPlwA\\n\\n**摘要**: 🚀 一键开启 24/7 OpenClaw Agent，内置精选 expert skills、持续更新最新版、还包含模型折扣：https://myclaw.ai/?utm_source=yt-yahaxuetangd5--------------------------------------你的Hermes A...\\n\\n---\\n\\n8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台 - YouTube 关于 新闻 版权 联系我们 创作者 广告 开发者 条款 隐私权 政策与安全 YouTube 的运作方式 测试新功能 NFL Sunday Ticket © 2026 Google LLC\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_ahmUuH2Fn82PCehtaUtd2231"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good - we got the YouTube video title and description. The title is \"8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台\" which is about Hermes Agent. The content is limited since web_fetch.py just scrapes HTML - it got the title and description but not much body content from the YouTube page.\n\nLet me see the full output and check if there's any error log.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good - we got the YouTube video title and description. The title is \"8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台\" which is about Hermes Agent. The content is limited since web_fetch.py just scrapes HTML - it got the title and description but not much body content from the YouTube page.\n\nLet me see the full output and check if there's any error log.",
+      "tool_calls": [
+        {
+          "id": "call_00_op0x7oPcGbeVQ6tORnKM3373",
+          "call_id": "call_00_op0x7oPcGbeVQ6tORnKM3373",
+          "response_item_id": "fc_00_op0x7oPcGbeVQ6tORnKM3373",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cat /tmp/intent-error.log\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_op0x7oPcGbeVQ6tORnKM3373"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "No errors. Let me see the full output.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "No errors. Let me see the full output.",
+      "tool_calls": [
+        {
+          "id": "call_00_aeUg54c2YPFIygPGMJvW2498",
+          "call_id": "call_00_aeUg54c2YPFIygPGMJvW2498",
+          "response_item_id": "fc_00_aeUg54c2YPFIygPGMJvW2498",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cat /tmp/intent-raw.md\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"# 8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台\\n\\n**来源**: https://www.youtube.com/watch?v=78YQMfgPlwA\\n\\n**摘要**: 🚀 一键开启 24/7 OpenClaw Agent，内置精选 expert skills、持续更新最新版、还包含模型折扣：https://myclaw.ai/?utm_source=yt-yahaxuetangd5--------------------------------------你的Hermes A...\\n\\n---\\n\\n8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台 - YouTube 关于 新闻 版权 联系我们 创作者 广告 开发者 条款 隐私权 政策与安全 YouTube 的运作方式 测试新功能 NFL Sunday Ticket © 2026 Google LLC\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_aeUg54c2YPFIygPGMJvW2498"
+    },
+    {
+      "role": "assistant",
+      "content": "成功抓取到 YouTube 页面信息。现在执行 **Step 3.2**：写入内容并触发 pipeline。\n\n先看看 `write_and_trigger.py` 的参数说明：",
+      "reasoning": "The web_fetch.py got the title and description from the YouTube page. The content is the video title and some metadata. This is a Chinese video about Hermes Agent (8萬顆星 = 80k stars).\n\nHowever, the actual content/transcript of the video is limited because YouTube pages don't show the full transcript in the HTML. For a more complete analysis, we might want to also use the youtube-content skill to get the transcript. But the SOP says to use web_fetch.py for web sources and then proceed to Step 3.2.\n\nLet me proceed to Step 3.2: write_and_trigger.py\n\nThe action is \"研究\" which maps to empty (default) action per the rules.\n\nLet me check what write_and_trigger.py does first.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The web_fetch.py got the title and description from the YouTube page. The content is the video title and some metadata. This is a Chinese video about Hermes Agent (8萬顆星 = 80k stars).\n\nHowever, the actual content/transcript of the video is limited because YouTube pages don't show the full transcript in the HTML. For a more complete analysis, we might want to also use the youtube-content skill to get the transcript. But the SOP says to use web_fetch.py for web sources and then proceed to Step 3.2.\n\nLet me proceed to Step 3.2: write_and_trigger.py\n\nThe action is \"研究\" which maps to empty (default) action per the rules.\n\nLet me check what write_and_trigger.py does first.",
+      "tool_calls": [
+        {
+          "id": "call_00_ExqGFmbiiG1uxO24CFSJ7498",
+          "call_id": "call_00_ExqGFmbiiG1uxO24CFSJ7498",
+          "response_item_id": "fc_00_ExqGFmbiiG1uxO24CFSJ7498",
+          "type": "function",
+          "function": {
+            "name": "skill_view",
+            "arguments": "{\"file_path\": \"scripts/write_and_trigger.py\", \"name\": \"sop-intent-router\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"success\": true, \"name\": \"sop-intent-router\", \"file\": \"scripts/write_and_trigger.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"\\nwrite_and_trigger.py: 将内容写入对应 pipeline 的 raw/ 目录并 git push 触发。\\n\\\"\\\"\\\"\\n\\nimport argparse\\nimport json\\nimport os\\nimport re\\nimport subprocess\\nimport sys\\nfrom pathlib import Path\\n\\nimport yaml\\n\\nWIKI_BASE = Path.home() / \\\"wiki\\\"\\n\\n# 追踪参数黑名单（通用，不感知 source_type）\\n_TRACKING_PARAMS = {\\\"si\\\", \\\"utm_source\\\", \\\"utm_medium\\\", \\\"utm_campaign\\\",\\n                    \\\"utm_term\\\", \\\"utm_content\\\", \\\"ref\\\", \\\"feature\\\", \\\"mc_cid\\\"}\\n\\n\\ndef normalize_url(url: str) -> str:\\n    \\\"\\\"\\\"去掉追踪参数，返回规范化 URL（不做 youtu.be→youtube.com 等转换）。\\\"\\\"\\\"\\n    from urllib.parse import urlparse, urlencode, parse_qs, urlunparse\\n    try:\\n        p = urlparse(url)\\n        qs = {k: v for k, v in parse_qs(p.query).items()\\n              if k.lower() not in _TRACKING_PARAMS}\\n        return urlunparse(p._replace(query=urlencode(qs, doseq=True)))\\n    except Exception:\\n        return url\\n\\n\\ndef find_existing_by_url(source_dir: Path, url: str) -> Path | None:\\n    \\\"\\\"\\\"在 source_dir 下找 frontmatter 含 source_url 匹配的文件。\\\"\\\"\\\"\\n    normalized = normalize_url(url)\\n    for f in source_dir.glob(\\\"*.md\\\"):\\n        try:\\n            text = f.read_text(encoding=\\\"utf-8\\\")\\n            for line in text.splitlines()[:10]:   # frontmatter 在文件头\\n                if line.startswith(\\\"source_url:\\\"):\\n                    existing_url = line.split(\\\":\\\", 1)[1].strip()\\n                    if normalize_url(existing_url) == normalized:\\n                        return f\\n        except Exception:\\n            continue\\n    return None\\n\\n\\n# URL 自动识别规则（优先于 LLM 传入的 source_type，防止误判）\\nURL_SOURCE_RULES = [\\n    ([\\\"youtube.com/watch\\\", \\\"youtu.be/\\\", \\\"youtube.com/shorts\\\"], \\\"youtube\\\"),\\n    ([\\\"github.com/\\\"], \\\"github\\\"),\\n    ([\\\"arxiv.org/abs\\\", \\\"arxiv.org/pdf\\\"], \\\"arxiv\\\"),\\n    ([\\\"reddit.com/r/\\\"], \\\"reddit\\\"),\\n    ([\\\"douyin.com/\\\", \\\"iesdouyin.com/\\\"], \\\"douyin\\\"),\\n]\\n\\n\\ndef detect_source_type(url: str, fallback: str) -> str:\\n    \\\"\\\"\\\"从 URL 自动识别来源类型，避免 LLM 误判。\\\"\\\"\\\"\\n    url_lower = url.lower()\\n    for patterns, source in URL_SOURCE_RULES:\\n        if any(p in url_lower for p in patterns):\\n            return source\\n    return fallback\\n\\n\\ndef log(msg):\\n    print(f\\\"[write-trigger] {msg}\\\", flush=True)\\n\\n\\ndef send_tg(text: str):\\n    token = os.environ.get(\\\"YOUTUBE_WIKI_TG_TOKEN\\\", \\\"\\\")\\n    chat_id = os.environ.get(\\\"YOUTUBE_WIKI_TG_CHAT_ID\\\", \\\"\\\")\\n    if not token or not chat_id:\\n        return\\n    try:\\n        subprocess.run([\\n            \\\"curl\\\", \\\"-s\\\", \\\"-X\\\", \\\"POST\\\",\\n            f\\\"https://api.telegram.org/bot{token}/sendMessage\\\",\\n            \\\"-d\\\", f\\\"chat_id={chat_id}\\\",\\n            \\\"-d\\\", \\\"disable_web_page_preview=true\\\",\\n            \\\"--data-urlencode\\\", f\\\"text={text}\\\",\\n            \\\"--max-time\\\", \\\"10\\\",\\n        ], capture_output=True)\\n    except Exception:\\n        pass\\n\\n\\ndef find_pipeline(source_type: str) -> dict | None:\\n    for sop_file in WIKI_BASE.glob(\\\"*/sop.yaml\\\"):\\n        try:\\n            sop = yaml.safe_load(sop_file.read_text())\\n            for stage in sop.get(\\\"pipeline\\\", []):\\n                trigger = stage.get(\\\"trigger\\\", \\\"\\\")\\n                if source_type in trigger or f\\\"{source_type}-links\\\" in trigger:\\n                    source_dir = (stage.get(\\\"params\\\", {}).get(\\\"source_dir\\\") or\\n                                  trigger.split(\\\"/**\\\")[0])\\n                    return {\\n                        \\\"pipeline_name\\\": sop[\\\"name\\\"],\\n                        \\\"wiki_local_path\\\": sop[\\\"wiki_local_path\\\"],\\n                        \\\"source_dir\\\": source_dir,\\n                    }\\n        except Exception:\\n            continue\\n    return None\\n\\n\\ndef create_pipeline(source_type: str, tg_chat_id: str) -> bool:\\n    secret = \\\"L84zG48C1OeuwNXz8d7myEttQGjWkXrfOfWBJAHXMJs\\\"\\n    payload = json.dumps({\\n        \\\"pipeline_name\\\": f\\\"{source_type}-wiki\\\",\\n        \\\"source_type\\\": source_type,\\n        \\\"stages\\\": \\\"wiki-build,tg-notify\\\",\\n        \\\"github_account\\\": \\\"divanoo65\\\",\\n        \\\"tg_chat_id\\\": tg_chat_id,\\n        \\\"source_dir\\\": f\\\"{source_type}-links\\\",\\n    })\\n    r = subprocess.run([\\n        \\\"curl\\\", \\\"-s\\\", \\\"-X\\\", \\\"POST\\\",\\n        \\\"http://localhost:8644/webhooks/sop-pipeline-creator\\\",\\n        \\\"-H\\\", \\\"Content-Type: application/json\\\",\\n        \\\"-H\\\", f\\\"X-Gitlab-Token: {secret}\\\",\\n        \\\"-d\\\", payload,\\n    ], capture_output=True, text=True)\\n    try:\\n        return json.loads(r.stdout).get(\\\"status\\\") == \\\"accepted\\\"\\n    except Exception:\\n        return False\\n\\n\\ndef main():\\n    parser = argparse.ArgumentParser()\\n    parser.add_argument(\\\"--content-file\\\", required=True)\\n    parser.add_argument(\\\"--url\\\", required=True)\\n    parser.add_argument(\\\"--source-type\\\", required=True)\\n    parser.add_argument(\\\"--tg-chat-id\\\", default=\\\"\\\")\\n    parser.add_argument(\\\"--action\\\", default=\\\"\\\",\\n                        help=\\\"内容变换动作: translate/summarize/extract_key_points\\\")\\n    parser.add_argument(\\\"--intent\\\", default=\\\"\\\", help=\\\"原始用户意图（用于 TG 通知）\\\")\\n    args = parser.parse_args()\\n\\n    tg_chat_id = args.tg_chat_id or os.environ.get(\\\"YOUTUBE_WIKI_TG_CHAT_ID\\\", \\\"\\\")\\n\\n    # URL 自动识别覆盖 LLM 传入的 source_type，防止误判\\n    detected = detect_source_type(args.url, args.source_type)\\n    if detected != args.source_type:\\n        log(f\\\"source_type 自动修正: {args.source_type} → {detected} (url={args.url})\\\")\\n    args.source_type = detected\\n\\n    # TG 开始通知\\n    intent_short = args.intent[:60] + \\\"...\\\" if len(args.intent) > 60 else args.intent\\n    send_tg(f\\\"🧭 [INTENT-ROUTER] 意图收到\\\\n{intent_short}\\\\n⏳ 正在路由...\\\")\\n    content = Path(args.content_file).read_text(encoding=\\\"utf-8\\\")\\n\\n    pipeline = find_pipeline(args.source_type)\\n    if not pipeline:\\n        log(f\\\"未找到 {args.source_type} pipeline，创建中...\\\")\\n        ok = create_pipeline(args.source_type, tg_chat_id)\\n        if ok:\\n            import time\\n            wiki_path = WIKI_BASE / f\\\"{args.source_type}-wiki\\\"\\n            for _ in range(18):\\n                time.sleep(5)\\n                if (wiki_path / \\\"sop.yaml\\\").exists():\\n                    pipeline = find_pipeline(args.source_type)\\n                    break\\n        if not pipeline:\\n            print(json.dumps({\\\"status\\\": \\\"error\\\", \\\"message\\\": \\\"pipeline 创建失败\\\"}))\\n            sys.exit(1)\\n\\n        # 新建 pipeline 需要设置 GitHub Actions variable\\n        source = __import__(\\\"subprocess\\\")\\n        gh_token = os.environ.get(\\\"DIVANOO65_GITHUB_TOKEN\\\", os.environ.get(\\\"GITHUB_TOKEN\\\", \\\"\\\"))\\n        if gh_token:\\n            source.run([\\n                \\\"curl\\\", \\\"-s\\\", \\\"-X\\\", \\\"POST\\\",\\n                \\\"-H\\\", f\\\"Authorization: Bearer {gh_token}\\\",\\n                \\\"-H\\\", \\\"Content-Type: application/json\\\",\\n                \\\"-d\\\", '{\\\"name\\\":\\\"HERMES_WEBHOOK_TOKEN\\\",\\\"value\\\":\\\"L84zG48C1OeuwNXz8d7myEttQGjWkXrfOfWBJAHXMJs\\\"}',\\n                f\\\"https://api.github.com/repos/divanoo65/{args.source_type}-wiki/actions/variables\\\"\\n            ], capture_output=True)\\n\\n    wiki_path = Path(pipeline[\\\"wiki_local_path\\\"]).expanduser()\\n\\n    # ── 数据契约强制执行 ──────────────────────────────────────\\n    # raw/web-links/   = 原始内容，永远保留，不覆盖已有原文\\n    # raw/web-transformed/ = 处理后内容，由 content-transform 写入\\n    # 任何 action 都不改变这个契约\\n    source_dir = Path(pipeline[\\\"source_dir\\\"])\\n    if not source_dir.is_absolute():\\n        source_dir = wiki_path / source_dir\\n    source_dir.mkdir(parents=True, exist_ok=True)\\n\\n    # ── 幂等写入：按 source_url 查找已有文件，有则更新，无则新建 ──────────\\n    existing = find_existing_by_url(source_dir, args.url)\\n    if existing:\\n        dest = existing\\n        log(f\\\"发现已有文件（source_url 匹配），更新: {dest}\\\")\\n        is_update = True\\n    else:\\n        slug = re.sub(r'[^\\\\w-]', '-',\\n                      args.url.split(\\\"//\\\")[-1].split(\\\"/\\\")[-1] or\\n                      args.url.split(\\\"//\\\")[-1].replace(\\\"/\\\", \\\"-\\\"))[:60]\\n        slug = slug.strip(\\\"-\\\") or \\\"content\\\"\\n        dest = source_dir / f\\\"{slug}.md\\\"\\n        is_update = False\\n\\n    # source_url 始终写入 frontmatter（canonical ID，贯穿全流程）\\n    normalized_url = normalize_url(args.url)\\n    frontmatter_lines = [\\n        \\\"---\\\",\\n        f\\\"source_url: {normalized_url}\\\",\\n    ]\\n    if args.action:\\n        frontmatter_lines.append(f\\\"action: {args.action}\\\")\\n    frontmatter_lines.append(\\\"---\\\")\\n    frontmatter = \\\"\\\\n\\\".join(frontmatter_lines) + \\\"\\\\n\\\\n\\\"\\n    final_content = frontmatter + content\\n\\n    dest.write_text(final_content, encoding=\\\"utf-8\\\")\\n    op = \\\"更新\\\" if is_update else \\\"新建\\\"\\n    log(f\\\"{op} {dest}\\\" + (f\\\" [action={args.action}]\\\" if args.action else \\\"\\\"))\\n\\n    # ── 数据总线：写 source_url 到 pipeline-context.json ──────────────────\\n    # 所有后续 stage 通过 pipeline-context.json 获取 source_url，不依赖各自文件 frontmatter\\n    ctx_file = wiki_path / \\\"raw\\\" / \\\"pipeline-context.json\\\"\\n    ctx_file.parent.mkdir(parents=True, exist_ok=True)\\n    ctx = {}\\n    if ctx_file.exists():\\n        try:\\n            ctx = json.loads(ctx_file.read_text())\\n        except Exception:\\n            pass\\n    ctx[\\\"source_url\\\"] = normalized_url\\n    ctx[\\\"source_type\\\"] = args.source_type\\n    ctx_file.write_text(json.dumps(ctx, ensure_ascii=False, indent=2))\\n    log(f\\\"pipeline-context.json 写入 source_url={normalized_url}\\\")\\n\\n    # git push\\n    try:\\n        subprocess.run([\\\"git\\\", \\\"pull\\\", \\\"--rebase\\\", \\\"origin\\\", \\\"main\\\"],\\n                       cwd=wiki_path, capture_output=True)\\n        subprocess.run([\\\"git\\\", \\\"add\\\", str(dest)], cwd=wiki_path, check=True,\\n                       capture_output=True)\\n        subprocess.run([\\\"git\\\", \\\"commit\\\", \\\"-m\\\",\\n                        f\\\"feat: add {slug} [{args.source_type}]\\\"],\\n                       cwd=wiki_path, check=True, capture_output=True)\\n        r = subprocess.run([\\\"git\\\", \\\"push\\\", \\\"origin\\\", \\\"main\\\"],\\n                           cwd=wiki_path, capture_output=True, text=True)\\n        if r.returncode != 0:\\n            subprocess.run([\\\"git\\\", \\\"pull\\\", \\\"--rebase\\\", \\\"origin\\\", \\\"main\\\"],\\n                           cwd=wiki_path, capture_output=True)\\n            subprocess.run([\\\"git\\\", \\\"push\\\", \\\"origin\\\", \\\"main\\\"],\\n                           cwd=wiki_path, check=True, capture_output=True)\\n    except subprocess.CalledProcessError as e:\\n        log(f\\\"git 失败: {e}\\\")\\n        print(json.dumps({\\\"status\\\": \\\"error\\\", \\\"message\\\": str(e)}))\\n        sys.exit(1)\\n\\n    # TG 完成通知\\n    action_label = f\\\" [{args.action}]\\\" if args.action else \\\"\\\"\\n    send_tg(\\n        f\\\"✅ [INTENT-ROUTER] 路由完成{action_label}\\\\n\\\"\\n        f\\\"📍 Pipeline: {pipeline['pipeline_name']}\\\\n\\\"\\n        f\\\"🔗 {args.url}\\\\n\\\"\\n        f\\\"⏳ Stage C/D 将自动执行...\\\"\\n    )\\n\\n    result = {\\n        \\\"status\\\": \\\"triggered\\\",\\n        \\\"pipeline\\\": pipeline[\\\"pipeline_name\\\"],\\n        \\\"url\\\": args.url,\\n        \\\"source_type\\\": args.source_type,\\n        \\\"file_written\\\": str(dest),\\n    }\\n    print(json.dumps(result, ensure_ascii=False, indent=2))\\n    log(f\\\"✅ 完成 → {pipeline['pipeline_name']}\\\")\\n\\n\\nif __name__ == \\\"__main__\\\":\\n    main()\\n\", \"file_type\": \".py\"}",
+      "tool_call_id": "call_00_ExqGFmbiiG1uxO24CFSJ7498"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "This is a comprehensive script. For a YouTube URL:\n1. It will auto-detect `source_type` as `youtube` (because youtube.com/watch is in URL_SOURCE_RULES)\n2. It will find an existing youtube pipeline or create one\n3. It writes the content to the youtube wiki's raw folder\n4. It pushes to git to trigger Stage C/D\n\nThe action for \"研究\" is empty per the rules table.\n\nLet me run the write_and_trigger.py script now.\n\nParameters:\n- --content-file /tmp/intent-raw.md\n- --url \"https://www.youtube.com/watch?v=78YQMfgPlwA\"\n- --source-type \"youtube\" (will be auto-detected)\n- --action \"\" (empty for 研究/分析/default)\n- --intent \"研究这个视频 https://www.youtube.com/watch?v=78YQMfgPlwA\"\n- --tg-chat-id should come from the payload\n\nWait, the user said tg_chat_id={tg_chat_id} in the key variables. The full payload is {payload}. Let me check if there's a tg_chat_id available.\n\nActually, looking at the payload variables: `intent=研究这个视频 https://www.youtube.com/watch?v=78YQMfgPlwA | tg_chat_id={tg_chat_id} | 完整payload={payload}`\n\nThe `{tg_chat_id}` is a template variable that should be substituted by the webhook system. But in the actual skill invocation context, it might be available as an environment variable.\n\nLet me check if there's a telegram chat ID available from the environment.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "This is a comprehensive script. For a YouTube URL:\n1. It will auto-detect `source_type` as `youtube` (because youtube.com/watch is in URL_SOURCE_RULES)\n2. It will find an existing youtube pipeline or create one\n3. It writes the content to the youtube wiki's raw folder\n4. It pushes to git to trigger Stage C/D\n\nThe action for \"研究\" is empty per the rules table.\n\nLet me run the write_and_trigger.py script now.\n\nParameters:\n- --content-file /tmp/intent-raw.md\n- --url \"https://www.youtube.com/watch?v=78YQMfgPlwA\"\n- --source-type \"youtube\" (will be auto-detected)\n- --action \"\" (empty for 研究/分析/default)\n- --intent \"研究这个视频 https://www.youtube.com/watch?v=78YQMfgPlwA\"\n- --tg-chat-id should come from the payload\n\nWait, the user said tg_chat_id={tg_chat_id} in the key variables. The full payload is {payload}. Let me check if there's a tg_chat_id available.\n\nActually, looking at the payload variables: `intent=研究这个视频 https://www.youtube.com/watch?v=78YQMfgPlwA | tg_chat_id={tg_chat_id} | 完整payload={payload}`\n\nThe `{tg_chat_id}` is a template variable that should be substituted by the webhook system. But in the actual skill invocation context, it might be available as an environment variable.\n\nLet me check if there's a telegram chat ID available from the environment.",
+      "tool_calls": [
+        {
+          "id": "call_00_Fl1hW29ZB2Om6FMDnt7t8331",
+          "call_id": "call_00_Fl1hW29ZB2Om6FMDnt7t8331",
+          "response_item_id": "fc_00_Fl1hW29ZB2Om6FMDnt7t8331",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"echo \\\"TG_CHAT: ${YOUTUBE_WIKI_TG_CHAT_ID:-not set}\\\"\\necho \\\"WEBHOOK_TG_CHAT: ${WEBHOOK_TG_CHAT_ID:-not set}\\\"\\n# Check if we can get tg_chat_id from payload env\\nenv | grep -i tg_chat 2>/dev/null || echo \\\"no tg_chat env found\\\"\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"TG_CHAT: 6938920500\\nWEBHOOK_TG_CHAT: not set\\nYOUTUBE_WIKI_TG_CHAT_ID=6938920500\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_Fl1hW29ZB2Om6FMDnt7t8331"
+    },
+    {
+      "role": "assistant",
+      "content": "`YOUTUBE_WIKI_TG_CHAT_ID` 已设置（`6938920500`）。现在执行 Step 3.2：写入并触发 pipeline。",
+      "reasoning": "`YOUTUBE_WIKI_TG_CHAT_ID=6938920500` is set. The script will use this if --tg-chat-id is not provided. Let me run the write_and_trigger.py now.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "`YOUTUBE_WIKI_TG_CHAT_ID=6938920500` is set. The script will use this if --tg-chat-id is not provided. Let me run the write_and_trigger.py now.",
+      "tool_calls": [
+        {
+          "id": "call_00_agJvaCPp45wy7WvWFZcV2060",
+          "call_id": "call_00_agJvaCPp45wy7WvWFZcV2060",
+          "response_item_id": "fc_00_agJvaCPp45wy7WvWFZcV2060",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"set -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a\\nset -a && source ~/.hermes/.env 2>/dev/null; set +a\\n\\npython3 /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-intent-router/scripts/write_and_trigger.py \\\\\\n  --content-file /tmp/intent-raw.md \\\\\\n  --url \\\"https://www.youtube.com/watch?v=78YQMfgPlwA\\\" \\\\\\n  --source-type \\\"youtube\\\" \\\\\\n  --action \\\"\\\" \\\\\\n  --intent \\\"研究这个视频 https://www.youtube.com/watch?v=78YQMfgPlwA\\\" 2>&1\", \"timeout\": 60}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"[write-trigger] 新建 /home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/watch-v-78YQMfgPlwA.md\\n[write-trigger] pipeline-context.json 写入 source_url=https://www.youtube.com/watch?v=78YQMfgPlwA\\n{\\n  \\\"status\\\": \\\"triggered\\\",\\n  \\\"pipeline\\\": \\\"youtube-research-wiki\\\",\\n  \\\"url\\\": \\\"https://www.youtube.com/watch?v=78YQMfgPlwA\\\",\\n  \\\"source_type\\\": \\\"youtube\\\",\\n  \\\"file_written\\\": \\\"/home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/watch-v-78YQMfgPlwA.md\\\"\\n}\\n[write-trigger] ✅ 完成 → youtube-research-wiki\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_agJvaCPp45wy7WvWFZcV2060"
+    },
+    {
+      "role": "assistant",
+      "content": "### ✅ 路由完成\n\n已成功写入并触发 pipeline：\n\n| 项目 | 值 |\n|------|-----|\n| **Pipeline** | `youtube-research-wiki` |\n| **源文件** | `raw/youtube-links/watch-v-78YQMfgPlwA.md` |\n| **内容** | 视频标题 + 描述（繁体中文 Hermes Agent 教程） |\n| **source_url** | `https://www.youtube.com/watch?v=78YQMfgPlwA` |\n\n验证写入内容：",
+      "reasoning": "The pipeline has been triggered successfully. The script:\n1. Found/used the existing `youtube-research-wiki` pipeline\n2. Wrote the file to `watch-v-78YQMfgPlwA.md`\n3. Pushed to git, which should trigger Stage C (wiki-build) and Stage D (tg-notify) via GitHub Actions\n\nLet me check what was actually written to the file to make sure it has proper frontmatter.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The pipeline has been triggered successfully. The script:\n1. Found/used the existing `youtube-research-wiki` pipeline\n2. Wrote the file to `watch-v-78YQMfgPlwA.md`\n3. Pushed to git, which should trigger Stage C (wiki-build) and Stage D (tg-notify) via GitHub Actions\n\nLet me check what was actually written to the file to make sure it has proper frontmatter.",
+      "tool_calls": [
+        {
+          "id": "call_00_CTEYyHj2t9QBi218e3MX0748",
+          "call_id": "call_00_CTEYyHj2t9QBi218e3MX0748",
+          "response_item_id": "fc_00_CTEYyHj2t9QBi218e3MX0748",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cat /home/zhouhuijuan1987/wiki/youtube-video-research-wiki/raw/youtube-links/watch-v-78YQMfgPlwA.md\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"---\\nsource_url: https://www.youtube.com/watch?v=78YQMfgPlwA\\n---\\n\\n# 8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台\\n\\n**来源**: https://www.youtube.com/watch?v=78YQMfgPlwA\\n\\n**摘要**: 🚀 一键开启 24/7 OpenClaw Agent，内置精选 expert skills、持续更新最新版、还包含模型折扣：https://myclaw.ai/?utm_source=yt-yahaxuetangd5--------------------------------------你的Hermes A...\\n\\n---\\n\\n8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台 - YouTube 关于 新闻 版权 联系我们 创作者 广告 开发者 条款 隐私权 政策与安全 YouTube 的运作方式 测试新功能 NFL Sunday Ticket © 2026 Google LLC\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_CTEYyHj2t9QBi218e3MX0748"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Everything looks good. The file has been written with proper frontmatter (source_url) and content. The pipeline has been triggered via git push, which should trigger Stage C (wiki-build) and Stage D (tg-notify).\n\nLet me confirm the git push worked by checking the recent commits.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Everything looks good. The file has been written with proper frontmatter (source_url) and content. The pipeline has been triggered via git push, which should trigger Stage C (wiki-build) and Stage D (tg-notify).\n\nLet me confirm the git push worked by checking the recent commits.",
+      "tool_calls": [
+        {
+          "id": "call_00_mRCON3ldyqOkhHVORSYL0907",
+          "call_id": "call_00_mRCON3ldyqOkhHVORSYL0907",
+          "response_item_id": "fc_00_mRCON3ldyqOkhHVORSYL0907",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && git log --oneline -3\", \"timeout\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"output\": \"2c11bd8 feat: add watch-v-78YQMfgPlwA [youtube]\\n38f0aeb chore: fix pipeline-context counts stage-c done [pipe:pipe-a6a03e6]\\n9bfe93b chore: stage-d done [pipe:pipe-a6a03e6] [run:gh-25968885803-1]\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_00_mRCON3ldyqOkhHVORSYL0907"
+    },
+    {
+      "role": "assistant",
+      "content": "---\n\n## ✅ 执行完成\n\n**视频文件已成功写入 pipeline，Stage C/D 将通过 GitHub Actions 自动执行。**\n\n### 路由总结\n\n| 项目 | 详情 |\n|------|------|\n| 📹 **视频标题** | 8萬顆星的Hermes Agent少了它根本不能用！3分鐘打造AI中控台 |\n| 🔗 **URL** | https://www.youtube.com/watch?v=78YQMfgPlwA |\n| 📂 **Pipeline** | `youtube-research-wiki` |\n| 📄 **写入文件** | `raw/youtube-links/watch-v-78YQMfgPlwA.md` |\n| ✅ **Git Push** | `2c11bd8 feat: add watch-v-78YQMfgPlwA [youtube]` |\n\n**后续流程**：\n1. **Stage C** — wiki-build 将抓取 YouTube 转录/字幕，构建知识图谱页面\n2. **Stage D** — tg-notify 完成后通过 Telegram 发送报告\n\n⏳ 流程正在 github actions 排队执行中...",
+      "reasoning": "The git push was successful - the commit is there. The workflow should now trigger via GitHub Actions to run Stage C (wiki-build) and Stage D (tg-notify).\n\nLet me provide a summary to the user (via the webhook response).",
+      "finish_reason": "stop",
+      "reasoning_content": "The git push was successful - the commit is there. The workflow should now trigger via GitHub Actions to run Stage C (wiki-build) and Stage D (tg-notify).\n\nLet me provide a summary to the user (via the webhook response)."
+    }
+  ]
+}
