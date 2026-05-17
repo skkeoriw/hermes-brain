@@ -111,6 +111,19 @@ When invoking the summarizer via the skill, you can override the provider with `
 | Extract full transcript (stdout) | `cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && docker compose exec -T summarizer python - <<'PY'\nfrom summarizer.transcription import get_transcript\ncfg={\n  'type_of_source':'YouTube Video',\n  'source_url_or_path':'https://www.youtube.com/watch?v=VIDEO_ID',\n  'use_youtube_captions':True,\n  'force_download':False,\n  'verbose':False,\n  'language':'auto',\n  'use_proxy':False,\n  'cache_transcript':False,\n  'audio_speed':1.0,\n  'transcription_method':'Cloud Whisper',\n  'whisper_model':'tiny'\n}\nprint(get_transcript(cfg))\nPY` |
 | Extract transcript and save to file | `cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && docker compose exec -T summarizer python - <<'PY'\nfrom summarizer.transcription import get_transcript\ncfg={\n  'type_of_source':'YouTube Video',\n  'source_url_or_path':'https://www.youtube.com/watch?v=VIDEO_ID',\n  'use_youtube_captions':True,\n  'force_download':False,\n  'verbose':False,\n  'language':'auto',\n  'use_proxy':False,\n  'cache_transcript':False,\n  'audio_speed':1.0,\n  'transcription_method':'Cloud Whisper',\n  'whisper_model':'tiny'\n}\nwith open('transcript.txt', 'w', encoding='utf-8') as f:\n    f.write(get_transcript(cfg))\nPY` |
 
+## CLI Reference (absorbed from summarize skill)
+
+The `summarize` vendor tool's full CLI reference has been absorbed into this umbrella skill. See:
+
+- `references/summarize-cli-reference.md` — Complete CLI flag reference, summary styles table (11 styles), examples for all provider combinations, multi-step workflow guidance, and warnings (Windows, social media Cobalt dependency, transcription fallback).
+
+Key notes absorbed:
+
+- **Summarization is independent of transcription** — you can use Cloud Whisper (Groq) for transcription and a different provider (DeepSeek, Gemini, OpenAI) for summarization.
+- **Prompt types** control output format: use `Summarization` for overviews, `Distill Wisdom` for insights, `Fact Checker` for claim verification, `Mermaid Diagram` for visual maps.
+- **No direct URL fetching** — always go through the CLI; the tool handles all downloading and transcription internally.
+- **Batch processing** supported: pass multiple `--source` values.
+
 ## Provider Configuration Examples
 
 See `references/provider-examples.md` for detailed examples of `.env` and `summarizer.yaml` configurations for various providers (DeepSeek, OpenAI, Anthropic, etc.).

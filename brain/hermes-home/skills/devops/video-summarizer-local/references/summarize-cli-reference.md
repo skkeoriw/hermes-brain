@@ -1,53 +1,30 @@
----
-name: summarize
-description: Transcribe and summarize videos from YouTube, local files, Google Drive, Dropbox, and social media platforms (TikTok, Instagram, Twitter/X, Reddit) using any OpenAI-compatible LLM. Use when asked to summarize, analyze, extract insights, fact-check, or create study materials from video content.
-license: MIT
-compatibility: Requires Python 3.7+, ffmpeg, and at least one OpenAI-compatible LLM API key in .env. Social media platforms (TikTok, Instagram, Twitter/X, Reddit) require a running Cobalt service.
-metadata:
-  author: summarize
-  version: "1.0"
-allowed-tools: Bash Read
----
+# Summarize CLI Reference
+
+> Absorbed from the `summarize` skill (vendored upstream project). This is the engine that `video-summarizer-local` wraps in Docker.
 
 ## Overview
 
-Runs `python -m summarizer` to transcribe videos and summarize them using a configurable LLM. Supports 11 summary styles and multiple providers.
+The `python -m summarizer` CLI transcribes videos and summarizes them using a configurable LLM. Supports 11 summary styles and multiple providers.
 
 **Never fetch, scrape, or download video URLs directly (e.g. with WebFetch or curl). The CLI handles all downloading, transcription, and summarization internally.**
 
-## Quick Start
-
-**Step 1 — Run the CLI:**
+## Quick Start (inside Docker)
 
 ```bash
-python -m summarizer --source "VIDEO_URL"
+cd ~/.hermes/skills/devops/video-summarizer-local/vendor/summarize && \
+docker compose exec -T summarizer python -m summarizer --source "VIDEO_URL"
 ```
 
-The tool uses the default provider from `summarizer.yaml`. No extra flags needed for basic usage.
+## File Locations (inside the vendor directory)
 
-**Step 2 — Read the output file:**
-
-The CLI prints the saved filename. Read it from `summaries/`:
-
-```
-[+] Saved watch_20260207_234533.md
-# Read: summaries/watch_20260207_234533.md
-```
-
-**Step 3 — Show the result to the user.**
-
-## File Locations
-
-All paths are relative to the **project root** (where `summarizer.yaml` and `setup.py` are). Do NOT look in your home directory or the skill directory.
-
-| File | Location |
-|------|----------|
+| File | Location (relative to vendor/summarize/) |
+|------|-----------------------------------------|
 | Config | `./summarizer.yaml` |
 | API keys | `./.env` |
 | Prompt templates | `./summarizer/prompts.json` |
 | Output summaries | `./summaries/<filename>.md` |
 
-## CLI Reference
+## CLI Flag Reference
 
 ```
 python -m summarizer [OPTIONS]
