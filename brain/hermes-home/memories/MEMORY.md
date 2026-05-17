@@ -16,4 +16,4 @@ webhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，
 §
 sop-notebooklm-research Pitfall #16 2026-05-13: pipeline-context.json 可能为空 `{}`（processor 自动写入静默失败或前序占位）。处理方式：视作新 pipeline，直接覆写完整版。不要在此空对象上做合并。
 §
-sop-tg-notify Step 9: 必须用 stage_c.run_id 做脚本 --run-id 参数（不是 webhook run_id）。我 2026-05-14 用错 webhook run_id。
+2026-05-17: terminal heredoc (python3 << 'PYEOF') 可静默失败——文件写入返回 success 但内容未持久化。python3 -c "..." 内联方式可靠。已更新 sop-notebooklm-research Pitfall #12。写 pipeline 关键文件后必须 cat 验证。
