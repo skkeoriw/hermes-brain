@@ -125,6 +125,29 @@
 | Telegram send | <5s | ❌ **Failed: "message is too long" (400 Bad Request)** |
 | **Total (2nd attempt, background)** | **~230s (~3 min 50s)** | Script finished but TG delivery failed |
 
+#### 2026-05-18 (Session 10 — cron job, foreground 300s + manual fallback)
+
+| Phase | Duration | Notes |
+|---|---|---|
+| auto_sync.sh (foreground, 300s timeout) | ~4 min | Jitter sleep 236s + git operations + push succeeded (6 files changed, +1969/-6) |
+| AI model: owl-alpha (1st, foreground) | ~45s | **Failed** — confirming cron deadlock pattern (cron agent model = script's first model) |
+| AI model: cobuddy:free (1st) | — | **Hung** — script killed by 300s cron timeout |
+| **Total (1st attempt, foreground)** | **~5 min** | Killed by 300s cron timeout (again — 5th confirmed failure with 300s foreground) |
+
+| Phase (manual fallback) | Duration | Notes |
+|---|---|---|
+| Kill hung processes | <5s | `pkill -f hermes_brain_sync_fallback; pkill -f 'hermes chat'` |
+| Collect diff info | <5s | `git log`, `git diff HEAD~1 HEAD --stat` — commit `d9cb35e` |
+| Compose concise report | <5s | Simple diff-based report (all AI models unavailable) |
+| Direct curl Telegram send | <5s | ✅ Success (message_id: 338) |
+| **Total (manual fallback)** | **~10s** | Completed successfully without `hermes chat` |
+
+**Key observations from Session 10:**
+- **GitHub repo remote recovered**: After 5+ days of "Repository not found" (Sessions 7-9, 2026-05-12/13), git push succeeded again. Repo `https://github.com/skkeoriw/hermes-brain.git` (note: renamed from `ChangfengHU` to `skkeoriw`) is accessible and accepting pushes. The remote URL in the script/config may need updating if it still references the old `ChangfengHU` path.
+- **300s foreground timeout failure confirmed again**: This is now the 5th consecutive failure when running inline with 300s timeout. The pattern is deterministic, not a fluke.
+- **`owl-alpha` again failed as first model**: The cron deadlock pattern is confirmed again — when the cron job runs on `openrouter/owl-alpha`, the script's first model attempt hangs or fails immediately. The script's model list still starts with `openrouter/owl-alpha`.
+- **Git push completed BEFORE timeout**: The auto_sync.sh finished (including push) before the 300s timeout. The timeout was consumed by the AI model fallback chain, not the git operations. This means the git sync was fully successful — only the TG notification needed manual completion.
+
 #### 2026-05-13 (Session 9 — cron job, background, 600s timeout)
 
 | Phase | Duration | Notes |
