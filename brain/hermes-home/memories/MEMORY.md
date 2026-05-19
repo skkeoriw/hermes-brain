@@ -14,6 +14,6 @@ Reviewed and updated sop-notebooklm-research skill based on execution experience
 §
 webhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，无法精确到当前 session。写 `"api_calls": "unknown"`（不用 0 或空字符串）。交互式 session 中若知道 session ID 可用 `hermes insights --session-id {id}` 获取精确值。
 §
-sop-notebooklm-research Pitfall #16 2026-05-13: pipeline-context.json 可能为空 `{}`（processor 自动写入静默失败或前序占位）。处理方式：视作新 pipeline，直接覆写完整版。不要在此空对象上做合并。
+Baidu Baike (baike.baidu.com) 可通过 web_fetch.py 成功抓取，不受反爬 CAPTCHA 拦截。sop-intent-router Phase 4 方案 A 利用此特性：从主题词直接构造 /item/{slug} URL 跳过百度搜索页面的反爬障碍。Bing/Google/DuckDuckGo 搜索页面均被 CAPTCHA 拦截无法直接抓取。
 §
 2026-05-17: terminal heredoc (python3 << 'PYEOF') 可静默失败——文件写入返回 success 但内容未持久化。python3 -c "..." 内联方式可靠。已更新 sop-notebooklm-research Pitfall #12。写 pipeline 关键文件后必须 cat 验证。
