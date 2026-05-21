@@ -10,7 +10,7 @@ Updated sop-notebooklm-research skill to include timing logs, duration calculati
 §
 2026-05-09: 修复 sop-notebooklm-research skill 的 Pitfall #2。原版错误引用 `rm -f` 清理旧文件，与 Step 7"不要删除"矛盾。修正为：遗留旧文件被捎带提交是预期行为（装饰性 bloat），Stage C 通过 diff 过滤；不删除以避免并发竞态。
 §
-Reviewed and updated sop-notebooklm-research skill based on execution experience: enhanced timing/logging requirements, clarified file renaming rules based on report title slug, and improved overall procedure clarity.
+2026-05-19: 两个 GitHub Token 均已失效无法 git push：DIVANOO65_GITHUB_TOKEN 和 GITHUB_TOKEN 均返回 "Invalid username or token"。credential store ~/.git-credentials 也缓存了过期 Token。已更新 sop-intent-router 增加 Git 认证失败 Pitfall。
 §
 webhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，无法精确到当前 session。写 `"api_calls": "unknown"`（不用 0 或空字符串）。交互式 session 中若知道 session ID 可用 `hermes insights --session-id {id}` 获取精确值。
 §

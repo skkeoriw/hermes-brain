@@ -11,8 +11,9 @@
 set -euo pipefail
 
 SKILL_NAME="${1:-}"
-FILE_API_URL="${FILE_API_URL:-https://upload.vyibc.com}"
-CDN_URL="${CDN_URL:-https://skills.vyibc.com}"
+FILE_API_URL="${FILE_API_URL:-https://upload-r2.vyibc.com}"
+FILE_API_TOKEN="${FILE_API_TOKEN:-123456}"
+CDN_URL="${CDN_URL:-https://skill.vyibc.com}"
 ALLOW_EXTERNAL_SKILL_DIR="${ALLOW_EXTERNAL_SKILL_DIR:-0}"
 
 resolve_abs_path() {
@@ -125,17 +126,37 @@ ZIP_PATH="${TMPDIR_WORK}/${ZIP_FILENAME}"
 # ── 打 zip（保留目录结构，zip 解压后得到 <skill-name>/ 目录）──
 echo "🗜  压缩..."
 # 从 skill 目录的上一级打包，解压后是 <skill-name>/...
-(cd "$(dirname "$SKILL_DIR")" && zip -qr "$ZIP_PATH" "$(basename "$SKILL_DIR")")
+if command -v zip &>/dev/null; then
+  (cd "$(dirname "$SKILL_DIR")" && zip -qr "$ZIP_PATH" "$(basename "$SKILL_DIR")")
+elif command -v python3 &>/dev/null; then
+  python3 -c "
+import zipfile, os, sys
+skill_dir = sys.argv[1]
+zip_path  = sys.argv[2]
+base      = os.path.basename(skill_dir)
+parent    = os.path.dirname(skill_dir)
+with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, dirs, files in os.walk(skill_dir):
+        for f in files:
+            abs_path = os.path.join(root, f)
+            arc_name = os.path.join(base, os.path.relpath(abs_path, skill_dir))
+            zf.write(abs_path, arc_name)
+" "$SKILL_DIR" "$ZIP_PATH"
+else
+  echo "❌ 需要 zip 或 python3 来打包，请先安装其中一个" >&2
+  exit 1
+fi
 echo "   ✅ $(du -sh "$ZIP_PATH" | cut -f1) — ${ZIP_PATH}"
 echo ""
 
 # ── 上传 zip ──────────────────────────────────────────────
 echo "📤 上传 zip..."
-ZIP_UPLOAD=$(curl -s -X POST "${FILE_API_URL}/admin/upload" \
-  -F "file=@${ZIP_PATH};filename=${ZIP_FILENAME}")
-ZIP_URL=$(echo "$ZIP_UPLOAD" | python3 -c "import sys,json; print(json.load(sys.stdin).get('url',''))" 2>/dev/null || true)
-# 用自定义 CDN 域名替换上传 API 返回的域名
-ZIP_URL=$(echo "$ZIP_URL" | sed "s|https://[^/]*|${CDN_URL}|")
+ZIP_UPLOAD=$(curl -s --location "${FILE_API_URL}" \
+  --header "Authorization: Bearer ${FILE_API_TOKEN}" \
+  --form "file=@${ZIP_PATH};type=text/plain" \
+  --form "domain=${CDN_URL}" \
+  --form "name=${ZIP_FILENAME}")
+ZIP_URL=$(echo "$ZIP_UPLOAD" | python3 -c "import sys,json; print(json.load(sys.stdin).get('image_url',''))" 2>/dev/null || true)
 
 if [[ -z "$ZIP_URL" ]]; then
   echo "❌ zip 上传失败: $ZIP_UPLOAD" >&2
@@ -262,10 +283,12 @@ chmod +x "$INSTALL_SCRIPT"
 
 # ── 上传安装脚本 ──────────────────────────────────────────
 echo "📤 上传安装脚本..."
-SCRIPT_UPLOAD=$(curl -s -X POST "${FILE_API_URL}/admin/upload" \
-  -F "file=@${INSTALL_SCRIPT};filename=${INSTALL_FILENAME}")
-SCRIPT_URL=$(echo "$SCRIPT_UPLOAD" | python3 -c "import sys,json; print(json.load(sys.stdin).get('url',''))" 2>/dev/null || true)
-SCRIPT_URL=$(echo "$SCRIPT_URL" | sed "s|https://[^/]*|${CDN_URL}|")
+SCRIPT_UPLOAD=$(curl -s --location "${FILE_API_URL}" \
+  --header "Authorization: Bearer ${FILE_API_TOKEN}" \
+  --form "file=@${INSTALL_SCRIPT};type=text/plain" \
+  --form "domain=${CDN_URL}" \
+  --form "name=${INSTALL_FILENAME}")
+SCRIPT_URL=$(echo "$SCRIPT_UPLOAD" | python3 -c "import sys,json; print(json.load(sys.stdin).get('image_url',''))" 2>/dev/null || true)
 
 if [[ -z "$SCRIPT_URL" ]]; then
   echo "❌ 安装脚本上传失败: $SCRIPT_UPLOAD" >&2
@@ -294,7 +317,7 @@ ${SKILL_MD}"""
 
 body = json.dumps({"content": content, "title": "Install: ${SKILL_NAME}"}).encode()
 req = urllib.request.Request(
-    "${FILE_API_URL}/v1beta/documents:toPage",
+    "https://upload.vyibc.com/v1beta/documents:toPage",
     data=body,
     headers={"Content-Type": "application/json"},
     method="POST"
