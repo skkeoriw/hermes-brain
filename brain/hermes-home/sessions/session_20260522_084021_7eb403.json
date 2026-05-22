@@ -1,88 +1,50 @@
 {
-  "session_id": "20260522_072352_75631d4f",
+  "session_id": "20260522_084021_7eb403",
   "model": "gemini-2.5-flash",
   "base_url": "http://127.0.0.1:8766/v1",
   "platform": "webhook",
-  "session_start": "2026-05-22T07:23:53.668741",
-  "last_updated": "2026-05-22T08:49:26.363948",
-  "system_prompt": "You are a helpful, concise AI assistant.\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nAfter completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n# Tool-use enforcement\nYou MUST use your tools to take action — do not describe what you would do or plan to do without actually doing it. When you say you will perform an action (e.g. 'I will run the tests', 'Let me check the file', 'I will create the project'), you MUST immediately make the corresponding tool call in the same response. Never end your turn with a promise of future action — execute it now.\nKeep working until the task is actually complete. Do not stop with a summary of what you plan to do next time. If you have tools available that can accomplish the task, use them instead of telling the user what you would do.\nEvery response should either (a) contain tool calls that make progress, or (b) deliver a final result to the user. Responses that only describe intentions without acting are not acceptable.\n\n# Google model operational directives\nFollow these operational rules strictly:\n- **Absolute paths:** Always construct and use absolute file paths for all file system operations. Combine the project root with relative paths.\n- **Verify first:** Use read_file/search_files to check file contents and project structure before making changes. Never guess at file contents.\n- **Dependency checks:** Never assume a library is available. Check package.json, requirements.txt, Cargo.toml, etc. before importing.\n- **Conciseness:** Keep explanatory text brief — a few sentences, not paragraphs. Focus on actions and results over narration.\n- **Parallel tool calls:** When you need to perform multiple independent operations (e.g. reading several files), make all the tool calls in a single response rather than sequentially.\n- **Non-interactive commands:** Use flags like -y, --yes, --non-interactive to prevent CLI tools from hanging on prompts.\n- **Keep going:** Work autonomously until the task is fully resolved. Don't stop with a plan — execute it.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [99% — 2,185/2,200 chars]\n══════════════════════════════════════════════\n【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。\n§\nSOP wiki-build 超时/守卫竞态: 脚本超600s缺git收尾 或 守卫杀前reset清commit。杀守卫再push。commit含\"stage-c done\"触发Stage D。Phase 3.A.1 fallback陷阱：先export WIKI_LLM_PROVIDER=deepseek再跑Phase 1会失效——Phase 1第一条source env覆盖回gemini。必须先source env再export override。\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.\n§\n2026-05-09: 修复 sop-notebooklm-research skill 的 Pitfall #2。原版错误引用 `rm -f` 清理旧文件，与 Step 7\"不要删除\"矛盾。修正为：遗留旧文件被捎带提交是预期行为（装饰性 bloat），Stage C 通过 diff 过滤；不删除以避免并发竞态。\n§\n2026-05-19: 两个 GitHub Token 均已失效无法 git push：DIVANOO65_GITHUB_TOKEN 和 GITHUB_TOKEN 均返回 \"Invalid username or token\"。credential store ~/.git-credentials 也缓存了过期 Token。已更新 sop-intent-router 增加 Git 认证失败 Pitfall。\n§\nwebhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，无法精确到当前 session。写 `\"api_calls\": \"unknown\"`（不用 0 或空字符串）。交互式 session 中若知道 session ID 可用 `hermes insights --session-id {id}` 获取精确值。\n§\nBaidu Baike (baike.baidu.com) 可通过 web_fetch.py 成功抓取，不受反爬 CAPTCHA 拦截。sop-intent-router Phase 4 方案 A 利用此特性：从主题词直接构造 /item/{slug} URL 跳过百度搜索页面的反爬障碍。Bing/Google/DuckDuckGo 搜索页面均被 CAPTCHA 拦截无法直接抓取。\n§\n2026-05-17: terminal heredoc (python3 << 'PYEOF') 可静默失败——文件写入返回 success 但内容未持久化。python3 -c \"...\" 内联方式可靠。已更新 sop-notebooklm-research Pitfall #12。写 pipeline 关键文件后必须 cat 验证。\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [100% — 1,427/1,375 chars]\n══════════════════════════════════════════════\n【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。\n§\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - publish-skill: 当用户说\"我想分享我的 skill\"、\"给我的 skill 生成安装脚本\"、\"publish skill\"、 \"g...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube video full pipeline: transcript extraction → Whis...\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  notebooklm-bridge:\n    - notebooklm-bridge: 远程调用 NotebookLM 全部能力的 HTTP 接口。支持：笔记本管理、添加 source（YouTube/...\n  notebooklm-bridge-release:\n    - notebooklm-bridge-release: 把 notebooklm-bridge 重新绑定到固定公网域名，并重新发布 skill；换机器时用它重建入口、更新...\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - maps: Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  sop-content-transform:\n    - sop-content-transform: 原子 Skill：读取 raw/ 文件的 frontmatter action，执行内容变换（翻译/总结/提炼），...\n  sop-douyin-fetch:\n    - sop-douyin-fetch: ⚠️ MOCK: 抖音视频采集与分析。接收 raw/douyin-links/ 下的抖音链接，生成分析报告到 ra...\n  sop-douyin-publish:\n    - sop-douyin-publish: ⚠️ MOCK: 将二创视频发布到抖音平台，更新 index.md。真实实现需接入抖音开放平台 API。\n  sop-intent-router:\n    - sop-intent-router: 意图路由 Agent（含 Planner 能力）：理解任意复杂意图，单任务直接路由，多任务/无URL自动分解执行。\n  sop-notebooklm-auth:\n    - sop-notebooklm-auth: NotebookLM 认证管理：检查有效性、从 AdsPower 刷新、安装 notebooklm-py。新机器初...\n  sop-notebooklm-login:\n    - sop-notebooklm-login: 通过 VNC 启动浏览器，引导用户完成 NotebookLM Google 登录，自动保存凭证并上传到 skill...\n  sop-notebooklm-post-processor:\n    - sop-notebooklm-post-processor: Extracts clean JSON output from notebooklm_processor.py r...\n  sop-notebooklm-research:\n    - sop-notebooklm-research: SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图...\n  sop-output-check:\n    - sop-output-check: Output Check: Stage C 完成后对产出物做纯规则质量检查，三档判断 PASS/WARN/FAIL...\n  sop-pipeline-creator:\n    - sop-pipeline-creator: Meta skill：根据用户意图创建新的 wiki pipeline（repo + sop.yaml + web...\n  sop-pipeline-watchdog:\n    - sop-pipeline-watchdog: YouTube Wiki pipeline 巡防员：调脚本判断状态、发 TG 报告、推送 brain。uncert...\n  sop-retry:\n    - sop-retry: 处理用户通过 TG 发出的重跑指令：retryB（重新研究）或 retryC（重建 wiki）。换策略重跑，归档旧内容。\n  sop-skill-author:\n    - sop-skill-author: Skill 创作规范：创建任何新 skill 前必须读取本文件。规定 lean skill 格式、存放路径、脚本优...\n  sop-tg-notify:\n    - sop-tg-notify: SOP Stage D: 读取 pipeline-context.json，组装完整 pipeline 运行报告，...\n  sop-tg-notify-new:\n    - sop-tg-notify-new: SOP Stage D: 读取 pipeline-context.json，组装完整 pipeline 运行报告，...\n  sop-video-create:\n    - sop-video-create: ⚠️ MOCK: 基于抖音分析报告进行 AI 二次创作，生成新视频脚本/素材。真实实现需接入 AI 视频生成能力（...\n  sop-wiki-build:\n    - sop-wiki-build: SOP Stage C: 增量知识图谱构建，调用脚本生成 wiki 页面并 push 触发 Stage D。\n  sop-wiki-evaluate:\n    - sop-wiki-evaluate: 独立 Evaluator Skill：在 wiki-build 之后评估页面质量，写入 pipeline-cont...\n  sop-youtube-fetch:\n    - sop-youtube-fetch: SOP Stage B: 获取 YouTube 视频元数据，写入 raw/youtube-metadata/，直接...\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Friday, May 22, 2026 07:24 AM\nModel: gemini-2.5-flash\nProvider: custom",
+  "session_start": "2026-05-22T08:40:21.635744",
+  "last_updated": "2026-05-22T08:40:34.793739",
+  "system_prompt": "You are a helpful, concise AI assistant.\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nYou have persistent memory across sessions. Save durable facts using the memory tool: user preferences, environment details, tool quirks, and stable conventions. Memory is injected into every turn, so keep it compact and focused on facts that will still matter later.\nPrioritize what reduces future user steering — the most valuable memory is one that prevents the user from having to correct or remind you again. User preferences and recurring corrections matter more than procedural task details.\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts. If you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\nWrite memories as declarative facts, not instructions to yourself. 'User prefers concise responses' ✓ — 'Always respond concisely' ✗. 'Project uses pytest with xdist' ✓ — 'Run tests with pytest -n 4' ✗. Imperative phrasing gets re-read as a directive in later sessions and can cause repeated work or override the user's current request. Procedures and workflows belong in skills, not memory. After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, save the approach as a skill with skill_manage so you can reuse it next time.\nWhen using a skill and finding it outdated, incomplete, or wrong, patch it immediately with skill_manage(action='patch') — don't wait to be asked. Skills that aren't maintained become liabilities.\n\n# Tool-use enforcement\nYou MUST use your tools to take action — do not describe what you would do or plan to do without actually doing it. When you say you will perform an action (e.g. 'I will run the tests', 'Let me check the file', 'I will create the project'), you MUST immediately make the corresponding tool call in the same response. Never end your turn with a promise of future action — execute it now.\nKeep working until the task is actually complete. Do not stop with a summary of what you plan to do next time. If you have tools available that can accomplish the task, use them instead of telling the user what you would do.\nEvery response should either (a) contain tool calls that make progress, or (b) deliver a final result to the user. Responses that only describe intentions without acting are not acceptable.\n\n# Google model operational directives\nFollow these operational rules strictly:\n- **Absolute paths:** Always construct and use absolute file paths for all file system operations. Combine the project root with relative paths.\n- **Verify first:** Use read_file/search_files to check file contents and project structure before making changes. Never guess at file contents.\n- **Dependency checks:** Never assume a library is available. Check package.json, requirements.txt, Cargo.toml, etc. before importing.\n- **Conciseness:** Keep explanatory text brief — a few sentences, not paragraphs. Focus on actions and results over narration.\n- **Parallel tool calls:** When you need to perform multiple independent operations (e.g. reading several files), make all the tool calls in a single response rather than sequentially.\n- **Non-interactive commands:** Use flags like -y, --yes, --non-interactive to prevent CLI tools from hanging on prompts.\n- **Keep going:** Work autonomously until the task is fully resolved. Don't stop with a plan — execute it.\n\n══════════════════════════════════════════════\nMEMORY (your personal notes) [99% — 2,185/2,200 chars]\n══════════════════════════════════════════════\n【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。\n§\nSOP wiki-build 超时/守卫竞态: 脚本超600s缺git收尾 或 守卫杀前reset清commit。杀守卫再push。commit含\"stage-c done\"触发Stage D。Phase 3.A.1 fallback陷阱：先export WIKI_LLM_PROVIDER=deepseek再跑Phase 1会失效——Phase 1第一条source env覆盖回gemini。必须先source env再export override。\n§\nUser's knowledge graph philosophy: Strict \"facts from raw only\" initially seemed appealing to user, but after discussion agreed that L2 (inference) + L3 (question) layers with explicit confidence/reasoning labels are better than locked-down facts-only approach. This enables deeper insights while maintaining traceability. User now convinced that \"releasing discovery with guardrails\" > \"constraining to raw-only\".\n§\nUser's quality diagnostic method: wiki/KG quality issues stem from (1) prompt/pipeline/schema design (main), (2) raw input quality (secondary), (3) model capability (tertiary). Prefers A/B testing to isolate root cause before fixing; prioritizes \"define real problem first\" over model change.\n§\nUpdated sop-notebooklm-research skill to include timing logs, duration calculation, and required log fields (start_time, end_time, duration_seconds, videos_processed). Also clarified the renaming rule for generated files based on report title slug.\n§\n2026-05-09: 修复 sop-notebooklm-research skill 的 Pitfall #2。原版错误引用 `rm -f` 清理旧文件，与 Step 7\"不要删除\"矛盾。修正为：遗留旧文件被捎带提交是预期行为（装饰性 bloat），Stage C 通过 diff 过滤；不删除以避免并发竞态。\n§\n2026-05-19: 两个 GitHub Token 均已失效无法 git push：DIVANOO65_GITHUB_TOKEN 和 GITHUB_TOKEN 均返回 \"Invalid username or token\"。credential store ~/.git-credentials 也缓存了过期 Token。已更新 sop-intent-router 增加 Git 认证失败 Pitfall。\n§\nwebhook session 中 `api_calls` 值：`hermes insights` 仅返回当天汇总，无法精确到当前 session。写 `\"api_calls\": \"unknown\"`（不用 0 或空字符串）。交互式 session 中若知道 session ID 可用 `hermes insights --session-id {id}` 获取精确值。\n§\nBaidu Baike (baike.baidu.com) 可通过 web_fetch.py 成功抓取，不受反爬 CAPTCHA 拦截。sop-intent-router Phase 4 方案 A 利用此特性：从主题词直接构造 /item/{slug} URL 跳过百度搜索页面的反爬障碍。Bing/Google/DuckDuckGo 搜索页面均被 CAPTCHA 拦截无法直接抓取。\n§\n2026-05-17: terminal heredoc (python3 << 'PYEOF') 可静默失败——文件写入返回 success 但内容未持久化。python3 -c \"...\" 内联方式可靠。已更新 sop-notebooklm-research Pitfall #12。写 pipeline 关键文件后必须 cat 验证。\n\n══════════════════════════════════════════════\nUSER PROFILE (who the user is) [100% — 1,427/1,375 chars]\n══════════════════════════════════════════════\n【重要约束】禁止使用 OpenRouter 付费模型。若必须用 OpenRouter，只能选免费模型（模型名带 :free 后缀）。\n§\nUser prefers Chinese communication for all interactions.\n§\nUser wants Hermes deployments across multiple machines to share accumulated “brain” state (memories, skills, webhook/SOP automations, and useful history) so new machines do not start from scratch, while still keeping machine-specific runtime/config local where appropriate.\n§\nUser wants a private GitHub repository named around “Hermes 大脑” / `hermes-brain` to sync all Hermes persistent data across machines, and for testing accepts plaintext synchronization of secrets/keys rather than encryption.\n§\nUser prefers one-shot automation via Hermes/Copilot and wants reusable copy-paste master prompts/templates so each new wiki can be bootstrapped end-to-end (repo + Actions + webhook + Telegram + multi-wiki routing) in a single chat.\n§\nUser expects Hermes troubleshooting/recommendations to be based on the machine’s current live configuration first (e.g., currently connected model/provider), not generic model suggestions.\n§\nUser prefers concise Chinese troubleshooting with binary conclusions first; focus on raw-change and KG-impact outcomes. For incremental no-raw-change runs, do not send Telegram; when sending, include quantitative KG deltas (counts + named entities/relations).\n§\nUser expects continuous progress updates during execution, including current status and any issues encountered.\n\n## Skills (mandatory)\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading — it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like web_search or terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing — load them even for tasks you already know how to do, because the skill defines how it should be done here.\nWhenever the user asks you to configure, set up, install, enable, disable, modify, or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, `hermes setup`) so you don't have to guess or invent workarounds.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  autonomous-ai-agents: Skills for spawning and orchestrating autonomous AI coding agents and multi-agent workflows — running independent agent processes, delegating tasks, and coordinating parallel workstreams.\n    - claude-code: Delegate coding to Claude Code CLI (features, PRs).\n    - codex: Delegate coding to OpenAI Codex CLI (features, PRs).\n    - hermes-agent: Configure, extend, or contribute to Hermes Agent.\n    - opencode: Delegate coding to OpenCode CLI (features, PR review).\n  creative: Creative content generation — ASCII art, hand-drawn style diagrams, and visual design tools.\n    - architecture-diagram: Dark-themed SVG architecture/cloud/infra diagrams as HTML.\n    - ascii-art: ASCII art: pyfiglet, cowsay, boxes, image-to-ascii.\n    - ascii-video: ASCII video: convert video/audio to colored ASCII MP4/GIF.\n    - baoyu-comic: Knowledge comics (知识漫画): educational, biography, tutorial.\n    - baoyu-infographic: Infographics: 21 layouts x 21 styles (信息图, 可视化).\n    - claude-design: Design one-off HTML artifacts (landing, deck, prototype).\n    - comfyui: Generate images, video, and audio with ComfyUI — install,...\n    - design-md: Author/validate/export Google's DESIGN.md token spec files.\n    - excalidraw: Hand-drawn Excalidraw JSON diagrams (arch, flow, seq).\n    - humanizer: Humanize text: strip AI-isms and add real voice.\n    - ideation: Generate project ideas via creative constraints.\n    - manim-video: Manim CE animations: 3Blue1Brown math/algo videos.\n    - p5js: p5.js sketches: gen art, shaders, interactive, 3D.\n    - pixel-art: Pixel art w/ era palettes (NES, Game Boy, PICO-8).\n    - popular-web-designs: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.\n    - pretext: Use when building creative browser demos with @chenglou/p...\n    - sketch: Throwaway HTML mockups: 2-3 design variants to compare.\n    - songwriting-and-ai-music: Songwriting craft and Suno AI music prompts.\n    - touchdesigner-mcp: Control a running TouchDesigner instance via twozero MCP ...\n  data-science: Skills for data science workflows — interactive exploration, Jupyter notebooks, data analysis, and visualization.\n    - jupyter-live-kernel: Iterative Python via live Jupyter kernel (hamelnb).\n  devops:\n    - hermes-brain-sync: Use when bootstrapping, cloning, restoring, synchronizing...\n    - hermes-custom-providers: Configure custom LLM providers in Hermes — OpenAI-compati...\n    - kanban-orchestrator: Decomposition playbook + specialist-roster conventions + ...\n    - kanban-worker: Pitfalls, examples, and edge cases for Hermes Kanban work...\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - publish-skill: 当用户说\"我想分享我的 skill\"、\"给我的 skill 生成安装脚本\"、\"publish skill\"、 \"g...\n    - video-summarizer-local: Use when you want Hermes to run a fully local, isolated v...\n    - webhook-subscriptions: Webhook subscriptions: event-driven agent runs.\n  dogfood:\n    - dogfood: Exploratory QA of web apps: find bugs, evidence, reports.\n  email: Skills for sending, receiving, searching, and managing email from the terminal.\n    - himalaya: Himalaya CLI: IMAP/SMTP email from terminal.\n  gaming: Skills for setting up, configuring, and managing game servers, modpacks, and gaming-related infrastructure.\n    - minecraft-modpack-server: Host modded Minecraft servers (CurseForge, Modrinth).\n    - pokemon-player: Play Pokemon via headless emulator + RAM reads.\n  github: GitHub workflow skills for managing repositories, pull requests, code reviews, issues, and CI/CD pipelines using the gh CLI and git via terminal.\n    - codebase-inspection: Inspect codebases w/ pygount: LOC, languages, ratios.\n    - github-auth: GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login.\n    - github-code-review: Review PRs: diffs, inline comments via gh or REST.\n    - github-issues: Create, triage, label, assign GitHub issues via gh or REST.\n    - github-pr-workflow: GitHub PR lifecycle: branch, commit, open, CI, merge.\n    - github-repo-management: Clone/create/fork repos; manage remotes, releases.\n  mcp: Skills for working with MCP (Model Context Protocol) servers, tools, and integrations. Documents the built-in native MCP client — configure servers in config.yaml for automatic tool discovery.\n    - native-mcp: MCP client: connect servers, register tools (stdio/HTTP).\n  media: Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.\n    - gif-search: Search/download GIFs from Tenor via curl + jq.\n    - heartmula: HeartMuLa: Suno-like song generation from lyrics + tags.\n    - songsee: Audio spectrograms/features (mel, chroma, MFCC) via CLI.\n    - spotify: Spotify: play, search, queue, manage playlists and devices.\n    - youtube-content: YouTube video full pipeline: transcript extraction → Whis...\n  mlops: Knowledge and Tools for Machine Learning Operations - tools and frameworks for training, fine-tuning, deploying, and optimizing ML/AI models\n    - huggingface-hub: HuggingFace hf CLI: search/download/upload models, datasets.\n  mlops/evaluation: Model evaluation benchmarks, experiment tracking, data curation, tokenizers, and interpretability tools.\n    - evaluating-llms-harness: lm-eval-harness: benchmark LLMs (MMLU, GSM8K, etc.).\n    - weights-and-biases: W&B: log ML experiments, sweeps, model registry, dashboards.\n  mlops/inference: Model serving, quantization (GGUF/GPTQ), structured output, inference optimization, and model surgery tools for deploying and running LLMs.\n    - llama-cpp: llama.cpp local GGUF inference + HF Hub model discovery.\n    - obliteratus: OBLITERATUS: abliterate LLM refusals (diff-in-means).\n    - outlines: Outlines: structured JSON/regex/Pydantic LLM generation.\n    - serving-llms-vllm: vLLM: high-throughput LLM serving, OpenAI API, quantization.\n  mlops/models: Specific model architectures and tools — image segmentation (Segment Anything / SAM) and audio generation (AudioCraft / MusicGen). Additional model skills (CLIP, Stable Diffusion, Whisper, LLaVA) are available as optional skills.\n    - audiocraft-audio-generation: AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.\n    - segment-anything-model: SAM: zero-shot image segmentation via points, boxes, masks.\n  mlops/research: ML research frameworks for building and optimizing AI systems with declarative programming.\n    - dspy: DSPy: declarative LM programs, auto-optimize prompts, RAG.\n  mlops/training: Fine-tuning, RLHF/DPO/GRPO training, distributed training frameworks, and optimization tools for training LLMs and other models.\n    - axolotl: Axolotl: YAML LLM fine-tuning (LoRA, DPO, GRPO).\n    - fine-tuning-with-trl: TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF.\n    - unsloth: Unsloth: 2-5x faster LoRA/QLoRA fine-tuning, less VRAM.\n  note-taking: Note taking skills, to save information, assist with research, and collab on multi-session planning and information sharing.\n    - obsidian: Read, search, and create notes in the Obsidian vault.\n  notebooklm-bridge:\n    - notebooklm-bridge: 远程调用 NotebookLM 全部能力的 HTTP 接口。支持：笔记本管理、添加 source（YouTube/...\n  notebooklm-bridge-release:\n    - notebooklm-bridge-release: 把 notebooklm-bridge 重新绑定到固定公网域名，并重新发布 skill；换机器时用它重建入口、更新...\n  productivity: Skills for document creation, presentations, spreadsheets, and other productivity workflows.\n    - airtable: Airtable REST API via curl. Records CRUD, filters, upserts.\n    - google-workspace: Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.\n    - linear: Linear: manage issues, projects, teams via GraphQL + curl.\n    - nano-pdf: Edit PDF text/typos/titles via nano-pdf CLI (NL prompts).\n    - notion: Notion API via curl: pages, databases, blocks, search.\n    - ocr-and-documents: Extract text from PDFs/scans (pymupdf, marker-pdf).\n    - powerpoint: Create, read, edit .pptx decks, slides, notes, templates.\n  red-teaming:\n    - godmode: Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN.\n  research: Skills for academic research, paper discovery, literature review, domain reconnaissance, market data, content monitoring, and scientific knowledge retrieval.\n    - arxiv: Search arXiv papers by keyword, author, category, or ID.\n    - blogwatcher: Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool.\n    - llm-wiki: Karpathy's LLM Wiki: build/query interlinked markdown KB.\n    - notebooklm-cli: NotebookLM CLI and API with live-session auth recovery. F...\n    - polymarket: Query Polymarket: markets, prices, orderbooks, history.\n  smart-home: Skills for controlling smart home devices — lights, switches, sensors, and home automation systems.\n    - openhue: Control Philips Hue lights, scenes, rooms via OpenHue CLI.\n  social-media: Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.\n    - xurl: X/Twitter via xurl CLI: post, search, DM, media, v2 API.\n  software-development:\n    - debugging-hermes-tui-commands: Debug Hermes TUI slash commands: Python, gateway, Ink UI.\n    - hermes-agent-skill-authoring: Author in-repo SKILL.md: frontmatter, validator, structure.\n    - node-inspect-debugger: Debug Node.js via --inspect + Chrome DevTools Protocol CLI.\n    - plan: Plan mode: write markdown plan to .hermes/plans/, no exec.\n    - python-debugpy: Debug Python: pdb REPL + debugpy remote (DAP).\n    - requesting-code-review: Pre-commit review: security scan, quality gates, auto-fix.\n    - spike: Throwaway experiments to validate an idea before build.\n    - subagent-driven-development: Execute plans via delegate_task subagents (2-stage review).\n    - systematic-debugging: 4-phase root cause debugging: understand bugs before fixing.\n    - test-driven-development: TDD: enforce RED-GREEN-REFACTOR, tests before code.\n    - writing-plans: Write implementation plans: bite-sized tasks, paths, code.\n  sop-content-transform:\n    - sop-content-transform: 原子 Skill：读取 raw/ 文件的 frontmatter action，执行内容变换（翻译/总结/提炼），...\n  sop-douyin-fetch:\n    - sop-douyin-fetch: ⚠️ MOCK: 抖音视频采集与分析。接收 raw/douyin-links/ 下的抖音链接，生成分析报告到 ra...\n  sop-douyin-publish:\n    - sop-douyin-publish: ⚠️ MOCK: 将二创视频发布到抖音平台，更新 index.md。真实实现需接入抖音开放平台 API。\n  sop-intent-router:\n    - sop-intent-router: 意图路由 Agent（含 Planner 能力）：理解任意复杂意图，单任务直接路由，多任务/无URL自动分解执行。\n  sop-notebooklm-auth:\n    - sop-notebooklm-auth: NotebookLM 认证管理：检查有效性、从 AdsPower 刷新、安装 notebooklm-py。新机器初...\n  sop-notebooklm-login:\n    - sop-notebooklm-login: 通过 VNC 启动浏览器，引导用户完成 NotebookLM Google 登录，自动保存凭证并上传到 skill...\n  sop-notebooklm-post-processor:\n    - sop-notebooklm-post-processor: Extracts clean JSON output from notebooklm_processor.py r...\n  sop-notebooklm-research:\n    - sop-notebooklm-research: SOP Stage B: 三阶段处理 YouTube 链接，调用 NotebookLM 生成深度研究报告和思维导图...\n  sop-output-check:\n    - sop-output-check: Output Check: Stage C 完成后对产出物做纯规则质量检查，三档判断 PASS/WARN/FAIL...\n  sop-pipeline-creator:\n    - sop-pipeline-creator: Meta skill：根据用户意图创建新的 wiki pipeline（repo + sop.yaml + web...\n  sop-pipeline-watchdog:\n    - sop-pipeline-watchdog: YouTube Wiki pipeline 巡防员：调脚本判断状态、发 TG 报告、推送 brain。uncert...\n  sop-retry:\n    - sop-retry: 处理用户通过 TG 发出的重跑指令：retryB（重新研究）或 retryC（重建 wiki）。换策略重跑，归档旧内容。\n  sop-skill-author:\n    - sop-skill-author: Skill 创作规范：创建任何新 skill 前必须读取本文件。规定 lean skill 格式、存放路径、脚本优...\n  sop-tg-notify:\n    - sop-tg-notify: SOP Stage D: 读取 pipeline-context.json，组装完整 pipeline 运行报告，...\n  sop-tg-notify-new:\n    - sop-tg-notify-new: SOP Stage D: 读取 pipeline-context.json，组装完整 pipeline 运行报告，...\n  sop-video-create:\n    - sop-video-create: ⚠️ MOCK: 基于抖音分析报告进行 AI 二次创作，生成新视频脚本/素材。真实实现需接入 AI 视频生成能力（...\n  sop-wiki-build:\n    - sop-wiki-build: SOP Stage C: 增量知识图谱构建，调用脚本生成 wiki 页面并 push 触发 Stage D。\n  sop-wiki-evaluate:\n    - sop-wiki-evaluate: 独立 Evaluator Skill：在 wiki-build 之后评估页面质量，写入 pipeline-cont...\n  sop-youtube-fetch:\n    - sop-youtube-fetch: SOP Stage B: 获取 YouTube 视频元数据，写入 raw/youtube-metadata/，直接...\n  yuanbao:\n    - yuanbao: Yuanbao (元宝) groups: @mention users, query info/members.\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.\n\nConversation started: Friday, May 22, 2026 08:40 AM\nModel: gemini-2.5-flash\nProvider: custom",
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "process",
-        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "name": "memory",
+        "description": "Save durable information to persistent memory that survives across sessions. Memory is injected into future turns, so keep it compact and focused on facts that will still matter later.\n\nWHEN TO SAVE (do this proactively, don't wait to be asked):\n- User corrects you or says 'remember this' / 'don't do that again'\n- User shares a preference, habit, or personal detail (name, role, timezone, coding style)\n- You discover something about the environment (OS, installed tools, project structure)\n- You learn a convention, API quirk, or workflow specific to this user's setup\n- You identify a stable fact that will be useful again in future sessions\n\nPRIORITY: User preferences and corrections > environment facts > procedural knowledge. The most valuable memory prevents the user from having to repeat themselves.\n\nDo NOT save task progress, session outcomes, completed-work logs, or temporary TODO state to memory; use session_search to recall those from past transcripts.\nIf you've discovered a new way to do something, solved a problem that could be necessary later, save it as a skill with the skill tool.\n\nTWO TARGETS:\n- 'user': who the user is -- name, role, preferences, communication style, pet peeves\n- 'memory': your notes -- environment facts, project conventions, tool quirks, lessons learned\n\nACTIONS: add (new entry), replace (update existing -- old_text identifies it), remove (delete -- old_text identifies it).\n\nSKIP: trivial/obvious info, things easily re-discovered, raw data dumps, and temporary task state.",
         "parameters": {
           "type": "object",
           "properties": {
             "action": {
               "type": "string",
               "enum": [
-                "list",
-                "poll",
-                "log",
-                "wait",
-                "kill",
-                "write",
-                "submit",
-                "close"
+                "add",
+                "replace",
+                "remove"
               ],
-              "description": "Action to perform on background processes"
-            },
-            "session_id": {
-              "type": "string",
-              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
-            },
-            "data": {
-              "type": "string",
-              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
-            },
-            "timeout": {
-              "type": "integer",
-              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
-              "minimum": 1
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Line offset for 'log' action (default: last 200 lines)"
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Max lines to return for 'log' action",
-              "minimum": 1
-            }
-          },
-          "required": [
-            "action"
-          ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "send_message",
-        "description": "Send a message to a connected messaging platform, or list available targets.\n\nIMPORTANT: When the user asks to send to a specific channel or person (not just a bare platform name), call send_message(action='list') FIRST to see available targets, then send to the correct one.\nIf the user just says a platform name like 'send to telegram', send directly to the home channel without listing first.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "action": {
-              "type": "string",
-              "enum": [
-                "send",
-                "list"
-              ],
-              "description": "Action to perform. 'send' (default) sends a message. 'list' returns all available channels/contacts across connected platforms."
+              "description": "The action to perform."
             },
             "target": {
               "type": "string",
-              "description": "Delivery target. Format: 'platform' (uses home channel), 'platform:#channel-name', 'platform:chat_id', or 'platform:chat_id:thread_id' for Telegram topics and Discord threads. Examples: 'telegram', 'telegram:-1001234567890:17585', 'discord:999888777:555444333', 'discord:#bot-home', 'slack:#engineering', 'signal:+155****4567', 'matrix:!roomid:server.org', 'matrix:@user:server.org', 'yuanbao:direct:<account_id>' (DM), 'yuanbao:group:<group_code>' (group chat)"
+              "enum": [
+                "memory",
+                "user"
+              ],
+              "description": "Which memory store: 'memory' for personal notes, 'user' for user profile."
             },
-            "message": {
+            "content": {
               "type": "string",
-              "description": "The message text to send. To send an image or file, include MEDIA:<local_path> (e.g. 'MEDIA:/tmp/hermes/cache/img_xxx.jpg') in the message — the platform will deliver it as a native media attachment."
+              "description": "The entry content. Required for 'add' and 'replace'."
+            },
+            "old_text": {
+              "type": "string",
+              "description": "Short unique substring identifying the entry to replace or remove."
             }
-          }
+          },
+          "required": [
+            "action",
+            "target"
+          ]
         }
       }
     },
@@ -188,59 +150,9 @@
           }
         }
       }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "terminal",
-        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "command": {
-              "type": "string",
-              "description": "The command to execute on the VM"
-            },
-            "background": {
-              "type": "boolean",
-              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
-              "default": false
-            },
-            "timeout": {
-              "type": "integer",
-              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
-              "minimum": 1
-            },
-            "workdir": {
-              "type": "string",
-              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
-            },
-            "pty": {
-              "type": "boolean",
-              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
-              "default": false
-            },
-            "notify_on_complete": {
-              "type": "boolean",
-              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
-              "default": false
-            },
-            "watch_patterns": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
-            }
-          },
-          "required": [
-            "command"
-          ]
-        }
-      }
     }
   ],
-  "message_count": 189,
+  "message_count": 187,
   "messages": [
     {
       "role": "user",
@@ -249,6 +161,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -260,8 +174,7 @@
             "arguments": "{\"command\": \"set -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a && pkill -f sop_stage_guard 2>/dev/null; sleep 1\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -271,6 +184,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -282,8 +197,7 @@
             "arguments": "{\"command\": \"cd /home/zhouhuijuan1987/wiki/youtube-video-research-wiki && git remote set-url origin \\\"https://divanoo65:${DIVANOO65_GITHUB_TOKEN}@github.com/divanoo65/youtube-video-research-wiki.git\\\"\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -293,6 +207,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -304,8 +220,7 @@
             "arguments": "{\"notify_on_complete\": true, \"background\": true, \"command\": \"set -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a && python3 ~/.agents/infrastructure/stage_runner.py on_start --stage wiki-build --wiki /home/zhouhuijuan1987/wiki/youtube-video-research-wiki --run-id direct-1779434632 && python3 /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-wiki-build/scripts/sop_wiki_builder_v3.py --wiki-path /home/zhouhuijuan1987/wiki/youtube-video-research-wiki --run-id direct-1779434632 --git-sync --git-push 2>&1; echo \\\"BUILD_EXIT_CODE=$?\\\"\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -315,6 +230,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -326,8 +243,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -337,6 +253,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -348,8 +266,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -359,6 +276,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -370,8 +289,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -381,6 +299,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -392,8 +312,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -403,6 +322,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -414,8 +335,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -425,6 +345,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -436,8 +358,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -447,6 +368,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -458,8 +381,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -469,6 +391,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -480,8 +404,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -491,6 +414,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -502,8 +427,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -513,6 +437,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -524,8 +450,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -535,6 +460,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -546,8 +473,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -557,6 +483,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -568,8 +496,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -579,6 +506,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -590,8 +519,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -601,6 +529,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -612,8 +542,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -623,6 +552,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -634,8 +565,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -645,6 +575,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -656,8 +588,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -667,6 +598,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -678,8 +611,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -689,6 +621,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -700,8 +634,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -711,6 +644,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -722,8 +657,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -733,6 +667,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -744,8 +680,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -755,6 +690,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -766,8 +703,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"poll\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -777,6 +713,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -788,8 +726,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -799,6 +736,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -810,8 +749,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -821,6 +759,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -832,8 +772,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -843,6 +782,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -854,8 +795,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -865,6 +805,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -876,8 +818,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -887,6 +828,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -898,8 +841,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -909,6 +851,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -920,8 +864,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"poll\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -931,6 +874,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -942,8 +887,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -953,6 +897,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -964,8 +910,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -975,6 +920,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -986,8 +933,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -997,6 +943,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1008,8 +956,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1019,6 +966,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1030,8 +979,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1041,6 +989,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1052,8 +1002,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"poll\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1063,6 +1012,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1074,8 +1025,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1085,6 +1035,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1096,8 +1048,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1107,6 +1058,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1118,8 +1071,7 @@
             "arguments": "{\"action\": \"poll\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1129,6 +1081,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1140,8 +1094,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1151,6 +1104,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1162,8 +1117,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1173,6 +1127,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1184,8 +1140,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1195,6 +1150,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1206,8 +1163,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1217,6 +1173,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1228,8 +1186,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"poll\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1239,6 +1196,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1250,8 +1209,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1261,6 +1219,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1272,8 +1232,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1283,6 +1242,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1294,8 +1255,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1305,6 +1265,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1316,8 +1278,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1327,6 +1288,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1338,8 +1301,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1349,6 +1311,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1360,8 +1324,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1371,6 +1334,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1382,8 +1347,7 @@
             "arguments": "{\"action\": \"poll\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1393,6 +1357,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1404,8 +1370,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1415,6 +1380,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1426,8 +1393,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1437,6 +1403,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1448,8 +1416,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1459,6 +1426,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1470,8 +1439,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"poll\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1481,6 +1449,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1492,8 +1462,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1503,6 +1472,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1514,8 +1485,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1525,6 +1495,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1536,8 +1508,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1547,6 +1518,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1558,8 +1531,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1569,6 +1541,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1580,8 +1554,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1591,6 +1564,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1602,8 +1577,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1613,6 +1587,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1624,8 +1600,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"poll\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1635,6 +1610,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1646,8 +1623,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1657,6 +1633,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1668,8 +1646,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1679,6 +1656,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1690,8 +1669,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1701,6 +1679,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1712,8 +1692,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1723,6 +1702,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1734,8 +1715,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1745,6 +1725,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1756,8 +1738,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"poll\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1767,6 +1748,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1778,8 +1761,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1789,6 +1771,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1800,8 +1784,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1811,6 +1794,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1822,8 +1807,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1833,6 +1817,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1844,8 +1830,7 @@
             "arguments": "{\"action\": \"poll\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1855,6 +1840,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1866,8 +1853,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1877,6 +1863,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1888,8 +1876,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1899,6 +1886,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1910,8 +1899,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1921,6 +1909,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1932,8 +1922,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"log\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1943,6 +1932,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1954,8 +1945,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1965,6 +1955,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1976,8 +1968,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -1987,6 +1978,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -1998,8 +1991,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"limit\": 10000, \"action\": \"log\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2009,6 +2001,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2020,8 +2014,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2031,6 +2024,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2042,8 +2037,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2053,6 +2047,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2064,8 +2060,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2075,6 +2070,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2086,8 +2083,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2097,6 +2093,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2108,8 +2106,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2119,6 +2116,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2130,8 +2129,7 @@
             "arguments": "{\"action\": \"wait\", \"session_id\": \"proc_68d1f6c97a0d\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2141,6 +2139,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2152,8 +2152,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"log\", \"limit\": 10000}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2163,6 +2162,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2174,8 +2175,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2185,6 +2185,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2196,8 +2198,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"wait\"}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2207,6 +2208,8 @@
     {
       "role": "assistant",
       "content": "",
+      "reasoning": null,
+      "finish_reason": "stop",
       "tool_calls": [
         {
           "id": "call_0",
@@ -2218,8 +2221,7 @@
             "arguments": "{\"session_id\": \"proc_68d1f6c97a0d\", \"action\": \"log\", \"limit\": 10000}"
           }
         }
-      ],
-      "finish_reason": "stop"
+      ]
     },
     {
       "role": "tool",
@@ -2236,7 +2238,7 @@
     },
     {
       "role": "user",
-      "content": "[IMPORTANT: Background process proc_68d1f6c97a0d completed (exit code 0).\nCommand: set -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a && python3 ~/.agents/infrastructure/stage_runner.py on_start --stage wiki-build --wiki /home/zhouhuijuan1987/wiki/youtube-video-research-wiki --run-id direct-1779434632 && python3 /home/zhouhuijuan1987/agent-brain-plugins/youtube-wiki/skills/sop-wiki-build/scripts/sop_wiki_builder_v3.py --wiki-path /home/zhouhuijuan1987/wiki/youtube-video-research-wiki --run-id direct-1779434632 --git-sync --git-push 2>&1; echo \"BUILD_EXIT_CODE=$?\"\nOutput:\n Cohere ASR\n    → cohere-asr.md (1335 chars)\n  [Call 3] 图谱连通性审查...\n    → 0 条补链建议 | tokens: 24244+78\n  ⚠️  脑图生成失败 Hermes-Agent-全能可视化控台-HOD-深度解析简报: 'nodes'\n  ⚠️  脑图生成失败 Andrej-Karpathy-从氛围编程-Vibe-Coding-到智能体工程: 'nodes'\n  ⚠️  脑图生成失败 赫美斯-Hermes-Agent-高级应用与部署指南-云端集成-界面优化与-To: 'nodes'\n  ⚠️  脑图生成失败 Hugging-Face-Spaces-永久免费云服务器使用与-AI-项目部署指: 'nodes'\n  ⚠️  脑图生成失败 Andrej-Karpathy-从-氛围编程-到-智能体工程-的演进: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-网页版中控台深度分析报告: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-AI-中控台综合简报: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-AI-中控台-全方位可视化监控与管理工具简报: 'nodes'\n  ⚠️  脑图生成失败 Claude-Code-与-NotebookLM-高效集成方案简报: 'nodes'\n  ⚠️  脑图生成失败 关系承诺与忠诚度分析简报-基于-Never-Gonna-Give-You-Up: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-高级应用技巧-云端模型-可视化界面与-Token-优化: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-综合管理中控台-全方位可视化与控制解决方案简报: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-AI-控制台-透明化管理与深度分析简报: 'nodes'\n  ⚠️  脑图生成失败 Open-Design-开源-AI-设计工具的深度解析与实操简报: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-智能中控台-全方位可视化管理简报: 'nodes'\n  ⚠️  脑图生成失败 Claude-Code-与-NotebookLM-协同增效-构建自动化-AI-研: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-智能中控台深度分析简报: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-可视化控制台-Dashboard-深度解析报告: 'nodes'\n  ⚠️  脑图生成失败 AI-行业动态简报-谷歌-Gemini-3-5-发布与全球-AI-竞速格局分析: 'nodes'\n  ⚠️  脑图生成失败 Open-Design-开源-AI-设计系统的深度解析与实操指南: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-网页版-AI-中控台深度简报: 'nodes'\n  ⚠️  脑图生成失败 Open-Design-Claude-Design-的开源强力平替与全流程-AI: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-高级应用与优化简报: 'nodes'\n  ⚠️  脑图生成失败 Claude-Code-与-NotebookLM-的深度整合-自动化-AI-研究: 'nodes'\n  ⚠️  脑图生成失败 Hermes-Agent-智能中控台-深度解析与功能简报: 'nodes'\n[v3] git push: add + commit + push ...\n[v3] git push ✅ (attempt 1)\n\n==================================================\n[v3] 完成 | pages=216 | llm_calls=273 | tokens=1612695 | 5102s\n{\"run_id\": \"direct-1779434632\", \"stage\": \"stage_c_v3\", \"start_time\": \"2026-05-22T07:24:10Z\", \"end_time\": \"2026-05-22T08:49:13Z\", \"duration_s\": 5102, \"llm_calls\": 273, \"prompt_tokens\": 1329153, \"completion_tokens\": 283542, \"total_tokens\": 1612695, \"pages_created\": 216, \"status\": \"success\"}\nBUILD_EXIT_CODE=0\n]"
+      "content": "Review the conversation above and update the skill library. Be ACTIVE — most sessions produce at least one skill update, even if small. A pass that does nothing is a missed learning opportunity, not a neutral outcome.\n\nTarget shape of the library: CLASS-LEVEL skills, each with a rich SKILL.md and a `references/` directory for session-specific detail. Not a long flat list of narrow one-session-one-skill entries. This shapes HOW you update, not WHETHER you update.\n\nSignals to look for (any one of these warrants action):\n  • User corrected your style, tone, format, legibility, or verbosity. Frustration signals like 'stop doing X', 'this is too verbose', 'don't format like this', 'why are you explaining', 'just give me the answer', 'you always do Y and I hate it', or an explicit 'remember this' are FIRST-CLASS skill signals, not just memory signals. Update the relevant skill(s) to embed the preference so the next session starts already knowing.\n  • User corrected your workflow, approach, or sequence of steps. Encode the correction as a pitfall or explicit step in the skill that governs that class of task.\n  • Non-trivial technique, fix, workaround, debugging path, or tool-usage pattern emerged that a future session would benefit from. Capture it.\n  • A skill that got loaded or consulted this session turned out to be wrong, missing a step, or outdated. Patch it NOW.\n\nPreference order — prefer the earliest action that fits, but do pick one when a signal above fired:\n  1. UPDATE A CURRENTLY-LOADED SKILL. Look back through the conversation for skills the user loaded via /skill-name or you read via skill_view. If any of them covers the territory of the new learning, PATCH that one first. It is the skill that was in play, so it's the right one to extend.\n  2. UPDATE AN EXISTING UMBRELLA (via skills_list + skill_view). If no loaded skill fits but an existing class-level skill does, patch it. Add a subsection, a pitfall, or broaden a trigger.\n  3. ADD A SUPPORT FILE under an existing umbrella. Skills can be packaged with three kinds of support files — use the right directory per kind:\n     • `references/<topic>.md` — session-specific detail (error transcripts, reproduction recipes, provider quirks) AND condensed knowledge banks: quoted research, API docs, external authoritative excerpts, or domain notes you found while working on the problem. Write it concise and for the value of the task, not as a full mirror of upstream docs.\n     • `templates/<name>.<ext>` — starter files meant to be copied and modified (boilerplate configs, scaffolding, a known-good example the agent can `reproduce with modifications`).\n     • `scripts/<name>.<ext>` — statically re-runnable actions the skill can invoke directly (verification scripts, fixture generators, deterministic probes, anything the agent should run rather than hand-type each time).\n     Add support files via skill_manage action=write_file with file_path starting 'references/', 'templates/', or 'scripts/'. The umbrella's SKILL.md should gain a one-line pointer to any new support file so future agents know it exists.\n  4. CREATE A NEW CLASS-LEVEL UMBRELLA SKILL when no existing skill covers the class. The name MUST be at the class level. The name MUST NOT be a specific PR number, error string, feature codename, library-alone name, or 'fix-X / debug-Y / audit-Z-today' session artifact. If the proposed name only makes sense for today's task, it's wrong — fall back to (1), (2), or (3).\n\nUser-preference embedding (important): when the user expressed a style/format/workflow preference, the update belongs in the SKILL.md body, not just in memory. Memory captures 'who the user is and what the current situation and state of your operations are'; skills capture 'how to do this class of task for this user'. When they complain about how you handled a task, the skill that governs that task needs to carry the lesson.\n\nIf you notice two existing skills that overlap, note it in your reply — the background curator handles consolidation at scale.\n\n'Nothing to save.' is a real option but should NOT be the default. If the session ran smoothly with no corrections and produced no new technique, just say 'Nothing to save.' and stop. Otherwise, act."
     },
     {
       "role": "assistant",
@@ -2250,43 +2252,20 @@
           "response_item_id": "fc_0",
           "type": "function",
           "function": {
-            "name": "terminal",
-            "arguments": "{\"command\": \"set -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a && python3 ~/.agents/infrastructure/stage_runner.py on_done --stage wiki-build --wiki /home/zhouhuijuan1987/wiki/youtube-video-research-wiki --run-id direct-1779434632\"}"
+            "name": "skill_manage",
+            "arguments": "{\"action\": \"patch\", \"name\": \"sop-wiki-build\", \"new_string\": \"### Pitfall: JSON Decoding Failures\\n\\nThe `sop_wiki_builder_v3.py` script frequently encounters `JSON decode failed` warnings during the \\\"\\u63d0\\u53d6+\\u53bb\\u91cd\\\" (extraction and deduplication) step. These failures are typically followed by `JSON repair succeeded`, indicating an internal repair mechanism is in place. This suggests that the LLM-generated JSON might not always be perfectly formatted, but the script is designed to handle minor inconsistencies. If a build fails due to JSON errors, investigate the raw LLM output for malformed JSON, even though the script attempts repair.\\n\\n---\\n\\n## \\u91cd\\u8981\\u7ea6\\u675f\\uff08\\u4e0d\\u53ef\\u8fdd\\u53cd\\uff09\", \"old_string\": \"---\\n\\n## \\u91cd\\u8981\\u7ea6\\u675f\\uff08\\u4e0d\\u53ef\\u8fdd\\u53cd\\uff09\"}"
           }
         }
       ]
     },
     {
       "role": "tool",
-      "content": "{\"output\": \"[stage_runner] ✅ wiki-build 完成 (0秒)\", \"exit_code\": 0, \"error\": null}",
+      "content": "{\"success\": true, \"message\": \"Patched SKILL.md in skill 'sop-wiki-build' (1 replacement).\"}",
       "tool_call_id": "call_0"
     },
     {
       "role": "assistant",
-      "content": "",
-      "reasoning": null,
-      "finish_reason": "stop",
-      "tool_calls": [
-        {
-          "id": "call_0",
-          "call_id": "call_0",
-          "response_item_id": "fc_0",
-          "type": "function",
-          "function": {
-            "name": "terminal",
-            "arguments": "{\"command\": \"set -a && source ~/.agent-brain-plugins.env 2>/dev/null; set +a && python3 ~/.agents/infrastructure/stage_runner.py forward_next --stage wiki-build --wiki /home/zhouhuijuan1987/wiki/youtube-video-research-wiki --run-id direct-1779434632\"}"
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "content": "{\"output\": \"[stage_runner] → forwarded to sop-tg-notify (run=direct-1779439762): HTTP 202\", \"exit_code\": 0, \"error\": null}",
-      "tool_call_id": "call_0"
-    },
-    {
-      "role": "assistant",
-      "content": "The wiki build process completed successfully (exit code 0). I have executed the `on_done` and `forward_next` actions as per the skill instructions. The next stage `sop-tg-notify` has been triggered.",
+      "content": "I've updated the `sop-wiki-build` skill to include a new \"Pitfall\" section in its documentation. This section notes the recurring \"JSON decode failed, attempting repair\" messages observed during the execution of `sop_wiki_builder_v3.py`, and explains that while the script typically repairs these issues, they indicate potential inconsistencies in the LLM-generated JSON that could warrant investigation if a build fails.",
       "reasoning": null,
       "finish_reason": "stop"
     }
