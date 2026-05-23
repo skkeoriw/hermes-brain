@@ -167,16 +167,17 @@
 
 | Phase | Duration | Notes |
 |---|---|---|
-| auto_sync.sh (2nd cron trigger) | ~108s | Jitter sleep 108s + git fetch/pull succeeded + push **failed 403** |
-| AI model: owl-alpha (1st) | ~30s | ✅ Succeeded on first try |
+| auto_sync.sh | ~273s | Jitter sleep 222s + git fetch/pull succeeded (already up to date) + local commit `7cc1d1f` (4 files, +2351/-3) + push **failed 403** |
+| AI model: owl-alpha (1st) | ~45s | ❌ Failed (timeout) — cron deadlock pattern confirmed again |
+| AI model: cobuddy:free (2nd) | ~30s | ✅ Succeeded |
 | Telegram send | <5s | ✅ Success |
-| **Total** | **~160s (~2 min 40s)** | Completed successfully |
+| **Total** | **~305s (~5 min 5s)** | Completed successfully |
 
 **Key observations from Session 11:**
-- **GitHub push 403 (NEW)**: After ~5 days of "Repository not found" errors, git fetch/pull now succeeds — the remote URL is correct. But git push returns `403: Permission to skkeoriw/hermes-brain.git denied to divanoo65`. The local commit (`6b2e392`, 9 files changed, +4327/-8) is safe on disk but not on GitHub. The repo rename/transfer is complete; the auth credential for `divanoo65` needs updating.
+- **GitHub push 403 (NEW)**: After ~5 days of "Repository not found" errors, git fetch/pull now succeeds — the remote URL is correct. But git push returns `403: Permission to skkeoriw/hermes-brain.git denied to divanoo65`. The local commit (`7cc1d1f`, 4 files changed, +2351/-3) is safe on disk but not on GitHub. The repo rename/transfer is complete; the auth credential for `divanoo65` needs updating.
 - **GitHub remote is healthy again**: Git fetch/pull works — the "Repository not found" era is over.
-- **owl-alpha succeeded on first try**: No cron deadlock this time — the cron trigger stagger avoided contention.
-- **Fast completion**: 160s total with 108s jitter. One of the fastest completions observed.
+- **owl-alpha failed as first model (cron deadlock)**: The cron job runs on `openrouter/owl-alpha`, and the script's first model attempt hung for 45s before failing. The `timeout 45` wrapper did kill it this time. `baidu/cobuddy:free` succeeded on the second attempt.
+- **First run of the evening (20:00 cron) also failed with 300s timeout**: The earlier inline run was killed mid-flight. The background run with 600s timeout completed fully.
 
 ### Key Findings
 
