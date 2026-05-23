@@ -161,7 +161,22 @@
 - Fastest observed completion: 90s total (git failed fast + owl-alpha succeeded immediately).
 - TG "message too long" failure confirmed again — this is now a recurring pattern when AI models succeed on large diffs.
 - The `bash -x` debug mode was used for the first time; no performance impact observed.
-- Git remote "Repository not found" persists (6+ days as of 2026-05-13).
+13. **Manual fallback is the most reliable path**: When all AI models are flaky, composing a concise human-written report and sending via direct curl is faster (~1 min) and more reliable than waiting for the model fallback chain. The report for Session 8 (349 files, +233K/-6.7K lines) was successfully delivered as message_id 231.
+
+#### 2026-05-23 (Session 11 — cron job, background, 600s timeout)
+
+| Phase | Duration | Notes |
+|---|---|---|
+| auto_sync.sh (2nd cron trigger) | ~108s | Jitter sleep 108s + git fetch/pull succeeded + push **failed 403** |
+| AI model: owl-alpha (1st) | ~30s | ✅ Succeeded on first try |
+| Telegram send | <5s | ✅ Success |
+| **Total** | **~160s (~2 min 40s)** | Completed successfully |
+
+**Key observations from Session 11:**
+- **GitHub push 403 (NEW)**: After ~5 days of "Repository not found" errors, git fetch/pull now succeeds — the remote URL is correct. But git push returns `403: Permission to skkeoriw/hermes-brain.git denied to divanoo65`. The local commit (`6b2e392`, 9 files changed, +4327/-8) is safe on disk but not on GitHub. The repo rename/transfer is complete; the auth credential for `divanoo65` needs updating.
+- **GitHub remote is healthy again**: Git fetch/pull works — the "Repository not found" era is over.
+- **owl-alpha succeeded on first try**: No cron deadlock this time — the cron trigger stagger avoided contention.
+- **Fast completion**: 160s total with 108s jitter. One of the fastest completions observed.
 
 ### Key Findings
 
