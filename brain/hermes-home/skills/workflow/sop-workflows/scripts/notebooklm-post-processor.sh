@@ -1,32 +1,3 @@
----
-name: sop-notebooklm-post-processor
-description: "Extracts clean JSON output from notebooklm_processor.py raw output and executes copy-and-rename-output.py."
-version: 1.0.0
----
-
-## Purpose
-This skill takes the raw output file from `notebooklm_processor.py`, extracts the clean JSON result, and then executes `copy-and-rename-output.py`.
-
-## Arguments
-- `processor_raw_output_file`: Absolute path to the raw output file from `notebooklm_processor.py` (e.g., `/tmp/processor_full_output.txt`).
-- `wiki_local_path`: Absolute path to the local wiki repository.
-
-## Steps
-
-1.  **Extract and clean JSON output**:
-    -   Read `processor_raw_output_file`.
-    -   Use `grep -oP '{.*}'` to extract all lines that look like JSON objects.
-    -   Take the `tail -1` to get the last complete JSON object (which should be the final result).
-    -   Save this cleaned JSON to `/tmp/processor_clean_output.json`.
-
-2.  **Execute `copy-and-rename-output.py`**:
-    -   Run `copy-and-rename-output.py` using `/tmp/processor_clean_output.json` as input and the `wiki_local_path`.
-    -   Capture its stdout to `/tmp/copy_rename_output.json`.
-
-3.  **Return Results**:
-    -   Read and return the content of `/tmp/processor_clean_output.json` and `/tmp/copy_rename_output.json`.
-
-```bash
 # Step 1: Extract and clean JSON output
 CLEAN_JSON_FILE="/tmp/processor_clean_output.json"
 
